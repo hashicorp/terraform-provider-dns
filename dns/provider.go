@@ -65,10 +65,12 @@ func Provider() terraform.ResourceProvider {
 			"dns_aaaa_record_set":  dataSourceDnsAAAARecordSet(),
 			"dns_cname_record_set": dataSourceDnsCnameRecordSet(),
 			"dns_txt_record_set":   dataSourceDnsTxtRecordSet(),
+			"dns_ns_record_set":    dataSourceDnsNSRecordSet(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
 			"dns_a_record_set":    resourceDnsARecordSet(),
+			"dns_ns_record_set":   resourceDnsNSRecordSet(),
 			"dns_aaaa_record_set": resourceDnsAAAARecordSet(),
 			"dns_cname_record":    resourceDnsCnameRecord(),
 			"dns_ptr_record":      resourceDnsPtrRecord(),
@@ -150,6 +152,19 @@ func getAVal(record interface{}) (string, error) {
 	}
 
 	return addr, nil
+}
+
+func getNSVal(record interface{}) (string, error) {
+
+	recstr := record.(*dns.NS).String()
+	var name, ttl, class, typ, nameserver string
+
+	_, err := fmt.Sscanf(recstr, "%s\t%s\t%s\t%s\t%s", &name, &ttl, &class, &typ, &nameserver)
+	if err != nil {
+		return "", fmt.Errorf("Error parsing record: %s", err)
+	}
+
+	return nameserver, nil
 }
 
 func getAAAAVal(record interface{}) (string, error) {
