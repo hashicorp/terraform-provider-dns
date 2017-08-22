@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
@@ -27,7 +28,17 @@ func Provider() terraform.ResourceProvider {
 						"port": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
-							Default:  53,
+							DefaultFunc: func() (interface{}, error) {
+								if envPortStr := os.Getenv("DNS_UPDATE_PORT"); envPortStr != "" {
+									port, err := strconv.Atoi(envPortStr)
+									if err != nil {
+										err = fmt.Errorf("invalid DNS_UPDATE_PORT environment variable: %s", err)
+									}
+									return port, err
+								}
+
+								return 53, nil
+							},
 						},
 						"key_name": &schema.Schema{
 							Type:        schema.TypeString,
@@ -95,7 +106,16 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		} else {
 			return nil, nil
 		}
-		port = 53
+		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
+			var err error
+			portStr := os.Getenv("DNS_UPDATE_PORT")
+			port, err = strconv.Atoi(portStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid DNS_UPDATE_PORT environment variable: %s", err)
+			}
+		} else {
+			port = 53
+		}
 		if len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
 			keyname = os.Getenv("DNS_UPDATE_KEYNAME")
 		}
