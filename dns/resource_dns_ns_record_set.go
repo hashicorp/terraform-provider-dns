@@ -3,7 +3,6 @@ package dns
 import (
 	"fmt"
 	"time"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/miekg/dns"
 )
@@ -27,7 +26,7 @@ func resourceDnsNSRecordSet() *schema.Resource {
 				ForceNew: true,
 			},
 			"nameservers": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeSet,
 				Required: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
@@ -55,7 +54,7 @@ func resourceDnsNSRecordSetCreate(d *schema.ResourceData, meta interface{}) erro
 
 	d.SetId(rec_fqdn)
 
-	return resourceDnsARecordSetUpdate(d, meta)
+	return resourceDnsNSRecordSetUpdate(d, meta)
 }
 
 func resourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error {
@@ -93,6 +92,7 @@ func resourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error 
 			}
 			nameservers.Add(nameserver)
 		}
+
 		if !nameservers.Equal(d.Get("nameservers")) {
 			d.SetId("")
 			return fmt.Errorf("DNS record differs")
@@ -135,12 +135,12 @@ func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 
 			// Loop through all the old nameservers and remove them
 			for _, nameserver := range remove {
-				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d A %s", rec_fqdn, ttl, nameserver.(string)))
+				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d NS %s", rec_fqdn, ttl, nameserver.(string)))
 				msg.Remove([]dns.RR{rr_remove})
 			}
 			// Loop through all the new nameservers and insert them
 			for _, nameserver := range add {
-				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d A %s", rec_fqdn, ttl, nameserver.(string)))
+				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d NS %s", rec_fqdn, ttl, nameserver.(string)))
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
