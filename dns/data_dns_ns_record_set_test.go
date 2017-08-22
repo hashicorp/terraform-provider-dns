@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 )
 
-func TestAccDataDnsARecordSet_Basic(t *testing.T) {
+func TestAccDataDnsNSRecordSet_Basic(t *testing.T) {
 	tests := []struct {
 		DataSourceBlock string
 		DataSourceName  string
@@ -16,27 +16,19 @@ func TestAccDataDnsARecordSet_Basic(t *testing.T) {
 	}{
 		{
 			`
-			data "dns_NS_record_set" "foo" {
-			  host = "test.nip.io"
+			data "dns_ns_record_set" "foo" {
+			  host = "terraform.io"
 			}
 			`,
 			"foo",
 			[]string{
-				"ns-test1.testdns.co.in",
+				// These results may change if terraform.io moves to a new DNS host.
+				// If you suspect the expected results have changed here, confirm
+				// with e.g. dig terraform.io NS
+				"sam.ns.cloudflare.com.",
+				"zara.ns.cloudflare.com.",
 			},
-			"test.nip.io",
-		},
-		{
-			`
-			data "dns_NS_record_set" "ntp" {
-			  host = "time-c.nist.gov"
-			}
-			`,
-			"ntp",
-			[]string{
-				"ns-test2.testdns.co.uk",
-			},
-			"time-c.nist.gov",
+			"terraform.io",
 		},
 	}
 

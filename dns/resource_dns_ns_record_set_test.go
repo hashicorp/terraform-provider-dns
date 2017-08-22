@@ -15,20 +15,20 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDnsARecordSetDestroy,
+		CheckDestroy: testAccCheckDnsNSRecordSetDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
 				Config: testAccDnsNSRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "2"),
-					testAccCheckDnsARecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.testdns.co.uk", "ns2.testdns.co.uk"}),
+					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.testdns.co.uk", "ns2.testdns.co.uk"}),
 				),
 			},
 			resource.TestStep{
 				Config: testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "3"),
-					testAccCheckDnsARecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk", "ns2.test2dns.co.uk", "ns3.test2dns.co.uk"}),
+					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk", "ns2.test2dns.co.uk", "ns3.test2dns.co.uk"}),
 				),
 			},
 		},
@@ -40,7 +40,8 @@ func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 	c := meta.(*DNSClient).c
 	srv_addr := meta.(*DNSClient).srv_addr
 	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "dns_a_record_set" {
+
+		if rs.Type != "dns_ns_record_set" {
 			continue
 		}
 

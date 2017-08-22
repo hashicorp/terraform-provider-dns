@@ -3,14 +3,13 @@ package dns
 import (
 	"fmt"
 	"net"
-	// "sort"
-
+	"sort"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
 func dataSourceDnsNSRecordSet() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceDnsARecordSetRead,
+		Read: dataSourceDnsNSRecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"host": &schema.Schema{
 				Type:     schema.TypeString,
@@ -27,17 +26,21 @@ func dataSourceDnsNSRecordSet() *schema.Resource {
 
 func dataSourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	host := d.Get("host").(string)
-
-	nameservers, err := net.LookupNS(host)
+	nsRecords, err := net.LookupNS(host)
 	if err != nil {
 		return fmt.Errorf("error looking up NS records for %q: %s", host, err)
 	}
 
-	// nameservers := make([]string, 0)
+	nameservers := make([]string, len(nsRecords))
+	for i, record := range nsRecords {
+		nameservers[i] = record.Host
+	}
+	sort.Strings(nameservers)
 
-	// sort.Strings(nameservers)
-
-	d.Set("nameservers", nameservers)
+	err = d.Set("nameservers", nameservers)
+	if err != nil {
+		return err
+	}
 	d.SetId(host)
 
 	return nil
