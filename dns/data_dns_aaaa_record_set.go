@@ -7,9 +7,9 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func dataSourceDnsARecordSet() *schema.Resource {
+func dataSourceDnsAAAARecordSet() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceDnsARecordSetRead,
+		Read: dataSourceDnsAAAARecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"host": &schema.Schema{
 				Type:     schema.TypeString,
@@ -24,16 +24,16 @@ func dataSourceDnsARecordSet() *schema.Resource {
 	}
 }
 
-func dataSourceDnsARecordSetRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	host := d.Get("host").(string)
 
-	a, _, err := lookupIP(host)
+	_, aaaa, err := lookupIP(host)
 	if err != nil {
-		return fmt.Errorf("error looking up A records for %q: %s", host, err)
+		return fmt.Errorf("error looking up AAAA records for %q: %s", host, err)
 	}
-	sort.Strings(a)
+	sort.Strings(aaaa)
 
-	d.Set("addrs", a)
+	d.Set("addrs", aaaa)
 	d.SetId(host)
 
 	return nil
