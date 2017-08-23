@@ -1,4 +1,9 @@
 ## 0.1.1 (Unreleased)
+
+NEW FEATURES:
+
+* **`dns_aaaa_record_set` data source** for fetching IPv6 address records [GH-9]
+
 ## 0.1.0 (June 20, 2017)
 
 NOTES:
