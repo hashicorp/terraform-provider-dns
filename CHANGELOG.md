@@ -3,6 +3,8 @@
 NEW FEATURES:
 
 * **`dns_aaaa_record_set` data source** for fetching IPv6 address records [GH-9]
+* **`dns_ns_record_set` data source** for fetching nameserver records [GH-10]
+* **`dns_ns_record_set` resource** for creating new nameserver records via the DNS update protocol [GH-10]
 
 ## 0.1.0 (June 20, 2017)
 
