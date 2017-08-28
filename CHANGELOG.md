@@ -1,10 +1,10 @@
-## 0.1.1 (Unreleased)
+## 0.1.1 (August 28, 2017)
 
 NEW FEATURES:
 
-* **`dns_aaaa_record_set` data source** for fetching IPv6 address records [GH-9]
-* **`dns_ns_record_set` data source** for fetching nameserver records [GH-10]
-* **`dns_ns_record_set` resource** for creating new nameserver records via the DNS update protocol [GH-10]
+* **`dns_aaaa_record_set` data source** for fetching IPv6 address records ([#9](https://github.com/terraform-providers/terraform-provider-dns/issues/9))
+* **`dns_ns_record_set` data source** for fetching nameserver records ([#10](https://github.com/terraform-providers/terraform-provider-dns/issues/10))
+* **`dns_ns_record_set` resource** for creating new nameserver records via the DNS update protocol ([#10](https://github.com/terraform-providers/terraform-provider-dns/issues/10))
 
 ## 0.1.0 (June 20, 2017)
 
