@@ -2,6 +2,7 @@ package dns
 
 import (
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -91,9 +92,25 @@ func resourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) erro
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}
-			addresses.Add(addr)
+
+			// This ensures the IP address is formatted consistently
+			ip := net.ParseIP(addr)
+			if ip == nil {
+				return fmt.Errorf("Error parsing IP address: %s", addr)
+			}
+			addresses.Add(ip.String())
 		}
-		if !addresses.Equal(d.Get("addresses")) {
+
+		// This ensures the IP addresses are formatted consistently
+		expected := schema.NewSet(schema.HashString, nil)
+		for _, addr := range d.Get("addresses").(*schema.Set).List() {
+			ip := net.ParseIP(addr.(string))
+			if ip == nil {
+				return fmt.Errorf("Error parsing IP address: %s", addr)
+			}
+			expected.Add(ip.String())
+		}
+		if !addresses.Equal(expected) {
 			d.SetId("")
 			return fmt.Errorf("DNS record differs")
 		}
