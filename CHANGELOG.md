@@ -1,4 +1,7 @@
-## 0.1.2 (Unreleased)
+## 1.0.0 (Unreleased)
+
+* No changes from 0.1.1; just adjusting to [the new version numbering scheme](https://www.hashicorp.com/blog/hashicorp-terraform-provider-versioning/).
+
 ## 0.1.1 (August 28, 2017)
 
 NEW FEATURES:
