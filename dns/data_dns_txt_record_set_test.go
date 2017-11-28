@@ -23,6 +23,7 @@ func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 			"foo",
 			[]string{
 				"google-site-verification=oqoe6Z7OB_726BNm33g4OdKK57KDtCfH266f8wAvLBo",
+				"google-site-verification=V8MoaHpn91Zfvk8uOTfdyxiKUGB38W083y9rZdqdlgI",
 				"v=spf1 include:_spf.google.com include:spf.mail.intercom.io  include:stspg-customer.com include:mail.zendesk.com ~all",
 				"status-page-domain-verification=dgtdvzlp8tfn",
 			},
