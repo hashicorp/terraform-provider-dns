@@ -2,8 +2,10 @@ package dns
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
 	"log"
+	"time"
+
+	"github.com/miekg/dns"
 )
 
 type Config struct {
@@ -12,6 +14,8 @@ type Config struct {
 	keyname   string
 	keyalgo   string
 	keysecret string
+	protocol  string
+	timeout   int
 }
 
 type DNSClient struct {
@@ -37,6 +41,8 @@ func (c *Config) Client() (interface{}, error) {
 		return nil, fmt.Errorf("Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty")
 	}
 	client.c = new(dns.Client)
+	client.c.Net = c.protocol
+	client.c.Timeout = time.Duration(c.timeout) * time.Second
 	if c.keyname != "" {
 		client.keyname = c.keyname
 		client.keysecret = c.keysecret

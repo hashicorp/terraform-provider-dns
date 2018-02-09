@@ -40,6 +40,16 @@ func Provider() terraform.ResourceProvider {
 								return 53, nil
 							},
 						},
+						"protocol": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_PROTOCOL", nil),
+						},
+						"timeout": &schema.Schema{
+							Type:        schema.TypeInt,
+							Optional:    true,
+							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TIMEOUT", nil),
+						},
 						"key_name": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
@@ -82,8 +92,8 @@ func Provider() terraform.ResourceProvider {
 
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
-	var server, keyname, keyalgo, keysecret string
-	var port int
+	var server, keyname, keyalgo, keysecret, protocol string
+	var port, timeout int
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
@@ -102,6 +112,12 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		}
 		if val, ok := update["key_secret"]; ok {
 			keysecret = val.(string)
+		}
+		if val, ok := update["protocol"]; ok {
+			protocol = val.(string)
+		}
+		if val, ok := update["timeout"]; ok {
+			timeout = int(val.(int))
 		}
 	} else {
 		if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
@@ -128,6 +144,20 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		if len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
 			keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
 		}
+		if len(os.Getenv("DNS_UPDATE_PROTOCOL")) > 0 {
+			protocol = os.Getenv("DNS_UPDATE_PROTOCOL")
+		}
+		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
+			var err error
+			timeoutStr := os.Getenv("DNS_UPDATE_TIMEOUT")
+			timeout, err = strconv.Atoi(timeoutStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid DNS_UPDATE_TIMEOUT environment variable: %s", err)
+			}
+		} else {
+			timeout = 0
+		}
+
 	}
 
 	config := Config{
@@ -136,6 +166,8 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		keyname:   keyname,
 		keyalgo:   keyalgo,
 		keysecret: keysecret,
+		protocol:  protocol,
+		timeout:   timeout,
 	}
 
 	return config.Client()
