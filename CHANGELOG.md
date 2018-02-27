@@ -1,4 +1,9 @@
 ## 1.0.1 (Unreleased)
+
+BUGS FIXED:
+
+* Normalize IP addresses before comparing them, so non-canonical forms don't cause errant diffs [GH-13]
+
 ## 1.0.0 (September 15, 2017)
 
 * No changes from 0.1.1; just adjusting to [the new version numbering scheme](https://www.hashicorp.com/blog/hashicorp-terraform-provider-versioning/).
