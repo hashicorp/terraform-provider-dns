@@ -3,6 +3,7 @@
 BUGS FIXED:
 
 * Normalize IP addresses before comparing them, so non-canonical forms don't cause errant diffs [GH-13]
+* Properly handle IPv6 IP addresses as the update host. Previously this would create an invalid connection address due to not properly constructing the address format. [GH-22]
 
 ## 1.0.0 (September 15, 2017)
 
