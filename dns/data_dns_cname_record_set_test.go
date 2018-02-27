@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 )
 
-func TestAccDnsCnameRecordSet_Basic(t *testing.T) {
+func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
 	tests := []struct {
 		DataSourceBlock string
 		Expected        string

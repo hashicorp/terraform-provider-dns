@@ -3,6 +3,8 @@ package dns
 import (
 	"fmt"
 	"log"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/miekg/dns"
@@ -31,7 +33,7 @@ func (c *Config) Client() (interface{}, error) {
 	log.Println("[INFO] Building DNSClient config structure")
 
 	var client DNSClient
-	client.srv_addr = fmt.Sprintf("%s:%d", c.server, c.port)
+	client.srv_addr = net.JoinHostPort(c.server, strconv.Itoa(c.port))
 	authCfgOk := false
 	if (c.keyname == "" && c.keysecret == "" && c.keyalgo == "") ||
 		(c.keyname != "" && c.keysecret != "" && c.keyalgo != "") {

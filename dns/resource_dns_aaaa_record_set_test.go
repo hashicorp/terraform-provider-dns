@@ -21,14 +21,14 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282:43b8:5303:dead:beef:cafe:babe", "fdd5:e282:43b8:5303:cafe:babe:dead:beef"}),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}),
 				),
 			},
 			resource.TestStep{
 				Config: testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282:43b8:5303:beef:dead:babe:cafe", "fdd5:e282:43b8:5303:babe:cafe:beef:dead"}),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}),
 				),
 			},
 		},
@@ -120,7 +120,7 @@ var testAccDnsAAAARecordSet_basic = fmt.Sprintf(`
   resource "dns_aaaa_record_set" "bar" {
     zone = "example.com."
     name = "bar"
-    addresses = ["fdd5:e282:43b8:5303:dead:beef:cafe:babe", "fdd5:e282:43b8:5303:cafe:babe:dead:beef"]
+    addresses = ["fdd5:e282:0000:0000:dead:beef:cafe:babe", "fdd5:e282:0000:0000:cafe:babe:dead:beef"]
     ttl = 300
   }`)
 
@@ -128,6 +128,6 @@ var testAccDnsAAAARecordSet_update = fmt.Sprintf(`
   resource "dns_aaaa_record_set" "bar" {
     zone = "example.com."
     name = "bar"
-    addresses = ["fdd5:e282:43b8:5303:beef:dead:babe:cafe", "fdd5:e282:43b8:5303:babe:cafe:beef:dead"]
+    addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe", "fdd5:e282:0000:0000:babe:cafe:beef:dead"]
     ttl = 300
   }`)
