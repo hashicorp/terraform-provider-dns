@@ -120,7 +120,7 @@ var testAccDnsARecordSet_basic = fmt.Sprintf(`
   resource "dns_a_record_set" "foo" {
     zone = "example.com."
     name = "foo"
-    addresses = ["192.168.0.1", "192.168.0.2"]
+    addresses = ["192.168.000.001", "192.168.000.002"]
     ttl = 300
   }`)
 
