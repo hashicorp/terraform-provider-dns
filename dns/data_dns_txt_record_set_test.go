@@ -17,17 +17,14 @@ func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 		{
 			`
 			data "dns_txt_record_set" "foo" {
-			  host = "hashicorp.com"
+			  host = "terraform.io"
 			}
 			`,
 			"foo",
 			[]string{
-				"google-site-verification=oqoe6Z7OB_726BNm33g4OdKK57KDtCfH266f8wAvLBo",
-				"google-site-verification=V8MoaHpn91Zfvk8uOTfdyxiKUGB38W083y9rZdqdlgI",
-				"v=spf1 include:_spf.google.com include:spf.mail.intercom.io  include:stspg-customer.com include:mail.zendesk.com ~all",
-				"status-page-domain-verification=dgtdvzlp8tfn",
+				"google-site-verification=LQZvxDzrGE-ZLudDpkpj-gcXN-5yF7Z6C-4Rljs3I_Q",
 			},
-			"hashicorp.com",
+			"terraform.io",
 		},
 	}
 
