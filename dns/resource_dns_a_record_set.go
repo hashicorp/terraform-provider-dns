@@ -78,6 +78,14 @@ func resourceDnsARecordSetRead(d *schema.ResourceData, meta interface{}) error {
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeA)
 
+		authquery := meta.(*DNSClient).authquery
+		if authquery {
+			keyname := meta.(*DNSClient).keyname
+			keyalgo := meta.(*DNSClient).keyalgo
+			if keyname != "" {
+				msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
+			}
+		}
 		r, _, err := c.Exchange(msg, srv_addr)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)

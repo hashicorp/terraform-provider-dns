@@ -65,6 +65,12 @@ func Provider() terraform.ResourceProvider {
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYSECRET", nil),
 						},
+						"auth_query": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_QUERYAUTH", nil),
+						},
 					},
 				},
 			},
@@ -94,6 +100,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
 	var server, keyname, keyalgo, keysecret, protocol string
 	var port, timeout int
+	var authquery bool
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
@@ -118,6 +125,9 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		}
 		if val, ok := update["timeout"]; ok {
 			timeout = int(val.(int))
+		}
+		if val, ok := update["auth_query"]; ok {
+			authquery = val.(bool)
 		}
 	} else {
 		if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
@@ -157,6 +167,13 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		} else {
 			timeout = 0
 		}
+		if len(os.Getenv("DNS_UPDATE_AUTHQUERY")) > 0 {
+			var err error
+			authquery, err = strconv.ParseBool(os.Getenv("DNS_UPDATE_AUTHQUERY"))
+			if err != nil {
+				return nil, fmt.Errorf("invalid DNS_UPDATE_AUTHQUERY environment variable: %s", err)
+			}
+		}
 
 	}
 
@@ -168,6 +185,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		keysecret: keysecret,
 		protocol:  protocol,
 		timeout:   timeout,
+		authquery: authquery,
 	}
 
 	return config.Client()

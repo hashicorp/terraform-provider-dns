@@ -18,6 +18,7 @@ type Config struct {
 	keysecret string
 	protocol  string
 	timeout   int
+	authquery bool
 }
 
 type DNSClient struct {
@@ -26,6 +27,7 @@ type DNSClient struct {
 	keyname   string
 	keysecret string
 	keyalgo   string
+	authquery bool
 }
 
 // Configures and returns a fully initialized DNSClient
@@ -54,6 +56,7 @@ func (c *Config) Client() (interface{}, error) {
 		}
 		client.keyalgo = keyalgo
 		client.c.TsigSecret = map[string]string{c.keyname: c.keysecret}
+		client.authquery = c.authquery
 	}
 	return &client, nil
 }
