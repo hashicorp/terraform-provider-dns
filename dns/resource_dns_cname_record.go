@@ -89,8 +89,14 @@ func resourceDnsCnameRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record: %v", r.Rcode)
+		switch r.Rcode {
+		case dns.RcodeSuccess:
+			break
+		case dns.RcodeNameError:
+			d.SetId("")
+			return nil
+		default:
+			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
 		}
 
 		if len(r.Answer) > 1 {
