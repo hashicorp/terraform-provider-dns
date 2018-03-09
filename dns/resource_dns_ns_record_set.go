@@ -83,7 +83,13 @@ func resourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
-		if r.Rcode != dns.RcodeSuccess {
+		switch r.Rcode {
+		case dns.RcodeSuccess:
+			break
+		case dns.RcodeNameError:
+			d.SetId("")
+			return nil
+		default:
 			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
 		}
 
