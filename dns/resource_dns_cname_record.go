@@ -81,9 +81,15 @@ func resourceDnsCnameRecordRead(d *schema.ResourceData, meta interface{}) error 
 
 		c := meta.(*DNSClient).c
 		srv_addr := meta.(*DNSClient).srv_addr
+		keyname := meta.(*DNSClient).keyname
+		keyalgo := meta.(*DNSClient).keyalgo
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeCNAME)
+
+		if keyname != "" {
+			msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
+		}
 
 		r, _, err := c.Exchange(msg, srv_addr)
 		if err != nil {
