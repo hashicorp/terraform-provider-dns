@@ -71,6 +71,13 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
 				),
 			},
+			resource.TestStep{
+				Config: testAccDnsAAAARecordSet_retry,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "14"),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"}, &rec_name, &rec_zone),
+				),
+			},
 		},
 	})
 }
@@ -169,5 +176,13 @@ var testAccDnsAAAARecordSet_update = fmt.Sprintf(`
     zone = "example.com."
     name = "bar"
     addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe", "fdd5:e282:0000:0000:babe:cafe:beef:dead"]
+    ttl = 300
+  }`)
+
+var testAccDnsAAAARecordSet_retry = fmt.Sprintf(`
+  resource "dns_aaaa_record_set" "bar" {
+    zone = "example.com."
+    name = "bar"
+    addresses = ["fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"]
     ttl = 300
   }`)
