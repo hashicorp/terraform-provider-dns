@@ -2,10 +2,12 @@ package dns
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
 	"log"
 	"net"
 	"strconv"
+	"strings"
+
+	"github.com/miekg/dns"
 )
 
 type Config struct {
@@ -40,14 +42,18 @@ func (c *Config) Client() (interface{}, error) {
 	}
 	client.c = new(dns.Client)
 	if c.keyname != "" {
-		client.keyname = c.keyname
+		if !dns.IsFqdn(c.keyname) {
+			return nil, fmt.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
+		}
+		keyname := strings.ToLower(c.keyname)
+		client.keyname = keyname
 		client.keysecret = c.keysecret
 		keyalgo, err := convertHMACAlgorithm(c.keyalgo)
 		if err != nil {
 			return nil, fmt.Errorf("Error configuring provider: %s", err)
 		}
 		client.keyalgo = keyalgo
-		client.c.TsigSecret = map[string]string{c.keyname: c.keysecret}
+		client.c.TsigSecret = map[string]string{keyname: c.keysecret}
 	}
 	return &client, nil
 }

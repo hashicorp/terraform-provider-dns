@@ -76,10 +76,6 @@ func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 		rec_name := rs.Primary.Attributes["name"]
 		rec_zone := rs.Primary.Attributes["zone"]
 
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
-		}
-
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
 		msg := new(dns.Msg)
@@ -109,10 +105,6 @@ func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []inter
 
 		*rec_name = rs.Primary.Attributes["name"]
 		*rec_zone = rs.Primary.Attributes["zone"]
-
-		if *rec_zone != dns.Fqdn(*rec_zone) {
-			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
-		}
 
 		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
 

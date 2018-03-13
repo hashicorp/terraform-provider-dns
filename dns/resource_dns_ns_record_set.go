@@ -16,20 +16,25 @@ func resourceDnsNSRecordSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"zone": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validateZone,
 			},
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validateName,
 			},
 			"nameservers": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Set:      schema.HashString,
+				Elem: &schema.Schema{
+					Type:         schema.TypeString,
+					ValidateFunc: validateZone,
+				},
+				Set: schema.HashString,
 			},
 			"ttl": &schema.Schema{
 				Type:     schema.TypeInt,
@@ -46,10 +51,6 @@ func resourceDnsNSRecordSetCreate(d *schema.ResourceData, meta interface{}) erro
 	rec_name := d.Get("name").(string)
 	rec_zone := d.Get("zone").(string)
 
-	if rec_zone != dns.Fqdn(rec_zone) {
-		return fmt.Errorf("Error creating DNS record: \"zone\" should be an FQDN")
-	}
-
 	rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
 	d.SetId(rec_fqdn)
@@ -63,10 +64,6 @@ func resourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error 
 
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
-
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
-		}
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
@@ -116,10 +113,6 @@ func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
 		ttl := d.Get("ttl").(int)
-
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error updating DNS record: \"zone\" should be an FQDN")
-		}
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
@@ -171,10 +164,6 @@ func resourceDnsNSRecordSetDelete(d *schema.ResourceData, meta interface{}) erro
 
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
-
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error updating DNS record: \"zone\" should be an FQDN")
-		}
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
