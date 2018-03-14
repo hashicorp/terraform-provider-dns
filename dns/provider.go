@@ -66,6 +66,7 @@ func Provider() terraform.ResourceProvider {
 			"dns_cname_record_set": dataSourceDnsCnameRecordSet(),
 			"dns_txt_record_set":   dataSourceDnsTxtRecordSet(),
 			"dns_ns_record_set":    dataSourceDnsNSRecordSet(),
+			"dns_ptr_record_set":   dataSourceDnsPtrRecordSet(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
