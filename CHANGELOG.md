@@ -1,5 +1,8 @@
 ## 1.0.1 (Unreleased)
 
+NEW FEATURES:
+* data/dns_ptr_record_set: Implement data source for PTR record. [GH-32]
+
 BUGS FIXED:
 
 * Normalize IP addresses before comparing them, so non-canonical forms don't cause errant diffs [GH-13]
