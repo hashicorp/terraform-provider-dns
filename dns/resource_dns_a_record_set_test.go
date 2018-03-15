@@ -13,6 +13,7 @@ import (
 func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 	var rec_name, rec_zone string
+	resourceName := "dns_a_record_set.foo"
 
 	deleteARecordSet := func() {
 		meta := testAccProvider.Meta()
@@ -43,24 +44,29 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 			{
 				Config: testAccDnsARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "2"),
-					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
+					testAccCheckDnsARecordSetExists(t, resourceName, []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),
+					testAccCheckDnsARecordSetExists(t, resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deleteARecordSet,
 				Config:    testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),
+					testAccCheckDnsARecordSetExists(t, resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -122,7 +128,7 @@ func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{},
 		addresses := schema.NewSet(schema.HashString, nil)
 		expected := schema.NewSet(schema.HashString, addr)
 		for _, record := range r.Answer {
-			addr, err := getAVal(record)
+			addr, _, err := getAVal(record)
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}

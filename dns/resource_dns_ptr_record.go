@@ -13,6 +13,9 @@ func resourceDnsPtrRecord() *schema.Resource {
 		Read:   resourceDnsPtrRecordRead,
 		Update: resourceDnsPtrRecordUpdate,
 		Delete: resourceDnsPtrRecordDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceDnsImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"zone": &schema.Schema{
@@ -60,7 +63,6 @@ func resourceDnsPtrRecordRead(d *schema.ResourceData, meta interface{}) error {
 
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
-		rec_ptr := d.Get("ptr").(string)
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
@@ -85,14 +87,15 @@ func resourceDnsPtrRecordRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Error querying DNS record: multiple responses received")
 		}
 		record := r.Answer[0]
-		ptr, err := getPtrVal(record)
+		ptr, ttl, err := getPtrVal(record)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
-		if rec_ptr != ptr {
-			d.SetId("")
-			return fmt.Errorf("DNS record differs")
-		}
+		d.Set("name", rec_name)
+		d.Set("zone", rec_zone)
+		d.Set("ptr", ptr)
+		d.Set("ttl", ttl)
+
 		return nil
 	} else {
 		return fmt.Errorf("update server is not set")

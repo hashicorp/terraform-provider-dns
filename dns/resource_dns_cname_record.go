@@ -13,6 +13,9 @@ func resourceDnsCnameRecord() *schema.Resource {
 		Read:   resourceDnsCnameRecordRead,
 		Update: resourceDnsCnameRecordUpdate,
 		Delete: resourceDnsCnameRecordDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceDnsImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"zone": &schema.Schema{
@@ -60,7 +63,6 @@ func resourceDnsCnameRecordRead(d *schema.ResourceData, meta interface{}) error 
 
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
-		rec_cname := d.Get("cname").(string)
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
@@ -85,14 +87,15 @@ func resourceDnsCnameRecordRead(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf("Error querying DNS record: multiple responses received")
 		}
 		record := r.Answer[0]
-		cname, err := getCnameVal(record)
+		cname, ttl, err := getCnameVal(record)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
-		if rec_cname != cname {
-			d.SetId("")
-			return fmt.Errorf("DNS record differs")
-		}
+		d.Set("name", rec_name)
+		d.Set("zone", rec_zone)
+		d.Set("cname", cname)
+		d.Set("ttl", ttl)
+
 		return nil
 	} else {
 		return fmt.Errorf("update server is not set")

@@ -13,6 +13,7 @@ import (
 func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
 	var rec_name, rec_zone string
+	resourceName := "dns_aaaa_record_set.bar"
 
 	deleteAAAARecordSet := func() {
 		meta := testAccProvider.Meta()
@@ -43,31 +44,36 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 			{
 				Config: testAccDnsAAAARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
+					testAccCheckDnsAAAARecordSetExists(t, resourceName, []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
+					testAccCheckDnsAAAARecordSetExists(t, resourceName, []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deleteAAAARecordSet,
 				Config:    testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
+					testAccCheckDnsAAAARecordSetExists(t, resourceName, []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsAAAARecordSet_retry,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "14"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "addresses.#", "14"),
+					testAccCheckDnsAAAARecordSetExists(t, resourceName, []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"}, &rec_name, &rec_zone),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -129,7 +135,7 @@ func testAccCheckDnsAAAARecordSetExists(t *testing.T, n string, addr []interface
 		addresses := schema.NewSet(schema.HashString, nil)
 		expected := schema.NewSet(schema.HashString, addr)
 		for _, record := range r.Answer {
-			addr, err := getAAAAVal(record)
+			addr, _, err := getAAAAVal(record)
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}

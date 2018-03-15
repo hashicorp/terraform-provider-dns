@@ -2,6 +2,7 @@ package dns
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/miekg/dns"
@@ -13,6 +14,9 @@ func resourceDnsNSRecordSet() *schema.Resource {
 		Read:   resourceDnsNSRecordSetRead,
 		Update: resourceDnsNSRecordSetUpdate,
 		Delete: resourceDnsNSRecordSetDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceDnsImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"zone": &schema.Schema{
@@ -84,22 +88,27 @@ func resourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
 		}
 
+		var ttl sort.IntSlice
+
 		nameservers := schema.NewSet(schema.HashString, nil)
 
 		for _, record := range r.Ns {
-			nameserver, err := getNSVal(record)
+			nameserver, t, err := getNSVal(record)
 
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}
 
 			nameservers.Add(nameserver)
+			ttl = append(ttl, t)
 		}
+		sort.Sort(ttl)
 
-		if !nameservers.Equal(d.Get("nameservers")) {
-			d.SetId("")
-			return fmt.Errorf("DNS record differs")
-		}
+		d.Set("name", rec_name)
+		d.Set("zone", rec_zone)
+		d.Set("nameservers", nameservers)
+		d.Set("ttl", ttl[0])
+
 		return nil
 	} else {
 		return fmt.Errorf("update server is not set")

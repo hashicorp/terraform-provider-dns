@@ -2,7 +2,7 @@ package dns
 
 import (
 	"fmt"
-	"net"
+	"sort"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/miekg/dns"
@@ -14,6 +14,9 @@ func resourceDnsARecordSet() *schema.Resource {
 		Read:   resourceDnsARecordSetRead,
 		Update: resourceDnsARecordSetUpdate,
 		Delete: resourceDnsARecordSetDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceDnsImport,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"zone": &schema.Schema{
@@ -32,7 +35,7 @@ func resourceDnsARecordSet() *schema.Resource {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
-				Set:      schema.HashString,
+				Set:      hashIPString,
 			},
 			"ttl": &schema.Schema{
 				Type:     schema.TypeInt,
@@ -82,34 +85,24 @@ func resourceDnsARecordSetRead(d *schema.ResourceData, meta interface{}) error {
 			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
 		}
 
-		addresses := schema.NewSet(schema.HashString, nil)
+		var ttl sort.IntSlice
+
+		addresses := schema.NewSet(hashIPString, nil)
 		for _, record := range r.Answer {
-			addr, err := getAVal(record)
+			addr, t, err := getAVal(record)
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}
+			addresses.Add(addr)
+			ttl = append(ttl, t)
+		}
+		sort.Sort(ttl)
 
-			// This ensures the IP address is formatted consistently
-			ip := net.ParseIP(addr)
-			if ip == nil {
-				return fmt.Errorf("Error parsing IP address: %s", addr)
-			}
-			addresses.Add(ip.String())
-		}
+		d.Set("name", rec_name)
+		d.Set("zone", rec_zone)
+		d.Set("addresses", addresses)
+		d.Set("ttl", ttl[0])
 
-		// This ensures the IP addresses are formatted consistently
-		expected := schema.NewSet(schema.HashString, nil)
-		for _, addr := range d.Get("addresses").(*schema.Set).List() {
-			ip := net.ParseIP(addr.(string))
-			if ip == nil {
-				return fmt.Errorf("Error parsing IP address: %s", addr)
-			}
-			expected.Add(ip.String())
-		}
-		if !addresses.Equal(expected) {
-			d.SetId("")
-			return fmt.Errorf("DNS record differs")
-		}
 		return nil
 	} else {
 		return fmt.Errorf("update server is not set")
