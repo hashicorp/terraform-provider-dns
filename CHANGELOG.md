@@ -1,6 +1,10 @@
-## 1.0.1 (Unreleased)
+## 2.0.0 (Unreleased)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+* Prior versions of the provider would sign requests when sending updates to a DNS server but would not sign the requests to read those values back on subsequent refreshes. For consistency, now _read_ requests are also signed for managed resources in this provider. This does not apply to the data sources, which continue to just send normal unsigned DNS requests as before.
 
 NEW FEATURES:
+* Use signed requests when refreshing managed resources [GH-35]
 * data/dns_ptr_record_set: Implement data source for PTR record. [GH-32]
 
 BUGS FIXED:
