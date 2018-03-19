@@ -3,7 +3,6 @@ package dns
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -17,10 +16,6 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 	deleteARecordSet := func() {
 		meta := testAccProvider.Meta()
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-		keyname := meta.(*DNSClient).keyname
-		keyalgo := meta.(*DNSClient).keyalgo
 
 		msg := new(dns.Msg)
 
@@ -31,11 +26,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 A", rec_fqdn))
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		if keyname != "" {
-			msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-		}
-
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, true, meta)
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}
@@ -77,8 +68,6 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 	meta := testAccProvider.Meta()
-	c := meta.(*DNSClient).c
-	srv_addr := meta.(*DNSClient).srv_addr
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "dns_a_record_set" {
 			continue
@@ -95,7 +84,7 @@ func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeA)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -127,12 +116,10 @@ func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{},
 		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeA)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
