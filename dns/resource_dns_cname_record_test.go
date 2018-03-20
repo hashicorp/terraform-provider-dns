@@ -11,6 +11,29 @@ import (
 
 func TestAccDnsCnameRecord_basic(t *testing.T) {
 
+	var rec_name, rec_zone string
+
+	deleteCnameRecord := func() {
+		meta := testAccProvider.Meta()
+
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(rec_zone)
+
+		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+
+		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 CNAME", rec_fqdn))
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -19,13 +42,20 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccDnsCnameRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "bar.example.com."),
+					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			resource.TestStep{
 				Config: testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "baz.example.com."),
+					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "baz.example.com.", &rec_name, &rec_zone),
+				),
+			},
+			resource.TestStep{
+				PreConfig: deleteCnameRecord,
+				Config:    testAccDnsCnameRecord_update,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 		},
@@ -34,8 +64,6 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 
 func testAccCheckDnsCnameRecordDestroy(s *terraform.State) error {
 	meta := testAccProvider.Meta()
-	c := meta.(*DNSClient).c
-	srv_addr := meta.(*DNSClient).srv_addr
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "dns_cname_record" {
 			continue
@@ -52,7 +80,7 @@ func testAccCheckDnsCnameRecordDestroy(s *terraform.State) error {
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeCNAME)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -64,7 +92,7 @@ func testAccCheckDnsCnameRecordDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDnsCnameRecordExists(t *testing.T, n string, expected string) resource.TestCheckFunc {
+func testAccCheckDnsCnameRecordExists(t *testing.T, n string, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -74,22 +102,20 @@ func testAccCheckDnsCnameRecordExists(t *testing.T, n string, expected string) r
 			return fmt.Errorf("No ID is set")
 		}
 
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
+		*rec_name = rs.Primary.Attributes["name"]
+		*rec_zone = rs.Primary.Attributes["zone"]
 
-		if rec_zone != dns.Fqdn(rec_zone) {
+		if *rec_zone != dns.Fqdn(*rec_zone) {
 			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
 		}
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeCNAME)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}

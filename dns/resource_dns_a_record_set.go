@@ -3,7 +3,6 @@ package dns
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/miekg/dns"
@@ -72,26 +71,21 @@ func resourceDnsARecordSetRead(d *schema.ResourceData, meta interface{}) error {
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeA)
 
-		authquery := meta.(*DNSClient).authquery
-		if authquery {
-			keyname := meta.(*DNSClient).keyname
-			keyalgo := meta.(*DNSClient).keyalgo
-			if keyname != "" {
-				msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-			}
-		}
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, true, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record: %v", r.Rcode)
+		switch r.Rcode {
+		case dns.RcodeSuccess:
+			break
+		case dns.RcodeNameError:
+			d.SetId("")
+			return nil
+		default:
+			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
 		}
 
 		addresses := schema.NewSet(schema.HashString, nil)
@@ -142,11 +136,6 @@ func resourceDnsARecordSetUpdate(d *schema.ResourceData, meta interface{}) error
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-		keyname := meta.(*DNSClient).keyname
-		keyalgo := meta.(*DNSClient).keyalgo
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(rec_zone)
@@ -169,11 +158,7 @@ func resourceDnsARecordSetUpdate(d *schema.ResourceData, meta interface{}) error
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
-			if keyname != "" {
-				msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-			}
-
-			r, _, err := c.Exchange(msg, srv_addr)
+			r, err := exchange(msg, true, meta)
 			if err != nil {
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %s", err)
@@ -206,11 +191,6 @@ func resourceDnsARecordSetDelete(d *schema.ResourceData, meta interface{}) error
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-		keyname := meta.(*DNSClient).keyname
-		keyalgo := meta.(*DNSClient).keyalgo
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(rec_zone)
@@ -218,11 +198,7 @@ func resourceDnsARecordSetDelete(d *schema.ResourceData, meta interface{}) error
 		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 A", rec_fqdn))
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		if keyname != "" {
-			msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-		}
-
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, true, meta)
 		if err != nil {
 			return fmt.Errorf("Error deleting DNS record: %s", err)
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
@@ -82,6 +83,7 @@ func Provider() terraform.ResourceProvider {
 			"dns_cname_record_set": dataSourceDnsCnameRecordSet(),
 			"dns_txt_record_set":   dataSourceDnsTxtRecordSet(),
 			"dns_ns_record_set":    dataSourceDnsNSRecordSet(),
+			"dns_ptr_record_set":   dataSourceDnsPtrRecordSet(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -254,4 +256,52 @@ func getPtrVal(record interface{}) (string, error) {
 	}
 
 	return ptr, nil
+}
+
+func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
+
+	c := meta.(*DNSClient).c
+	srv_addr := meta.(*DNSClient).srv_addr
+	keyname := meta.(*DNSClient).keyname
+	keyalgo := meta.(*DNSClient).keyalgo
+
+	// If we allow setting the transport default then adjust these
+	c.Net = "udp"
+	retry_tcp := false
+
+	msg.RecursionDesired = false
+
+Retry:
+	if tsig && keyname != "" {
+		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
+	}
+
+	r, _, err := c.Exchange(msg, srv_addr)
+
+	switch err {
+	case dns.ErrTruncated:
+		if retry_tcp {
+			switch c.Net {
+			case "udp":
+				c.Net = "tcp"
+			case "udp4":
+				c.Net = "tcp4"
+			case "udp6":
+				c.Net = "tcp6"
+			default:
+				return nil, fmt.Errorf("Unknown transport: %s", c.Net)
+			}
+		} else {
+			msg.SetEdns0(dns.DefaultMsgSize, false)
+			retry_tcp = true
+		}
+
+		goto Retry
+	case nil:
+		fallthrough
+	default:
+		// do nothing
+	}
+
+	return r, err
 }

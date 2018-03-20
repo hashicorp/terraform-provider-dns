@@ -1,9 +1,17 @@
-## 1.0.1 (Unreleased)
+## 2.0.0 (Unreleased)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+* Prior versions of the provider would sign requests when sending updates to a DNS server but would not sign the requests to read those values back on subsequent refreshes. For consistency, now _read_ requests are also signed for managed resources in this provider. This does not apply to the data sources, which continue to just send normal unsigned DNS requests as before.
+
+NEW FEATURES:
+* Use signed requests when refreshing managed resources [GH-35]
+* data/dns_ptr_record_set: Implement data source for PTR record. [GH-32]
 
 BUGS FIXED:
 
 * Normalize IP addresses before comparing them, so non-canonical forms don't cause errant diffs [GH-13]
 * Properly handle IPv6 IP addresses as the update host. Previously this would create an invalid connection address due to not properly constructing the address format. [GH-22]
+* When refreshing DNS record resources, `NXDOMAIN` errors are now properly marked as deletions in state rather than returning an error, thus allowing Terraform to plan to re-create the missing records. [GH-33]
 
 ## 1.0.0 (September 15, 2017)
 

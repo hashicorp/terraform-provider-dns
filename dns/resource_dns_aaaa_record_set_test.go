@@ -12,6 +12,29 @@ import (
 
 func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
+	var rec_name, rec_zone string
+
+	deleteAAAARecordSet := func() {
+		meta := testAccProvider.Meta()
+
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(rec_zone)
+
+		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+
+		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 AAAA", rec_fqdn))
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -21,14 +44,29 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}, &rec_name, &rec_zone),
 				),
 			},
 			resource.TestStep{
 				Config: testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
+				),
+			},
+			resource.TestStep{
+				PreConfig: deleteAAAARecordSet,
+				Config:    testAccDnsAAAARecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
+				),
+			},
+			resource.TestStep{
+				Config: testAccDnsAAAARecordSet_retry,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "14"),
+					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"}, &rec_name, &rec_zone),
 				),
 			},
 		},
@@ -37,8 +75,6 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
 func testAccCheckDnsAAAARecordSetDestroy(s *terraform.State) error {
 	meta := testAccProvider.Meta()
-	c := meta.(*DNSClient).c
-	srv_addr := meta.(*DNSClient).srv_addr
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "dns_aaaa_record_set" {
 			continue
@@ -55,7 +91,7 @@ func testAccCheckDnsAAAARecordSetDestroy(s *terraform.State) error {
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeAAAA)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -67,7 +103,7 @@ func testAccCheckDnsAAAARecordSetDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDnsAAAARecordSetExists(t *testing.T, n string, addr []interface{}) resource.TestCheckFunc {
+func testAccCheckDnsAAAARecordSetExists(t *testing.T, n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -77,22 +113,20 @@ func testAccCheckDnsAAAARecordSetExists(t *testing.T, n string, addr []interface
 			return fmt.Errorf("No ID is set")
 		}
 
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
+		*rec_name = rs.Primary.Attributes["name"]
+		*rec_zone = rs.Primary.Attributes["zone"]
 
-		if rec_zone != dns.Fqdn(rec_zone) {
+		if *rec_zone != dns.Fqdn(*rec_zone) {
 			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
 		}
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeAAAA)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -129,5 +163,13 @@ var testAccDnsAAAARecordSet_update = fmt.Sprintf(`
     zone = "example.com."
     name = "bar"
     addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe", "fdd5:e282:0000:0000:babe:cafe:beef:dead"]
+    ttl = 300
+  }`)
+
+var testAccDnsAAAARecordSet_retry = fmt.Sprintf(`
+  resource "dns_aaaa_record_set" "bar" {
+    zone = "example.com."
+    name = "bar"
+    addresses = ["fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"]
     ttl = 300
   }`)

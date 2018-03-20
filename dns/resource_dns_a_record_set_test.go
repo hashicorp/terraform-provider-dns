@@ -12,6 +12,29 @@ import (
 
 func TestAccDnsARecordSet_Basic(t *testing.T) {
 
+	var rec_name, rec_zone string
+
+	deleteARecordSet := func() {
+		meta := testAccProvider.Meta()
+
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(rec_zone)
+
+		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+
+		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 A", rec_fqdn))
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -21,14 +44,22 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config: testAccDnsARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "2"),
-					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"192.168.0.2", "192.168.0.1"}),
+					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			resource.TestStep{
 				Config: testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}),
+					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+				),
+			},
+			resource.TestStep{
+				PreConfig: deleteARecordSet,
+				Config:    testAccDnsARecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "3"),
+					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 		},
@@ -37,8 +68,6 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 	meta := testAccProvider.Meta()
-	c := meta.(*DNSClient).c
-	srv_addr := meta.(*DNSClient).srv_addr
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "dns_a_record_set" {
 			continue
@@ -55,7 +84,7 @@ func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeA)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -67,7 +96,7 @@ func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{}) resource.TestCheckFunc {
+func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -77,22 +106,20 @@ func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{})
 			return fmt.Errorf("No ID is set")
 		}
 
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
+		*rec_name = rs.Primary.Attributes["name"]
+		*rec_zone = rs.Primary.Attributes["zone"]
 
-		if rec_zone != dns.Fqdn(rec_zone) {
+		if *rec_zone != dns.Fqdn(*rec_zone) {
 			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
 		}
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeA)
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}

@@ -2,7 +2,6 @@ package dns
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/miekg/dns"
@@ -79,18 +78,21 @@ func resourceDnsPtrRecordRead(d *schema.ResourceData, meta interface{}) error {
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypePTR)
 
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, true, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record: %v", r.Rcode)
+		switch r.Rcode {
+		case dns.RcodeSuccess:
+			break
+		case dns.RcodeNameError:
+			d.SetId("")
+			return nil
+		default:
+			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
 		}
 
 		if len(r.Answer) > 1 {
@@ -130,11 +132,6 @@ func resourceDnsPtrRecordUpdate(d *schema.ResourceData, meta interface{}) error 
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-		keyname := meta.(*DNSClient).keyname
-		keyalgo := meta.(*DNSClient).keyalgo
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(rec_zone)
@@ -151,11 +148,7 @@ func resourceDnsPtrRecordUpdate(d *schema.ResourceData, meta interface{}) error 
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
-			if keyname != "" {
-				msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-			}
-
-			r, _, err := c.Exchange(msg, srv_addr)
+			r, err := exchange(msg, true, meta)
 			if err != nil {
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %s", err)
@@ -188,11 +181,6 @@ func resourceDnsPtrRecordDelete(d *schema.ResourceData, meta interface{}) error 
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
-		keyname := meta.(*DNSClient).keyname
-		keyalgo := meta.(*DNSClient).keyalgo
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(rec_zone)
@@ -200,11 +188,7 @@ func resourceDnsPtrRecordDelete(d *schema.ResourceData, meta interface{}) error 
 		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 PTR", rec_fqdn))
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		if keyname != "" {
-			msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-		}
-
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, true, meta)
 		if err != nil {
 			return fmt.Errorf("Error deleting DNS record: %s", err)
 		}

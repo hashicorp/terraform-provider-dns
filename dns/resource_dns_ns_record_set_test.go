@@ -2,14 +2,38 @@ package dns
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/miekg/dns"
-	"testing"
 )
 
 func TestAccDnsNSRecordSet_Basic(t *testing.T) {
+
+	var rec_name, rec_zone string
+
+	deleteNSRecordSet := func() {
+		meta := testAccProvider.Meta()
+
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(rec_zone)
+
+		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+
+		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 NS", rec_fqdn))
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -20,14 +44,22 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsNSRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "2"),
-					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}),
+					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 			resource.TestStep{
 				Config: testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_ns_record_set.bar", "nameservers.#", "3"),
-					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.bar", []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}),
+					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "3"),
+					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
+				),
+			},
+			resource.TestStep{
+				PreConfig: deleteNSRecordSet,
+				Config:    testAccDnsNSRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "3"),
+					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 		},
@@ -36,8 +68,6 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 
 func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 	meta := testAccProvider.Meta()
-	c := meta.(*DNSClient).c
-	srv_addr := meta.(*DNSClient).srv_addr
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "dns_ns_record_set" {
 			continue
@@ -55,7 +85,7 @@ func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeNS)
 
-		r, _, err := c.Exchange(msg, srv_addr)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -67,7 +97,7 @@ func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 	return nil
 }
 
-func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []interface{}) resource.TestCheckFunc {
+func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -77,23 +107,21 @@ func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []inter
 			return fmt.Errorf("No ID is set")
 		}
 
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
-		if rec_zone != dns.Fqdn(rec_zone) {
+		*rec_name = rs.Primary.Attributes["name"]
+		*rec_zone = rs.Primary.Attributes["zone"]
+
+		if *rec_zone != dns.Fqdn(*rec_zone) {
 			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
 		}
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
-		c := meta.(*DNSClient).c
-		srv_addr := meta.(*DNSClient).srv_addr
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeNS)
-		msg.RecursionDesired = false
-		r, _, err := c.Exchange(msg, srv_addr)
 
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -130,9 +158,9 @@ var testAccDnsNSRecordSet_basic = fmt.Sprintf(`
   }`)
 
 var testAccDnsNSRecordSet_update = fmt.Sprintf(`
-  resource "dns_ns_record_set" "bar" {
+  resource "dns_ns_record_set" "foo" {
     zone = "example.com."
-    name = "bar"
+    name = "foo"
     nameservers = ["ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk.",]
     ttl = 60
   }`)
