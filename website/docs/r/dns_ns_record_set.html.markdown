@@ -41,3 +41,11 @@ The following attributes are exported:
 * `name` - See Argument Reference above.
 * `nameservers` - See Argument Reference above.
 * `ttl` - See Argument Reference above.
+
+## Import
+
+Records can be imported using the FQDN, e.g.
+
+```
+$ terraform import dns_ns_record_set.www www.example.com.
+```

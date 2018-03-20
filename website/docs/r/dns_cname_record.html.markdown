@@ -38,3 +38,11 @@ The following attributes are exported:
 * `name` - See Argument Reference above.
 * `cname` - See Argument Reference above.
 * `ttl` - See Argument Reference above.
+
+## Import
+
+Records can be imported using the FQDN, e.g.
+
+```
+$ terraform import dns_cname_record.foo foo.example.com.
+```
