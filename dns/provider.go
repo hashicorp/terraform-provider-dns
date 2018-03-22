@@ -145,10 +145,10 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
 func getAVal(record interface{}) (string, error) {
 
-  _, ok := record.(*dns.A)
-  if !ok {
-    return "", fmt.Errorf("didn't get a A record")
-  }
+	_, ok := record.(*dns.A)
+	if !ok {
+		return "", fmt.Errorf("didn't get a A record")
+	}
 
 	recstr := record.(*dns.A).String()
 	var name, ttl, class, typ, addr string
@@ -163,10 +163,10 @@ func getAVal(record interface{}) (string, error) {
 
 func getNSVal(record interface{}) (string, error) {
 
-  _, ok := record.(*dns.NS)
-  if !ok {
-    return "", fmt.Errorf("didn't get a NS record")
-  }
+	_, ok := record.(*dns.NS)
+	if !ok {
+		return "", fmt.Errorf("didn't get a NS record")
+	}
 
 	recstr := record.(*dns.NS).String()
 	var name, ttl, class, typ, nameserver string
@@ -181,10 +181,10 @@ func getNSVal(record interface{}) (string, error) {
 
 func getAAAAVal(record interface{}) (string, error) {
 
-  _, ok := record.(*dns.AAAA)
-  if !ok {
-    return "", fmt.Errorf("didn't get a AAAA record")
-  }
+	_, ok := record.(*dns.AAAA)
+	if !ok {
+		return "", fmt.Errorf("didn't get a AAAA record")
+	}
 
 	recstr := record.(*dns.AAAA).String()
 	var name, ttl, class, typ, addr string
@@ -199,10 +199,10 @@ func getAAAAVal(record interface{}) (string, error) {
 
 func getCnameVal(record interface{}) (string, error) {
 
-  _, ok := record.(*dns.CNAME)
-  if !ok {
-    return "", fmt.Errorf("didn't get a CNAME record")
-  }
+	_, ok := record.(*dns.CNAME)
+	if !ok {
+		return "", fmt.Errorf("didn't get a CNAME record")
+	}
 
 	recstr := record.(*dns.CNAME).String()
 	var name, ttl, class, typ, cname string
@@ -217,10 +217,10 @@ func getCnameVal(record interface{}) (string, error) {
 
 func getPtrVal(record interface{}) (string, error) {
 
-  _, ok := record.(*dns.PTR)
-  if !ok {
-    return "", fmt.Errorf("didn't get a PTR record")
-  }
+	_, ok := record.(*dns.PTR)
+	if !ok {
+		return "", fmt.Errorf("didn't get a PTR record")
+	}
 
 	recstr := record.(*dns.PTR).String()
 	var name, ttl, class, typ, ptr string
