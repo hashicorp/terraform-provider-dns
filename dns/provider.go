@@ -44,6 +44,7 @@ func Provider() terraform.ResourceProvider {
 						"protocol": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
+							Default:     "udp",
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_PROTOCOL", nil),
 						},
 						"timeout": &schema.Schema{
@@ -248,7 +249,8 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 	keyalgo := meta.(*DNSClient).keyalgo
 
 	// If we allow setting the transport default then adjust these
-	c.Net = "udp"
+	// Save desired protocol
+	old_protocol := c.Net
 	retry_tcp := false
 
 	msg.RecursionDesired = false
@@ -284,6 +286,9 @@ Retry:
 	default:
 		// do nothing
 	}
+
+	// Revert UDP fix to use desired protocol
+	c.Net = old_protocol
 
 	return r, err
 }
