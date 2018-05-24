@@ -33,19 +33,19 @@ func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 		resource.UnitTest(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						testCheckAttrStringArray(recordName, "records", test.Expected),
 					),
 				},
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						testCheckAttrStringArrayMember(recordName, "record", test.Expected),
 					),
 				},
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(recordName, "id", test.Host),

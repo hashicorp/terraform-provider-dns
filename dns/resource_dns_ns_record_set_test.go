@@ -40,21 +40,21 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDnsNSRecordSetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDnsNSRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "2"),
 					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "3"),
 					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				PreConfig: deleteNSRecordSet,
 				Config:    testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(

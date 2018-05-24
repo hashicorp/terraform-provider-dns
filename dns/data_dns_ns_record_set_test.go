@@ -38,13 +38,13 @@ func TestAccDataDnsNSRecordSet_Basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						testCheckAttrStringArray(recordName, "nameservers", test.Expected),
 					),
 				},
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(recordName, "id", test.Host),

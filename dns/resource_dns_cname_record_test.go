@@ -39,19 +39,19 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDnsCnameRecordDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDnsCnameRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				PreConfig: deleteCnameRecord,
 				Config:    testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(

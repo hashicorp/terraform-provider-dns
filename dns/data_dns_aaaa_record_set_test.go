@@ -17,14 +17,14 @@ func TestAccDataDnsAAAARecordSet_Basic(t *testing.T) {
 		{
 			`
 			data "dns_aaaa_record_set" "ntp" {
-			  host = "nist-time-server.eoni.com"
+			  host = "example.com"
 			}
 			`,
 			"ntp",
 			[]string{
-				"2607:f248::45",
+				"2606:2800:220:1:248:1893:25c8:1946",
 			},
-			"nist-time-server.eoni.com",
+			"example.com",
 		},
 	}
 
@@ -34,13 +34,13 @@ func TestAccDataDnsAAAARecordSet_Basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						testCheckAttrStringArray(recordName, "addrs", test.Expected),
 					),
 				},
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr(recordName, "id", test.Host),

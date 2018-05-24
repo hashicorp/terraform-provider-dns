@@ -27,13 +27,13 @@ func TestAccDataDnsPtrRecordSet_Basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.dns_ptr_record_set.foo", "ptr", test.Expected),
 					),
 				},
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.dns_ptr_record_set.foo", "id", test.IPAddress),

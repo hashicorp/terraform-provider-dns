@@ -40,21 +40,21 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDnsAAAARecordSetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDnsAAAARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
 					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "2"),
 					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				PreConfig: deleteAAAARecordSet,
 				Config:    testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
@@ -62,7 +62,7 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 					testAccCheckDnsAAAARecordSetExists(t, "dns_aaaa_record_set.bar", []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccDnsAAAARecordSet_retry,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_aaaa_record_set.bar", "addresses.#", "14"),

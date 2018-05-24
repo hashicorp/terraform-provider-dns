@@ -40,21 +40,21 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDnsARecordSetDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDnsARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "2"),
 					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("dns_a_record_set.foo", "addresses.#", "3"),
 					testAccCheckDnsARecordSetExists(t, "dns_a_record_set.foo", []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				PreConfig: deleteARecordSet,
 				Config:    testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
