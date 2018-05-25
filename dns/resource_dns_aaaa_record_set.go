@@ -17,14 +17,16 @@ func resourceDnsAAAARecordSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"zone": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validateZone,
 			},
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validateName,
 			},
 			"addresses": &schema.Schema{
 				Type:     schema.TypeSet,
@@ -47,10 +49,6 @@ func resourceDnsAAAARecordSetCreate(d *schema.ResourceData, meta interface{}) er
 	rec_name := d.Get("name").(string)
 	rec_zone := d.Get("zone").(string)
 
-	if rec_zone != dns.Fqdn(rec_zone) {
-		return fmt.Errorf("Error creating DNS record: \"zone\" should be an FQDN")
-	}
-
 	rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
 	d.SetId(rec_fqdn)
@@ -64,10 +62,6 @@ func resourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) erro
 
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
-
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error reading DNS record: \"zone\" should be an FQDN")
-		}
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
@@ -130,10 +124,6 @@ func resourceDnsAAAARecordSetUpdate(d *schema.ResourceData, meta interface{}) er
 		rec_zone := d.Get("zone").(string)
 		ttl := d.Get("ttl").(int)
 
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error updating DNS record: \"zone\" should be an FQDN")
-		}
-
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
 		msg := new(dns.Msg)
@@ -184,10 +174,6 @@ func resourceDnsAAAARecordSetDelete(d *schema.ResourceData, meta interface{}) er
 
 		rec_name := d.Get("name").(string)
 		rec_zone := d.Get("zone").(string)
-
-		if rec_zone != dns.Fqdn(rec_zone) {
-			return fmt.Errorf("Error updating DNS record: \"zone\" should be an FQDN")
-		}
 
 		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
 
