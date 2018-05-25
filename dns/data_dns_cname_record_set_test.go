@@ -18,7 +18,7 @@ func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
 			  host = "www.hashicorp.com"
 			}
 			`,
-			"dualstack.s.shared.global.fastly.net.",
+			"hashicorp.netlifyglobalcdn.com.",
 			"www.hashicorp.com",
 		},
 	}
@@ -27,13 +27,13 @@ func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
 		resource.Test(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.dns_cname_record_set.foo", "cname", test.Expected),
 					),
 				},
-				resource.TestStep{
+				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
 						resource.TestCheckResourceAttr("data.dns_cname_record_set.foo", "id", test.Host),

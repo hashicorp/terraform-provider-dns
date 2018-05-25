@@ -39,19 +39,19 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckDnsPtrRecordDestroy,
 		Steps: []resource.TestStep{
-			resource.TestStep{
+			{
 				Config: testAccDnsPtrRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDnsPtrRecordExists(t, "dns_ptr_record.foo", "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				Config: testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDnsPtrRecordExists(t, "dns_ptr_record.foo", "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
-			resource.TestStep{
+			{
 				PreConfig: deletePtrRecord,
 				Config:    testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
