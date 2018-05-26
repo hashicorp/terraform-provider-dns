@@ -18,7 +18,7 @@ func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
 			  host = "www.hashicorp.com"
 			}
 			`,
-			"1hashicorp.netlifyglobalcdn.com.",
+			"hashicorp.netlifyglobalcdn.com.",
 			"www.hashicorp.com",
 		},
 	}
