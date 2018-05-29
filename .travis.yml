@@ -15,6 +15,7 @@ install:
 - go get github.com/kardianos/govendor
 
 script:
+- make test
 - bash dns/acceptance.sh
 - make vendor-status
 - make vet
