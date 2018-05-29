@@ -16,6 +16,7 @@ install:
 
 script:
 - make test
+- bash dns/acceptance.sh
 - make vendor-status
 - make vet
 - make website-test
