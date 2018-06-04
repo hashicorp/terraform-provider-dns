@@ -38,3 +38,11 @@ The following attributes are exported:
 * `name` - See Argument Reference above.
 * `ptr` - See Argument Reference above.
 * `ttl` - See Argument Reference above.
+
+## Import
+
+Records can be imported using the FQDN, e.g.
+
+```
+$ terraform import dns_ptr_record.dns-sd r._dns-sd.example.com.
+```

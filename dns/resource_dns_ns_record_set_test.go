@@ -13,6 +13,7 @@ import (
 func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 
 	var rec_name, rec_zone string
+	resourceName := "dns_ns_record_set.foo"
 
 	deleteNSRecordSet := func() {
 		meta := testAccProvider.Meta()
@@ -43,24 +44,29 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 			{
 				Config: testAccDnsNSRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "2"),
-					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "2"),
+					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "3"),
-					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
+					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deleteNSRecordSet,
 				Config:    testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("dns_ns_record_set.foo", "nameservers.#", "3"),
-					testAccCheckDnsNSRecordSetExists(t, "dns_ns_record_set.foo", []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
+					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -123,7 +129,7 @@ func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []inter
 
 		nameservers := schema.NewSet(schema.HashString, nil)
 		for _, record := range r.Ns {
-			nameserver, err := getNSVal(record)
+			nameserver, _, err := getNSVal(record)
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}

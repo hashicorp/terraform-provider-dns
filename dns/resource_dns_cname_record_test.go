@@ -12,6 +12,7 @@ import (
 func TestAccDnsCnameRecord_basic(t *testing.T) {
 
 	var rec_name, rec_zone string
+	resourceName := "dns_cname_record.foo"
 
 	deleteCnameRecord := func() {
 		meta := testAccProvider.Meta()
@@ -42,21 +43,26 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 			{
 				Config: testAccDnsCnameRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "bar.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsCnameRecordExists(t, resourceName, "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsCnameRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deleteCnameRecord,
 				Config:    testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, "dns_cname_record.foo", "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsCnameRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -119,7 +125,7 @@ func testAccCheckDnsCnameRecordExists(t *testing.T, n string, expected string, r
 			return fmt.Errorf("Error querying DNS record: multiple responses received")
 		}
 		record := r.Answer[0]
-		cname, err := getCnameVal(record)
+		cname, _, err := getCnameVal(record)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -141,7 +147,7 @@ var testAccDnsCnameRecord_basic = fmt.Sprintf(`
 var testAccDnsCnameRecord_update = fmt.Sprintf(`
   resource "dns_cname_record" "foo" {
     zone = "example.com."
-    name = "baz"
+    name = "foo"
     cname = "baz.example.com."
     ttl = 300
   }`)

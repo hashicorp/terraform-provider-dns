@@ -12,6 +12,7 @@ import (
 func TestAccDnsPtrRecord_basic(t *testing.T) {
 
 	var rec_name, rec_zone string
+	resourceName := "dns_ptr_record.foo"
 
 	deletePtrRecord := func() {
 		meta := testAccProvider.Meta()
@@ -42,21 +43,26 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 			{
 				Config: testAccDnsPtrRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, "dns_ptr_record.foo", "bar.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(t, resourceName, "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, "dns_ptr_record.foo", "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deletePtrRecord,
 				Config:    testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, "dns_ptr_record.foo", "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
 			},
 		},
 	})
@@ -119,7 +125,7 @@ func testAccCheckDnsPtrRecordExists(t *testing.T, n string, expected string, rec
 			return fmt.Errorf("Error querying DNS record: multiple responses received")
 		}
 		record := r.Answer[0]
-		ptr, err := getPtrVal(record)
+		ptr, _, err := getPtrVal(record)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -143,94 +144,99 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 	return config.Client()
 }
 
-func getAVal(record interface{}) (string, error) {
+func getAVal(record interface{}) (string, int, error) {
 
 	_, ok := record.(*dns.A)
 	if !ok {
-		return "", fmt.Errorf("didn't get a A record")
+		return "", 0, fmt.Errorf("didn't get a A record")
 	}
 
 	recstr := record.(*dns.A).String()
-	var name, ttl, class, typ, addr string
+	var name, class, typ, addr string
+	var ttl int
 
-	_, err := fmt.Sscanf(recstr, "%s\t%s\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
+	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing record: %s", err)
+		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
 
-	return addr, nil
+	return addr, ttl, nil
 }
 
-func getNSVal(record interface{}) (string, error) {
+func getNSVal(record interface{}) (string, int, error) {
 
 	_, ok := record.(*dns.NS)
 	if !ok {
-		return "", fmt.Errorf("didn't get a NS record")
+		return "", 0, fmt.Errorf("didn't get a NS record")
 	}
 
 	recstr := record.(*dns.NS).String()
-	var name, ttl, class, typ, nameserver string
+	var name, class, typ, nameserver string
+	var ttl int
 
-	_, err := fmt.Sscanf(recstr, "%s\t%s\t%s\t%s\t%s", &name, &ttl, &class, &typ, &nameserver)
+	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &nameserver)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing record: %s", err)
+		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
 
-	return nameserver, nil
+	return nameserver, ttl, nil
 }
 
-func getAAAAVal(record interface{}) (string, error) {
+func getAAAAVal(record interface{}) (string, int, error) {
 
 	_, ok := record.(*dns.AAAA)
 	if !ok {
-		return "", fmt.Errorf("didn't get a AAAA record")
+		return "", 0, fmt.Errorf("didn't get a AAAA record")
 	}
 
 	recstr := record.(*dns.AAAA).String()
-	var name, ttl, class, typ, addr string
+	var name, class, typ, addr string
+	var ttl int
 
-	_, err := fmt.Sscanf(recstr, "%s\t%s\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
+	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing record: %s", err)
+		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
 
-	return addr, nil
+	return addr, ttl, nil
 }
 
-func getCnameVal(record interface{}) (string, error) {
+func getCnameVal(record interface{}) (string, int, error) {
 
 	_, ok := record.(*dns.CNAME)
 	if !ok {
-		return "", fmt.Errorf("didn't get a CNAME record")
+		return "", 0, fmt.Errorf("didn't get a CNAME record")
 	}
 
 	recstr := record.(*dns.CNAME).String()
-	var name, ttl, class, typ, cname string
+	var name, class, typ, cname string
+	var ttl int
 
-	_, err := fmt.Sscanf(recstr, "%s\t%s\t%s\t%s\t%s", &name, &ttl, &class, &typ, &cname)
+	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &cname)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing record: %s", err)
+		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
 
-	return cname, nil
+	return cname, ttl, nil
 }
 
-func getPtrVal(record interface{}) (string, error) {
+func getPtrVal(record interface{}) (string, int, error) {
 
 	_, ok := record.(*dns.PTR)
 	if !ok {
-		return "", fmt.Errorf("didn't get a PTR record")
+		return "", 0, fmt.Errorf("didn't get a PTR record")
 	}
 
 	recstr := record.(*dns.PTR).String()
-	var name, ttl, class, typ, ptr string
+	var name, class, typ, ptr string
+	var ttl int
 
-	_, err := fmt.Sscanf(recstr, "%s\t%s\t%s\t%s\t%s", &name, &ttl, &class, &typ, &ptr)
+	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &ptr)
 	if err != nil {
-		return "", fmt.Errorf("Error parsing record: %s", err)
+		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
 
-	return ptr, nil
+	return ptr, ttl, nil
 }
 
 func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
@@ -279,4 +285,66 @@ Retry:
 	}
 
 	return r, err
+}
+
+func resourceDnsImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+
+	record := d.Id()
+	if !dns.IsFqdn(record) {
+		return nil, fmt.Errorf("Not a fully-qualified DNS name: %s", record)
+	}
+
+	labels := dns.SplitDomainName(record)
+
+	msg := new(dns.Msg)
+
+	var zone *string
+
+Loop:
+	for l, _ := range labels {
+
+		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			return nil, fmt.Errorf("Error querying DNS record: %s", err)
+		}
+
+		switch r.Rcode {
+		case dns.RcodeSuccess:
+
+			if len(r.Answer) == 0 {
+				continue
+			}
+
+			for _, ans := range r.Answer {
+				switch t := ans.(type) {
+				case *dns.SOA:
+					zone = &t.Hdr.Name
+				}
+			}
+
+			break Loop
+		case dns.RcodeNameError:
+			continue
+		default:
+			return nil, fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
+		}
+	}
+
+	if zone == nil {
+		return nil, fmt.Errorf("No SOA record in authority section in response for %s", record)
+	}
+
+	common := dns.CompareDomainName(record, *zone)
+	if common == 0 {
+		return nil, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
+	}
+
+	name := strings.Join(labels[:len(labels)-common], ".")
+
+	d.Set("name", name)
+	d.Set("zone", *zone)
+
+	return []*schema.ResourceData{d}, nil
 }
