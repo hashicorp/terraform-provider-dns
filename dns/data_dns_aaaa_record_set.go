@@ -11,11 +11,11 @@ func dataSourceDnsAAAARecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsAAAARecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"addrs": &schema.Schema{
+			"addrs": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,

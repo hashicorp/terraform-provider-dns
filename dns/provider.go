@@ -16,18 +16,18 @@ import (
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"update": &schema.Schema{
+			"update": {
 				Type:     schema.TypeList,
 				MaxItems: 1,
 				Optional: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"server": &schema.Schema{
+						"server": {
 							Type:        schema.TypeString,
 							Required:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_SERVER", nil),
 						},
-						"port": &schema.Schema{
+						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							DefaultFunc: func() (interface{}, error) {
@@ -42,17 +42,17 @@ func Provider() terraform.ResourceProvider {
 								return 53, nil
 							},
 						},
-						"key_name": &schema.Schema{
+						"key_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYNAME", nil),
 						},
-						"key_algorithm": &schema.Schema{
+						"key_algorithm": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYALGORITHM", nil),
 						},
-						"key_secret": &schema.Schema{
+						"key_secret": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYSECRET", nil),
@@ -301,7 +301,7 @@ func resourceDnsImport(d *schema.ResourceData, meta interface{}) ([]*schema.Reso
 	var zone *string
 
 Loop:
-	for l, _ := range labels {
+	for l := range labels {
 
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 

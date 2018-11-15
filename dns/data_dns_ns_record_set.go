@@ -12,11 +12,11 @@ func dataSourceDnsNSRecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsNSRecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"nameservers": &schema.Schema{
+			"nameservers": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,
