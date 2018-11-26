@@ -22,7 +22,7 @@ output "hashi_txt" {
 }
 
 output "hashi_txts" {
-  value = "${join(",", data.dns_txt_record_set.hashi.records})"
+  value = "${join(",", data.dns_txt_record_set.hashi.records)}"
 }
 ```
 
