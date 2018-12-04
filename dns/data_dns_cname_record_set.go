@@ -12,13 +12,13 @@ func dataSourceDnsCnameRecordSet() *schema.Resource {
 		Read: dataSourceDnsCnameRecordSetRead,
 
 		Schema: map[string]*schema.Schema{
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"cname": &schema.Schema{
+			"cname": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},

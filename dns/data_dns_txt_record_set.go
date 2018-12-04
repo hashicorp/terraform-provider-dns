@@ -12,18 +12,18 @@ func dataSourceDnsTxtRecordSet() *schema.Resource {
 		Read: dataSourceDnsTxtRecordSetRead,
 
 		Schema: map[string]*schema.Schema{
-			"host": &schema.Schema{
+			"host": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"record": &schema.Schema{
+			"record": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"records": &schema.Schema{
+			"records": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,
