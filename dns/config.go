@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -16,6 +17,8 @@ type Config struct {
 	keyname   string
 	keyalgo   string
 	keysecret string
+	transport string
+	timeout   int
 }
 
 type DNSClient struct {
@@ -24,6 +27,8 @@ type DNSClient struct {
 	keyname   string
 	keysecret string
 	keyalgo   string
+	transport string
+	timeout   time.Duration
 }
 
 // Configures and returns a fully initialized DNSClient
@@ -55,6 +60,8 @@ func (c *Config) Client() (interface{}, error) {
 		client.keyalgo = keyalgo
 		client.c.TsigSecret = map[string]string{keyname: c.keysecret}
 	}
+	client.transport = c.transport
+	client.timeout = time.Duration(c.timeout) * time.Second
 	return &client, nil
 }
 
