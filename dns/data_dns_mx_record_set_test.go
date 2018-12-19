@@ -18,43 +18,14 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 		{
 			`
 			data "dns_mx_record_set" "foo" {
-			  zone = "hashicorp.net"
+			zone = "hashicorptest.com"
 			}
 			`,
 			"foo",
 			[]string{
-				// These results may change if hashicorp.net changes MX hosts or providers.
+				// These results may change if hashicorptest.com changes MX hosts or providers.
 				// If you suspect the expected results have changed here, confirm
-				// with e.g. dig hashicorp.net MX +short
-				"eforward1.registrar-servers.com.",
-				"eforward2.registrar-servers.com.",
-				"eforward3.registrar-servers.com.",
-				"eforward4.registrar-servers.com.",
-				"eforward5.registrar-servers.com.",
-			},
-			[]int{
-				// These results may change if hashicorp.net changes MX host priorities, hosts, or providers.
-				// If you suspect the expected results have changed here, confirm
-				// with e.g. dig hashicorp.net MX +short
-				10,
-				10,
-				10,
-				15,
-				20,
-			},
-			"hashicorp.net",
-		},
-		{
-			`
-			data "dns_mx_record_set" "foo" {
-			zone = "google.com"
-			}
-			`,
-			"foo",
-			[]string{
-				// These results may change if google.com changes MX hosts or providers.
-				// If you suspect the expected results have changed here, confirm
-				// with e.g. dig google.com MX +short
+				// with e.g. dig hashicorptest.com MX +short
 				"alt1.aspmx.l.google.com.",
 				"alt2.aspmx.l.google.com.",
 				"alt3.aspmx.l.google.com.",
@@ -62,16 +33,16 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 				"aspmx.l.google.com.",
 			},
 			[]int{
-				// These results may change if hashicorp.net changes MX host priorities, hosts, or providers.
+				// These results may change if hashicorptest.com changes MX host priorities, hosts, or providers.
 				// If you suspect the expected results have changed here, confirm
-				// with e.g. dig hashicorp.net MX +short
-				20,
-				30,
-				40,
-				50,
+				// with e.g. dig hashicorptest.net MX +short
+				5,
+				5,
 				10,
+				10,
+				1,
 			},
-			"google.com",
+			"hashicorptest.com",
 		},
 	}
 
