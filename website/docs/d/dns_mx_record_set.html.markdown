@@ -34,4 +34,4 @@ The following attributes are exported:
 
  * `id` - Set to `zone`.
 
- * `mxservers` - A list of nameservers. Nameservers are always sorted to avoid constant changing plans.
+ * `mxservers` - A list of MX servers. MX servers are returned in priority order.
