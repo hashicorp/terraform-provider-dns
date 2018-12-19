@@ -14,7 +14,7 @@ Use this data source to get DNS mx records of the zone.
 
 ```hcl
 data "dns_mx_record_set" "google" {
-  host = "google.com"
+  zone = "google.com"
 }
 
 output "google_mxservers" {

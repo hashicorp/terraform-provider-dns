@@ -11,7 +11,7 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsMXRecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"host": &schema.Schema{
+			"zone": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
@@ -25,11 +25,11 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsMXRecordSetRead(d *schema.ResourceData, meta interface{}) error {
-	host := d.Get("host").(string)
+	zone := d.Get("zone").(string)
 
-	mxRecords, err := net.LookupMX(host)
+	mxRecords, err := net.LookupMX(zone)
 	if err != nil {
-		return fmt.Errorf("error looking up MX records for %q: %s", host, err)
+		return fmt.Errorf("error looking up MX records for %q: %s", zone, err)
 	}
 
 	mxservers := make([]string, len(mxRecords))
@@ -41,7 +41,7 @@ func dataSourceDnsMXRecordSetRead(d *schema.ResourceData, meta interface{}) erro
 	if err != nil {
 		return err
 	}
-	d.SetId(host)
+	d.SetId(zone)
 
 	return nil
 }

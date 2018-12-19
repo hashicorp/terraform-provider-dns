@@ -12,12 +12,12 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 		DataSourceBlock string
 		DataSourceName  string
 		Expected        []string
-		Host            string
+		Zone            string
 	}{
 		{
 			`
 			data "dns_mx_record_set" "foo" {
-			  host = "hashicorp.net"
+			  zone = "hashicorp.net"
 			}
 			`,
 			"foo",
@@ -50,7 +50,7 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(recordName, "id", test.Host),
+						resource.TestCheckResourceAttr(recordName, "id", test.Zone),
 					),
 				},
 			},
