@@ -26,21 +26,21 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 				// These results may change if hashicorptest.com changes MX hosts or providers.
 				// If you suspect the expected results have changed here, confirm
 				// with e.g. dig hashicorptest.com MX +short
+				"aspmx.l.google.com.",
 				"alt1.aspmx.l.google.com.",
 				"alt2.aspmx.l.google.com.",
 				"alt3.aspmx.l.google.com.",
 				"alt4.aspmx.l.google.com.",
-				"aspmx.l.google.com.",
 			},
 			[]int{
 				// These results may change if hashicorptest.com changes MX host priorities, hosts, or providers.
 				// If you suspect the expected results have changed here, confirm
 				// with e.g. dig hashicorptest.net MX +short
-				5,
-				5,
-				10,
-				10,
 				1,
+				5,
+				5,
+				10,
+				10,
 			},
 			"hashicorptest.com",
 		},
@@ -55,13 +55,13 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
-						testCheckAttrStringArray(recordName, "mxservers", test.Expected),
+						testCheckAttrOrderedStringArray(recordName, "mxservers", test.Expected),
 					),
 				},
 				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
-						testCheckAttrIntArray(recordName, "priorities", test.Priority),
+						testCheckAttrOrderedIntArray(recordName, "priorities", test.Priority),
 					),
 				},
 				{

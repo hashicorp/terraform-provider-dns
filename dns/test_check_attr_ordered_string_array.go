@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func testCheckAttrOrderedIntArray(name, key string, value []int) r.TestCheckFunc {
+func testCheckAttrOrderedStringArray(name, key string, value []string) r.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ms := s.RootModule()
 		rs, ok := ms.Resources[name]
@@ -39,12 +39,11 @@ func testCheckAttrOrderedIntArray(name, key string, value []int) r.TestCheckFunc
 			if !ok {
 				return fmt.Errorf("Missing array item for %s", attrKey)
 			}
-			intGot, _ := strconv.Atoi(got)
-			if intGot == value[i] {
+			if got == value[i] {
 				continue Next
 			}
 			return fmt.Errorf(
-				"Unexpected array item for %s: expected %d, got %s",
+				"Unexpected array item for %s: expected %s, got %s",
 				attrKey,
 				value[i],
 				got)

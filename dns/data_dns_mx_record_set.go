@@ -38,21 +38,33 @@ func dataSourceDnsMXRecordSetRead(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("error looking up MX records for %q: %s", zone, err)
 	}
 
-	m := make(map[string]int)
+	type MxServer struct {
+		Host     string
+		Priority int
+	}
+
+	//var m []MxServer
+	m := make([]MxServer, 0)
 	for _, record := range mxRecords {
-		m[record.Host] = int(record.Pref)
+		m = append(m, MxServer{record.Host, int(record.Pref)})
 	}
-	//List of mxservers sorted by name, not priority
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
+
+	sort.Slice(m, func(i, j int) bool {
+		if m[i].Priority < m[j].Priority {
+			return true
+		}
+		if m[i].Priority > m[j].Priority {
+			return false
+		}
+		return m[i].Host < m[j].Host
+	})
+
 	mxservers := make([]string, 0, len(m))
 	priorities := make([]int, 0, len(m))
-	for _, k := range keys {
-		mxservers = append(mxservers, k)
-		priorities = append(priorities, m[k])
+
+	for _, MxServer := range m {
+		mxservers = append(mxservers, MxServer.Host)
+		priorities = append(priorities, MxServer.Priority)
 	}
 
 	err = d.Set("mxservers", mxservers)
