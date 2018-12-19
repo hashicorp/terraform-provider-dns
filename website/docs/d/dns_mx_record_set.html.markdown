@@ -20,6 +20,10 @@ data "dns_mx_record_set" "google" {
 output "google_mxservers" {
   value = "${join(",", data.dns_mx_record_set.google.mxservers)}"
 }
+
+output "google_mxserver_priorities" {
+  value = "${join(",", data.dns_mx_record_set.google.priorities)}"
+}
 ```
 
 ## Argument Reference
@@ -36,4 +40,4 @@ The following attributes are exported:
 
  * `mxservers` - A list of MX servers. MX servers are sorted to avoid constant changing plans.
 
- * `priorities` - A list of MX server priorities corresponding to the mxserver list entries
+ * `priorities` - A list of MX server priorities corresponding to the mxserver list entries.
