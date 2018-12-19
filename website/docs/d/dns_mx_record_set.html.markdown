@@ -38,6 +38,6 @@ The following attributes are exported:
 
  * `id` - Set to `zone`.
 
- * `mxservers` - A list of MX servers. MX servers are sorted to avoid constant changing plans.
+ * `mxservers` - A list of MX servers. MX servers are sorted first by priority and then by name to avoid changing plans.
 
  * `priorities` - A list of MX server priorities corresponding to the mxserver list entries.
