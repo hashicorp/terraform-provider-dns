@@ -260,7 +260,9 @@ Retry:
 	r, _, err := c.Exchange(msg, srv_addr)
 
 	switch err {
-	case dns.ErrTruncated:
+	case nil:
+		return r, nil
+	default:
 		if retry_tcp {
 			switch c.Net {
 			case "udp":
@@ -269,6 +271,10 @@ Retry:
 				c.Net = "tcp4"
 			case "udp6":
 				c.Net = "tcp6"
+			case "tcp":
+				c.Net = "udp"
+			case "":
+				c.Net = "tcp"
 			default:
 				return nil, fmt.Errorf("Unknown transport: %s", c.Net)
 			}
@@ -278,13 +284,7 @@ Retry:
 		}
 
 		goto Retry
-	case nil:
-		fallthrough
-	default:
-		// do nothing
 	}
-
-	return r, err
 }
 
 func resourceDnsImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
