@@ -39,6 +39,7 @@ The `update` block supports the following attributes:
 
 * `server` - (Required) The IPv4 address of the DNS server to send updates to.
 * `port` - (Optional) The target UDP port on the server where updates are sent to. Defaults to `53`.
+* `retries` - (Optional) How many times to retry on connection timeout. Defaults to `3`.
 * `key_name` - (Optional) The name of the TSIG key used to sign the DNS update messages.
 * `key_algorithm` - (Optional; Required if `key_name` is set) When using TSIG authentication, the algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` or `hmac-sha512`.
 * `key_secret` - (Optional; Required if `key_name` is set)
