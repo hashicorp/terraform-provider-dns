@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -13,6 +14,8 @@ import (
 type Config struct {
 	server    string
 	port      int
+	transport string
+	timeout   time.Duration
 	retries   int
 	keyname   string
 	keyalgo   string
@@ -22,6 +25,7 @@ type Config struct {
 type DNSClient struct {
 	c         *dns.Client
 	srv_addr  string
+	transport string
 	retries   int
 	keyname   string
 	keysecret string
@@ -43,6 +47,8 @@ func (c *Config) Client() (interface{}, error) {
 		return nil, fmt.Errorf("Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty")
 	}
 	client.c = new(dns.Client)
+	client.transport = c.transport
+	client.c.Timeout = c.timeout
 	client.retries = c.retries
 	if c.keyname != "" {
 		if !dns.IsFqdn(c.keyname) {
