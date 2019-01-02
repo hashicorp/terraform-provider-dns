@@ -369,7 +369,10 @@ Retry:
 		retries = meta.(*DNSClient).retries
 		goto Retry
 	case nil:
-		// do nothing
+		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
+			retries--
+			goto Retry
+		}
 	default:
 		if isTimeout(err) && retries > 0 {
 			retries--
