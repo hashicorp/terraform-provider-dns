@@ -124,8 +124,6 @@ func resourceDnsAAAARecordSetUpdate(d *schema.ResourceData, meta interface{}) er
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 			}
-
-			d.Set("addresses", ns)
 		}
 
 		return resourceDnsAAAARecordSetRead(d, meta)

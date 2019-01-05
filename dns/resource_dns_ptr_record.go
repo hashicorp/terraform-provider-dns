@@ -111,8 +111,6 @@ func resourceDnsPtrRecordUpdate(d *schema.ResourceData, meta interface{}) error 
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 			}
-
-			d.Set("ptr", n)
 		}
 
 		return resourceDnsPtrRecordRead(d, meta)

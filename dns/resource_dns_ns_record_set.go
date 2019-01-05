@@ -128,8 +128,6 @@ func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 			}
-
-			d.Set("nameservers", ns)
 		}
 
 		return resourceDnsNSRecordSetRead(d, meta)
