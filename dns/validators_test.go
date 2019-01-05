@@ -17,6 +17,9 @@ func TestValidateZone(t *testing.T) {
 
 	invalidNames := []string{
 		"example.com",
+		" example.com.",
+		" ",
+		"",
 	}
 	for _, v := range invalidNames {
 		_, errors := validateZone(v, "name")
@@ -39,6 +42,9 @@ func TestValidateName(t *testing.T) {
 
 	invalidNames := []string{
 		"test.",
+		" test. ",
+		" ",
+		"",
 	}
 	for _, v := range invalidNames {
 		_, errors := validateName(v, "name")
