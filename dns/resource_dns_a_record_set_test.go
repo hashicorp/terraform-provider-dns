@@ -14,6 +14,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 	var rec_name, rec_zone string
 	resourceName := "dns_a_record_set.foo"
+	resourceRoot := "dns_a_record_set.root"
 
 	deleteARecordSet := func() {
 		meta := testAccProvider.Meta()
@@ -22,7 +23,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 		msg.SetUpdate(rec_zone)
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
 
 		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 A", rec_fqdn))
 		msg.RemoveRRset([]dns.RR{rr_remove})
@@ -68,34 +69,24 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			{
+				Config: testAccDnsARecordSet_root,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
+					testAccCheckDnsARecordSetExists(t, resourceRoot, []interface{}{"192.168.0.1"}, &rec_name, &rec_zone),
+				),
+			},
+			{
+				ResourceName:      resourceRoot,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
 
 func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
-	meta := testAccProvider.Meta()
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "dns_a_record_set" {
-			continue
-		}
-
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
-
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypeA)
-		r, err := exchange(msg, false, meta)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeNameError {
-			return fmt.Errorf("DNS record still exists: %v", r.Rcode)
-		}
-	}
-
-	return nil
+	return testAccCheckDnsDestroy(s, "dns_a_record_set", dns.TypeA)
 }
 
 func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
@@ -111,7 +102,7 @@ func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{},
 		*rec_name = rs.Primary.Attributes["name"]
 		*rec_zone = rs.Primary.Attributes["zone"]
 
-		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
+		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
 
@@ -154,5 +145,12 @@ var testAccDnsARecordSet_update = fmt.Sprintf(`
     zone = "example.com."
     name = "foo"
     addresses = ["10.0.0.1", "10.0.0.2", "10.0.0.3"]
+    ttl = 300
+  }`)
+
+var testAccDnsARecordSet_root = fmt.Sprintf(`
+  resource "dns_a_record_set" "root" {
+    zone = "example.com."
+    addresses = ["192.168.0.1"]
     ttl = 300
   }`)

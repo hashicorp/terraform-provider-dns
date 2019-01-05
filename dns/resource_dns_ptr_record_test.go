@@ -13,6 +13,7 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 
 	var rec_name, rec_zone string
 	resourceName := "dns_ptr_record.foo"
+	resourceRoot := "dns_ptr_record.root"
 
 	deletePtrRecord := func() {
 		meta := testAccProvider.Meta()
@@ -21,7 +22,7 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 
 		msg.SetUpdate(rec_zone)
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
 
 		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 PTR", rec_fqdn))
 		msg.RemoveRRset([]dns.RR{rr_remove})
@@ -64,34 +65,23 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			{
+				Config: testAccDnsPtrRecord_root,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDnsPtrRecordExists(t, resourceRoot, "baz.example.com.", &rec_name, &rec_zone),
+				),
+			},
+			{
+				ResourceName:      resourceRoot,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
 
 func testAccCheckDnsPtrRecordDestroy(s *terraform.State) error {
-	meta := testAccProvider.Meta()
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "dns_ptr_record" {
-			continue
-		}
-
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
-
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypePTR)
-		r, err := exchange(msg, false, meta)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeNameError {
-			return fmt.Errorf("DNS record still exists: %v", r.Rcode)
-		}
-	}
-
-	return nil
+	return testAccCheckDnsDestroy(s, "dns_ptr_record", dns.TypePTR)
 }
 
 func testAccCheckDnsPtrRecordExists(t *testing.T, n string, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
@@ -107,7 +97,7 @@ func testAccCheckDnsPtrRecordExists(t *testing.T, n string, expected string, rec
 		*rec_name = rs.Primary.Attributes["name"]
 		*rec_zone = rs.Primary.Attributes["zone"]
 
-		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
+		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
 
@@ -148,6 +138,13 @@ var testAccDnsPtrRecord_update = fmt.Sprintf(`
   resource "dns_ptr_record" "foo" {
     zone = "example.com."
     name = "r._dns-sd._udp"
+    ptr = "baz.example.com."
+    ttl = 300
+  }`)
+
+var testAccDnsPtrRecord_root = fmt.Sprintf(`
+  resource "dns_ptr_record" "root" {
+    zone = "example.com."
     ptr = "baz.example.com."
     ttl = 300
   }`)
