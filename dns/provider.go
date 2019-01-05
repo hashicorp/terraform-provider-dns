@@ -348,3 +348,14 @@ Loop:
 
 	return []*schema.ResourceData{d}, nil
 }
+
+func resourceFQDN(d *schema.ResourceData) string {
+
+	fqdn := d.Get("zone").(string)
+
+	if name, ok := d.GetOk("name"); ok {
+		fqdn = fmt.Sprintf("%s.%s", name.(string), fqdn)
+	}
+
+	return fqdn
+}
