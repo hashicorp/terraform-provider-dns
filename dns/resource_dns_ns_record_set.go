@@ -52,82 +52,54 @@ func resourceDnsNSRecordSet() *schema.Resource {
 
 func resourceDnsNSRecordSetCreate(d *schema.ResourceData, meta interface{}) error {
 
-	rec_name := d.Get("name").(string)
-	rec_zone := d.Get("zone").(string)
-
-	rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
-
-	d.SetId(rec_fqdn)
+	d.SetId(resourceFQDN(d))
 
 	return resourceDnsNSRecordSetUpdate(d, meta)
 }
 
 func resourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 
-	if meta != nil {
+	answers, err := resourceDnsRead(d, meta, dns.TypeNS)
+	if err != nil {
+		return err
+	}
 
-		rec_name := d.Get("name").(string)
-		rec_zone := d.Get("zone").(string)
-
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypeNS)
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		switch r.Rcode {
-		case dns.RcodeSuccess:
-			break
-		case dns.RcodeNameError:
-			d.SetId("")
-			return nil
-		default:
-			return fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
-		}
+	if len(answers) > 0 {
 
 		var ttl sort.IntSlice
 
 		nameservers := schema.NewSet(schema.HashString, nil)
-
-		for _, record := range r.Ns {
+		for _, record := range answers {
 			nameserver, t, err := getNSVal(record)
-
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}
-
 			nameservers.Add(nameserver)
 			ttl = append(ttl, t)
 		}
 		sort.Sort(ttl)
 
-		d.Set("name", rec_name)
-		d.Set("zone", rec_zone)
 		d.Set("nameservers", nameservers)
 		d.Set("ttl", ttl[0])
-
-		return nil
 	} else {
-		return fmt.Errorf("update server is not set")
+		d.SetId("")
 	}
+
+	return nil
+
 }
 
 func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if meta != nil {
 
-		rec_name := d.Get("name").(string)
-		rec_zone := d.Get("zone").(string)
 		ttl := d.Get("ttl").(int)
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 
-		msg.SetUpdate(rec_zone)
+		msg.SetUpdate(d.Get("zone").(string))
 
 		if d.HasChange("nameservers") {
 			o, n := d.GetChange("nameservers")
@@ -157,8 +129,7 @@ func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 				return fmt.Errorf("Error updating DNS record: %v", r.Rcode)
 			}
 
-			nameservers := ns
-			d.Set("nameservers", nameservers)
+			d.Set("nameservers", ns)
 		}
 
 		return resourceDnsNSRecordSetRead(d, meta)
@@ -169,30 +140,5 @@ func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 
 func resourceDnsNSRecordSetDelete(d *schema.ResourceData, meta interface{}) error {
 
-	if meta != nil {
-
-		rec_name := d.Get("name").(string)
-		rec_zone := d.Get("zone").(string)
-
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(rec_zone)
-
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 NS", rec_fqdn))
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			return fmt.Errorf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error deleting DNS record: %v", r.Rcode)
-		}
-
-		return nil
-	} else {
-		return fmt.Errorf("update server is not set")
-	}
+	return resourceDnsDelete(d, meta, dns.TypeNS)
 }
