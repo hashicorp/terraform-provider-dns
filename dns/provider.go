@@ -341,10 +341,10 @@ Loop:
 		return nil, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
 	}
 
-	name := strings.Join(labels[:len(labels)-common], ".")
-
-	d.Set("name", name)
 	d.Set("zone", *zone)
+	if name := strings.Join(labels[:len(labels)-common], "."); name != "" {
+		d.Set("name", name)
+	}
 
 	return []*schema.ResourceData{d}, nil
 }
