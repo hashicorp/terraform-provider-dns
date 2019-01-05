@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -33,4 +34,13 @@ func testAccPreCheck(t *testing.T) {
 	if v == "" {
 		t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
 	}
+}
+
+func testResourceFQDN(name, zone string) string {
+	fqdn := zone
+	if name != "" {
+		fqdn = fmt.Sprintf("%s.%s", name, fqdn)
+	}
+
+	return fqdn
 }
