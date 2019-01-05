@@ -328,7 +328,7 @@ Loop:
 		case dns.RcodeNameError:
 			continue
 		default:
-			return nil, fmt.Errorf("Error querying DNS record: %s", dns.RcodeToString[r.Rcode])
+			return nil, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 		}
 	}
 
