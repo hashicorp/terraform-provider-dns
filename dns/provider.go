@@ -359,3 +359,65 @@ func resourceFQDN(d *schema.ResourceData) string {
 
 	return fqdn
 }
+
+func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([]dns.RR, error) {
+
+	if meta != nil {
+
+		fqdn := resourceFQDN(d)
+
+		msg := new(dns.Msg)
+		msg.SetQuestion(fqdn, rrType)
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			return nil, fmt.Errorf("Error querying DNS record: %s", err)
+		}
+		switch r.Rcode {
+		case dns.RcodeSuccess:
+			// NS records are returned slightly differently
+			if (rrType == dns.TypeNS && len(r.Ns) > 0) || len(r.Answer) > 0 {
+				break
+			}
+			fallthrough
+		case dns.RcodeNameError:
+			return nil, nil
+		default:
+			return nil, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+		}
+
+		if rrType == dns.TypeNS {
+			return r.Ns, nil
+		}
+		return r.Answer, nil
+	} else {
+		return nil, fmt.Errorf("update server is not set")
+	}
+}
+
+func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) error {
+
+	if meta != nil {
+
+		fqdn := resourceFQDN(d)
+
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(d.Get("zone").(string))
+
+		rr, _ := dns.NewRR(fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType]))
+		msg.RemoveRRset([]dns.RR{rr})
+
+		r, err := exchange(msg, true, meta)
+		if err != nil {
+			return fmt.Errorf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			return fmt.Errorf("Error deleting DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+		}
+
+		return nil
+	} else {
+		return fmt.Errorf("update server is not set")
+	}
+}
