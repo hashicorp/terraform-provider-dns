@@ -110,6 +110,7 @@ func Provider() terraform.ResourceProvider {
 			"dns_aaaa_record_set": resourceDnsAAAARecordSet(),
 			"dns_cname_record":    resourceDnsCnameRecord(),
 			"dns_ptr_record":      resourceDnsPtrRecord(),
+			"dns_txt_record_set":  resourceDnsTXTRecordSet(),
 		},
 
 		ConfigureFunc: configureProvider,
