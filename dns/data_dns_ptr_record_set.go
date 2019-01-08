@@ -11,11 +11,11 @@ func dataSourceDnsPtrRecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsPtrRecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"ip_address": &schema.Schema{
+			"ip_address": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"ptr": &schema.Schema{
+			"ptr": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
