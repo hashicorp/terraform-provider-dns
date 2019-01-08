@@ -3,6 +3,10 @@
 NEW FEATURES:
 * All resources can now be imported.
 
+IMPROVEMENTS:
+
+* dependencies: switching to Go 1.11 [GH-73]
+
 ## 2.0.0 (May 25, 2018)
 
 BACKWARDS INCOMPATIBILITIES / NOTES:
