@@ -14,6 +14,7 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
 	var rec_name, rec_zone string
 	resourceName := "dns_aaaa_record_set.bar"
+	resourceRoot := "dns_aaaa_record_set.root"
 
 	deleteAAAARecordSet := func() {
 		meta := testAccProvider.Meta()
@@ -22,7 +23,7 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
 		msg.SetUpdate(rec_zone)
 
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
+		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
 
 		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 AAAA", rec_fqdn))
 		msg.RemoveRRset([]dns.RR{rr_remove})
@@ -75,34 +76,24 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 			},
+			{
+				Config: testAccDnsAAAARecordSet_root,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
+					testAccCheckDnsAAAARecordSetExists(t, resourceRoot, []interface{}{"fdd5:e282::beef:dead:babe:cafe"}, &rec_name, &rec_zone),
+				),
+			},
+			{
+				ResourceName:      resourceRoot,
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
 
 func testAccCheckDnsAAAARecordSetDestroy(s *terraform.State) error {
-	meta := testAccProvider.Meta()
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "dns_aaaa_record_set" {
-			continue
-		}
-
-		rec_name := rs.Primary.Attributes["name"]
-		rec_zone := rs.Primary.Attributes["zone"]
-
-		rec_fqdn := fmt.Sprintf("%s.%s", rec_name, rec_zone)
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypeAAAA)
-		r, err := exchange(msg, false, meta)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeNameError {
-			return fmt.Errorf("DNS record still exists: %v", r.Rcode)
-		}
-	}
-
-	return nil
+	return testAccCheckDnsDestroy(s, "dns_aaaa_record_set", dns.TypeAAAA)
 }
 
 func testAccCheckDnsAAAARecordSetExists(t *testing.T, n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
@@ -118,7 +109,7 @@ func testAccCheckDnsAAAARecordSetExists(t *testing.T, n string, addr []interface
 		*rec_name = rs.Primary.Attributes["name"]
 		*rec_zone = rs.Primary.Attributes["zone"]
 
-		rec_fqdn := fmt.Sprintf("%s.%s", *rec_name, *rec_zone)
+		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
 
 		meta := testAccProvider.Meta()
 
@@ -169,5 +160,12 @@ var testAccDnsAAAARecordSet_retry = fmt.Sprintf(`
     zone = "example.com."
     name = "bar"
     addresses = ["fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"]
+    ttl = 300
+  }`)
+
+var testAccDnsAAAARecordSet_root = fmt.Sprintf(`
+  resource "dns_aaaa_record_set" "root" {
+    zone = "example.com."
+    addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe"]
     ttl = 300
   }`)

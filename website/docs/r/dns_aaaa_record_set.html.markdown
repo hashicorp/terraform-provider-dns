@@ -29,7 +29,7 @@ resource "dns_aaaa_record_set" "www" {
 The following arguments are supported:
 
 * `zone` - (Required) DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.
-* `name` - (Required) The name of the record set. The `zone` argument will be appended to this value to create the full record path.
+* `name` - (Optional) The name of the record set. The `zone` argument will be appended to this value to create the full record path.
 * `addresses` - (Required) The IPv6 addresses this record set will point to.
 * `ttl` - (Optional) The TTL of the record set. Defaults to `3600`.
 
