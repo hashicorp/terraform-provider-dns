@@ -3,6 +3,7 @@
 NEW FEATURES:
 
 * All resources can now be imported [GH-37]
+* Retry DNS queries on timeout [GH-68]
 
 IMPROVEMENTS:
 
