@@ -1,7 +1,8 @@
 ## 2.1.0 (Unreleased)
 
 NEW FEATURES:
-* All resources can now be imported.
+
+* All resources can now be imported [GH-37]
 
 IMPROVEMENTS:
 
@@ -10,9 +11,11 @@ IMPROVEMENTS:
 ## 2.0.0 (May 25, 2018)
 
 BACKWARDS INCOMPATIBILITIES / NOTES:
+
 * Prior versions of the provider would sign requests when sending updates to a DNS server but would not sign the requests to read those values back on subsequent refreshes. For consistency, now _read_ requests are also signed for managed resources in this provider. This does not apply to the data sources, which continue to just send normal unsigned DNS requests as before.
 
 NEW FEATURES:
+
 * Use signed requests when refreshing managed resources ([#35](https://github.com/terraform-providers/terraform-provider-dns/issues/35))
 * data/dns_ptr_record_set: Implement data source for PTR record. ([#32](https://github.com/terraform-providers/terraform-provider-dns/issues/32))
 
