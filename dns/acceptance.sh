@@ -27,7 +27,7 @@ docker run -d -p "$DNS_UPDATE_PORT:53/udp" \
 	-e BIND_DOMAIN_REVERSE=${DNS_DOMAIN_REVERSE} \
 	-e BIND_INSECURE=true \
 	--name "$DOCKER_CONTAINER_NAME" drebes/bind || failed
-make testacc TEST=./dns || failed
+GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./dns || failed
 cleanup_docker
 
 # Run with authentication
@@ -42,5 +42,5 @@ docker run -d -p "$DNS_UPDATE_PORT:53/udp" \
 	-e BIND_KEY_ALGORITHM=${DNS_UPDATE_KEYALGORITHM} \
 	-e BIND_KEY_SECRET=${DNS_UPDATE_KEYSECRET} \
 	--name "$DOCKER_CONTAINER_NAME" drebes/bind || failed
-make testacc TEST=./dns || failed
+GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./dns || failed
 cleanup_docker
