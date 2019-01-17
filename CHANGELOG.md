@@ -2,6 +2,8 @@
 
 NEW FEATURES:
 
+* **New Data Source:** `dns_mx_record_set` [GH-71]
+* **New Resource:** `dns_mx_record_set` [GH-71]
 * **New Resource:** `dns_txt_record_set` [GH-72]
 * All resources can now be imported [GH-37]
 * Allow the creation of apex records [GH-69]
