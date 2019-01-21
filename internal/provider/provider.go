@@ -49,17 +49,17 @@ func New() *schema.Provider {
 								return defaultPort, nil
 							},
 						},
-						"transport": &schema.Schema{
+						"transport": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TRANSPORT", defaultTransport),
 						},
-						"timeout": &schema.Schema{
+						"timeout": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TIMEOUT", defaultTimeout),
 						},
-						"retries": &schema.Schema{
+						"retries": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							DefaultFunc: func() (interface{}, error) {
@@ -75,19 +75,60 @@ func New() *schema.Provider {
 							},
 						},
 						"key_name": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYNAME", nil),
+							Type:          schema.TypeString,
+							Optional:      true,
+							DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYNAME", nil),
+							ConflictsWith: []string{"update.0.gssapi.0"},
+							RequiredWith:  []string{"update.0.key_algorithm", "update.0.key_secret"},
 						},
 						"key_algorithm": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYALGORITHM", nil),
+							Type:          schema.TypeString,
+							Optional:      true,
+							DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYALGORITHM", nil),
+							ConflictsWith: []string{"update.0.gssapi.0"},
+							RequiredWith:  []string{"update.0.key_name", "update.0.key_secret"},
 						},
 						"key_secret": {
-							Type:        schema.TypeString,
-							Optional:    true,
-							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYSECRET", nil),
+							Type:          schema.TypeString,
+							Optional:      true,
+							DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYSECRET", nil),
+							ConflictsWith: []string{"update.0.gssapi.0"},
+							RequiredWith:  []string{"update.0.key_name", "update.0.key_algorithm"},
+						},
+						"gssapi": {
+							Type:     schema.TypeList,
+							MaxItems: 1,
+							Optional: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"realm": {
+										Type:        schema.TypeString,
+										Required:    true,
+										DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_REALM", nil),
+									},
+									"username": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_USERNAME", nil),
+									},
+									"password": {
+										Type:          schema.TypeString,
+										Optional:      true,
+										DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_PASSWORD", nil),
+										ConflictsWith: []string{"update.0.gssapi.0.keytab"},
+										RequiredWith:  []string{"update.0.gssapi.0.username"},
+										Sensitive:     true,
+									},
+									"keytab": {
+										Type:          schema.TypeString,
+										Optional:      true,
+										DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYTAB", nil),
+										ConflictsWith: []string{"update.0.gssapi.0.password"},
+										RequiredWith:  []string{"update.0.gssapi.0.username"},
+									},
+								},
+							},
+							ConflictsWith: []string{"update.0.key_name", "update.0.key_algorithm", "update.0.key_secret"},
 						},
 					},
 				},
@@ -122,9 +163,10 @@ func New() *schema.Provider {
 
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
-	var server, transport, timeout, keyname, keyalgo, keysecret string
+	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
+	var gssapi bool
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
@@ -152,6 +194,22 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		}
 		if val, ok := update["key_secret"]; ok {
 			keysecret = val.(string)
+		}
+		if val, ok := update["gssapi"]; ok && len(val.([]interface{})) > 0 {
+			g := val.([]interface{})[0].(map[string]interface{})
+			if val, ok := g["realm"]; ok {
+				realm = val.(string)
+			}
+			if val, ok := g["username"]; ok {
+				username = val.(string)
+			}
+			if val, ok := g["password"]; ok {
+				password = val.(string)
+			}
+			if val, ok := g["keytab"]; ok {
+				keytab = val.(string)
+			}
+			gssapi = true
 		}
 	} else {
 		if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
@@ -198,6 +256,21 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		if len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
 			keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
 		}
+		if len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
+			realm = os.Getenv("DNS_UPDATE_REALM")
+		}
+		if len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
+			username = os.Getenv("DNS_UPDATE_USERNAME")
+		}
+		if len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
+			password = os.Getenv("DNS_UPDATE_PASSWORD")
+		}
+		if len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
+			keytab = os.Getenv("DNS_UPDATE_KEYTAB")
+		}
+		if realm != "" || username != "" || password != "" || keytab != "" {
+			gssapi = true
+		}
 	}
 
 	if timeout != "" {
@@ -226,6 +299,11 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		keyname:   keyname,
 		keyalgo:   keyalgo,
 		keysecret: keysecret,
+		gssapi:    gssapi,
+		realm:     realm,
+		username:  username,
+		password:  password,
+		keytab:    keytab,
 	}
 
 	return config.Client()
@@ -340,7 +418,36 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 	keyalgo := meta.(*DNSClient).keyalgo
 	c.Net = meta.(*DNSClient).transport
 	retries := meta.(*DNSClient).retries
+	g := meta.(*DNSClient).gssClient
 	retry_tcp := false
+
+	// GSS-TSIG
+	if tsig && g != nil {
+		realm := meta.(*DNSClient).realm
+		username := meta.(*DNSClient).username
+		password := meta.(*DNSClient).password
+		keytab := meta.(*DNSClient).keytab
+
+		var k string
+		var err error
+
+		if realm != "" && username != "" && (password != "" || keytab != "") {
+			if password != "" {
+				k, _, err = g.NegotiateContextWithCredentials(srv_addr, realm, username, password)
+			} else {
+				k, _, err = g.NegotiateContextWithKeytab(srv_addr, realm, username, keytab)
+			}
+		} else {
+			k, _, err = g.NegotiateContext(srv_addr)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("Error negotiating GSS context: %s", err)
+		}
+
+		defer g.DeleteContext(k)
+
+		keyname = k
+	}
 
 	msg.RecursionDesired = false
 
