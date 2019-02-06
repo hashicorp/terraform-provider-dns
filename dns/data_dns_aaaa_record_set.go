@@ -15,6 +15,11 @@ func dataSourceDnsAAAARecordSet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"addrs": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -26,10 +31,14 @@ func dataSourceDnsAAAARecordSet() *schema.Resource {
 
 func dataSourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	host := d.Get("host").(string)
+	ignore := d.Get("ignore_errors").(bool)
 
 	_, aaaa, err := lookupIP(host)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up AAAA records for %q: %s", host, err)
+	}
+	if aaaa == nil {
+		aaaa = []string{}
 	}
 	sort.Strings(aaaa)
 

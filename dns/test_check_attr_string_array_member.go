@@ -25,6 +25,10 @@ func testCheckAttrStringArrayMember(name, key string, value []string) r.TestChec
 			return fmt.Errorf("Attributes not found for %s", key)
 		}
 
+		if got == "" && len(value) == 0 {
+			return nil
+		}
+
 		for _, want := range value {
 			if got == want {
 				return nil

@@ -17,7 +17,11 @@ func dataSourceDnsCnameRecordSet() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"cname": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -28,9 +32,10 @@ func dataSourceDnsCnameRecordSet() *schema.Resource {
 
 func dataSourceDnsCnameRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	host := d.Get("host").(string)
+	ignore := d.Get("ignore_errors").(bool)
 
 	cname, err := net.LookupCNAME(host)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up CNAME records for %q: %s", host, err)
 	}
 

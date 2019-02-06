@@ -16,6 +16,11 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"mx": &schema.Schema{
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
@@ -38,10 +43,14 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 
 func dataSourceDnsMXRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	domain := d.Get("domain").(string)
+	ignore := d.Get("ignore_errors").(bool)
 
 	records, err := net.LookupMX(domain)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up MX records for %q: %s", domain, err)
+	}
+	if records == nil {
+		records = []*net.MX{}
 	}
 
 	// Sort by preference ascending, and host alphabetically

@@ -38,6 +38,17 @@ func TestAccDataDnsARecordSet_Basic(t *testing.T) {
 			},
 			"time-c.nist.gov",
 		},
+		{
+			`
+			data "dns_a_record_set" "non-existent" {
+			  host          = "jolly.roger"
+			  ignore_errors = true
+			}
+			`,
+			"non-existent",
+			[]string{},
+			"jolly.roger",
+		},
 	}
 
 	for _, test := range tests {
@@ -61,5 +72,4 @@ func TestAccDataDnsARecordSet_Basic(t *testing.T) {
 			},
 		})
 	}
-
 }
