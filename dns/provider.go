@@ -423,6 +423,10 @@ Loop:
 				}
 			}
 
+			if zone == nil {
+				continue
+			}
+
 			break Loop
 		case dns.RcodeNameError:
 			continue
