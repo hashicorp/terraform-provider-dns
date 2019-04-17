@@ -1,4 +1,4 @@
-## 3.0.0 (Unreleased)
+## 2.1.0 (Unreleased)
 
 NEW FEATURES:
 
@@ -11,7 +11,6 @@ NEW FEATURES:
 
 IMPROVEMENTS:
 
-* dependencies: switching to Go 1.11 [GH-73]
 * The provider is now compatible with Terraform v0.12, while retaining compatibility with prior versions.
 
 ## 2.0.0 (May 25, 2018)
