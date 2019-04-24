@@ -1,17 +1,17 @@
-## 3.0.0 (Unreleased)
+## 2.2.0 (Unreleased)
+## 2.1.0 (April 17, 2019)
 
 NEW FEATURES:
 
-* **New Data Source:** `dns_mx_record_set` [GH-71]
-* **New Resource:** `dns_mx_record_set` [GH-71]
-* **New Resource:** `dns_txt_record_set` [GH-72]
-* All resources can now be imported [GH-37]
-* Allow the creation of apex records [GH-69]
-* Retry DNS queries on timeout [GH-68]
+* **New Data Source:** `dns_mx_record_set` ([#71](https://github.com/terraform-providers/terraform-provider-dns/issues/71))
+* **New Resource:** `dns_mx_record_set` ([#71](https://github.com/terraform-providers/terraform-provider-dns/issues/71))
+* **New Resource:** `dns_txt_record_set` ([#72](https://github.com/terraform-providers/terraform-provider-dns/issues/72))
+* All resources can now be imported ([#37](https://github.com/terraform-providers/terraform-provider-dns/issues/37))
+* Allow the creation of apex records ([#69](https://github.com/terraform-providers/terraform-provider-dns/issues/69))
+* Retry DNS queries on timeout ([#68](https://github.com/terraform-providers/terraform-provider-dns/issues/68))
 
 IMPROVEMENTS:
 
-* dependencies: switching to Go 1.11 [GH-73]
 * The provider is now compatible with Terraform v0.12, while retaining compatibility with prior versions.
 
 ## 2.0.0 (May 25, 2018)
