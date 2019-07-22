@@ -1,5 +1,6 @@
 ## 2.2.0 (Unreleased)
 
+*  Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79]
 * All data sources support an optional flag `ignore_errors` that allows to ignore
   any DNS resolution errors instead of failing the plan. This can be useful in
   implementing conditional logic based on the presence of absence of DNS records.
