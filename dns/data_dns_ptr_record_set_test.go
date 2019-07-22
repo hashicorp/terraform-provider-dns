@@ -21,7 +21,7 @@ func TestAccDataDnsPtrRecordSet_Basic(t *testing.T) {
 			}
 			`,
 			"foo",
-			"google-public-dns-a.google.com.",
+			"dns.google.",
 			"8.8.8.8",
 		},
 		{
