@@ -1,6 +1,6 @@
 ## 2.2.0 (Unreleased)
 
-* This release includes a stable version of Terraform SDK v0.12.0.
+* This release includes a stable version of Terraform SDK v0.12.5.
   The provider should still retain full backwards compatibility with Terraform v0.11.x.
 * Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79]
 
