@@ -1,14 +1,16 @@
 ## 2.2.0 (Unreleased)
 
-*  Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79]
+* This release includes a stable version of Terraform SDK v0.12.5.
+  The provider should still retain full backwards compatibility with Terraform v0.11.x.
+* Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79]
 * All data sources support an optional flag `ignore_errors` that allows to ignore
-  any DNS resolution errors instead of failing the plan. This can be useful in
+  any DNS resolution errors instead of aborting the plan. This can be useful in
   implementing conditional logic based on the presence of absence of DNS records.
-  A typical use case is retrieving DNS records that are configured outside of Terraform.
+  A typical use case is retrieving DNS records that are configured outside of Terraform. [#75]
 
 ## 2.1.1 (May 01, 2019)
 
-* This release includes and upgraded Terraform SDK, for the sake of aligning the versions of the SDK amongst released providers, as we lead up to Core v0.12. This should have no noticeable impact on the provider.
+* This release includes an upgraded Terraform SDK, for the sake of aligning the versions of the SDK amongst released providers, as we lead up to Core v0.12. This should have no noticeable impact on the provider.
 
 ## 2.1.0 (April 17, 2019)
 
