@@ -24,7 +24,7 @@ func TestAccDataDnsPtrRecordSet_Basic(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		resource.Test(t, resource.TestCase{
+		resource.UnitTest(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
 				{

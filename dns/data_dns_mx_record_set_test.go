@@ -38,7 +38,7 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 	for _, test := range tests {
 		recordName := fmt.Sprintf("data.dns_mx_record_set.%s", test.DataSourceName)
 
-		resource.Test(t, resource.TestCase{
+		resource.UnitTest(t, resource.TestCase{
 			Providers: testAccProviders,
 			Steps: []resource.TestStep{
 				{
