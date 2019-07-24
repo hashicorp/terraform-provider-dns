@@ -21,7 +21,7 @@ func TestAccDataDnsSRVRecordSet_Basic(t *testing.T) {
 			}
 			`,
 			"srv",
-			"mxtoolbox.com",
+			"mxtoolbox.com.",
 			"_http._tcp.mxtoolbox.com",
 		},
 	}
