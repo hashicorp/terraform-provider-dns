@@ -1,3 +1,4 @@
+## 2.3.0 (Unreleased)
 ## 2.2.0 (July 24, 2019)
 
 * **New Data Source:** `dns_srv_record_set` [#70]
