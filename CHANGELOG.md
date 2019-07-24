@@ -1,11 +1,11 @@
 ## 2.3.0 (Unreleased)
 ## 2.2.0 (July 24, 2019)
 
-* **New Data Source:** `dns_srv_record_set` (#70)
-* **New Resource:** `dns_srv_record_set` (#70)
+* **New Data Source:** `dns_srv_record_set` [#70](https://github.com/terraform-providers/terraform-provider-dns/issues/70)
+* **New Resource:** `dns_srv_record_set` [#70](https://github.com/terraform-providers/terraform-provider-dns/issues/70)
 * This release includes a stable version of Terraform SDK v0.12.5.
   The provider should still retain full backwards compatibility with Terraform v0.11.x.
-* Fix SOA detection logic to cover DNS servers returning a non-SOA record. (#79)
+* Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79](https://github.com/terraform-providers/terraform-provider-dns/issues/79)
 
 ## 2.1.1 (May 01, 2019)
 
