@@ -1,5 +1,7 @@
 ## 2.2.0 (Unreleased)
 
+* **New Data Source:** `dns_srv_record_set` [#70]
+* **New Resource:** `dns_srv_record_set` [#70]
 * This release includes a stable version of Terraform SDK v0.12.5.
   The provider should still retain full backwards compatibility with Terraform v0.11.x.
 * Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79]
