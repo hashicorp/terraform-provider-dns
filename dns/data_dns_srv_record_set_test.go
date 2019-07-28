@@ -10,44 +10,29 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
+func TestAccDataDnsSRVRecordSet_Basic(t *testing.T) {
 	tests := []struct {
 		DataSourceBlock string
 		DataSourceName  string
 		Expected        []map[string]string
-		Domain          string
+		Service         string
 	}{
 		{
 			`
-			data "dns_mx_record_set" "mx" {
-			  domain = "google.com"
+			data "dns_srv_record_set" "srv" {
+			  service = "_http._tcp.mxtoolbox.com"
 			}
 			`,
-			"mx",
+			"srv",
 			[]map[string]string{
-				{"preference": "10", "exchange": "aspmx.l.google.com."},
-				{"preference": "20", "exchange": "alt1.aspmx.l.google.com."},
-				{"preference": "30", "exchange": "alt2.aspmx.l.google.com."},
-				{"preference": "40", "exchange": "alt3.aspmx.l.google.com."},
-				{"preference": "50", "exchange": "alt4.aspmx.l.google.com."},
+				{"priority": "10", "weight": "100", "port": "80", "target": "mxtoolbox.com."},
 			},
-			"google.com",
-		},
-		{
-			`
-			data "dns_mx_record_set" "non-existent" {
-			  domain        = "jolly.roger"
-			  ignore_errors = true
-			}
-			`,
-			"non-existent",
-			[]map[string]string{},
-			"jolly.roger",
+			"_http._tcp.mxtoolbox.com",
 		},
 	}
 
 	for _, test := range tests {
-		recordName := fmt.Sprintf("data.dns_mx_record_set.%s", test.DataSourceName)
+		recordName := fmt.Sprintf("data.dns_srv_record_set.%s", test.DataSourceName)
 
 		resource.UnitTest(t, resource.TestCase{
 			Providers: testAccProviders,
@@ -55,13 +40,13 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
-						testAccDataDnsMXExpected(recordName, "mx", test.Expected),
+						testAccDataDnsSRVExpected(recordName, "srv", test.Expected),
 					),
 				},
 				{
 					Config: test.DataSourceBlock,
 					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(recordName, "id", test.Domain),
+						resource.TestCheckResourceAttr(recordName, "id", test.Service),
 					),
 				},
 			},
@@ -69,7 +54,7 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 	}
 }
 
-func testAccDataDnsMXExpected(name, key string, value []map[string]string) resource.TestCheckFunc {
+func testAccDataDnsSRVExpected(name, key string, value []map[string]string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		ms := s.RootModule()
 		rs, ok := ms.Resources[name]
@@ -94,19 +79,19 @@ func testAccDataDnsMXExpected(name, key string, value []map[string]string) resou
 		}
 
 		for i := 0; i < gotCount; i++ {
-			mx := make(map[string]string)
+			srv := make(map[string]string)
 
-			for _, attr := range []string{"exchange", "preference"} {
+			for _, attr := range []string{"port", "priority", "target", "weight"} {
 				attrKey = fmt.Sprintf("%s.%d.%s", key, i, attr)
 				got, ok := is.Attributes[attrKey]
 				if !ok {
 					return fmt.Errorf("Missing attribute for %s", attrKey)
 				}
-				mx[attr] = got
+				srv[attr] = got
 			}
 
-			if !reflect.DeepEqual(mx, value[i]) {
-				return fmt.Errorf("Expected %v, got %v", value[i], mx)
+			if !reflect.DeepEqual(srv, value[i]) {
+				return fmt.Errorf("Expected %v, got %v", value[i], srv)
 			}
 		}
 
