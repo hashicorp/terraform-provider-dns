@@ -26,6 +26,17 @@ func TestAccDataDnsAAAARecordSet_Basic(t *testing.T) {
 			},
 			"example.com",
 		},
+		{
+			`
+			data "dns_aaaa_record_set" "non-existent" {
+			  host          = "jolly.roger"
+			  ignore_errors = true
+			}
+			`,
+			"non-existent",
+			[]string{},
+			"jolly.roger",
+		},
 	}
 
 	for _, test := range tests {
@@ -49,5 +60,4 @@ func TestAccDataDnsAAAARecordSet_Basic(t *testing.T) {
 			},
 		})
 	}
-
 }

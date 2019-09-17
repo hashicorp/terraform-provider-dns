@@ -16,6 +16,11 @@ func dataSourceDnsSRVRecordSet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"srv": &schema.Schema{
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
@@ -46,10 +51,14 @@ func dataSourceDnsSRVRecordSet() *schema.Resource {
 
 func dataSourceDnsSRVRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	service := d.Get("service").(string)
+	ignore := d.Get("ignore_errors").(bool)
 
 	_, records, err := net.LookupSRV("", "", service)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up SRV records for %q: %s", service, err)
+	}
+	if records == nil {
+		records = []*net.SRV{}
 	}
 
 	// Sort by priority ascending, weight descending, target

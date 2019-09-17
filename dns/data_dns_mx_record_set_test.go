@@ -33,6 +33,17 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 			},
 			"google.com",
 		},
+		{
+			`
+			data "dns_mx_record_set" "non-existent" {
+			  domain        = "jolly.roger"
+			  ignore_errors = true
+			}
+			`,
+			"non-existent",
+			[]map[string]string{},
+			"jolly.roger",
+		},
 	}
 
 	for _, test := range tests {

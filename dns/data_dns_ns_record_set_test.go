@@ -24,11 +24,22 @@ func TestAccDataDnsNSRecordSet_Basic(t *testing.T) {
 			[]string{
 				// These results may change if terraform.io moves to a new DNS host.
 				// If you suspect the expected results have changed here, confirm
-				// with e.g. dig terraform.io NS
+				// with e.g. `dig terraform.io NS`
 				"sam.ns.cloudflare.com.",
 				"zara.ns.cloudflare.com.",
 			},
 			"terraform.io",
+		},
+		{
+			`
+			data "dns_ns_record_set" "non-existent" {
+			  host          = "jolly.roger"
+			  ignore_errors = true
+			}
+			`,
+			"non-existent",
+			[]string{},
+			"jolly.roger",
 		},
 	}
 
@@ -53,5 +64,4 @@ func TestAccDataDnsNSRecordSet_Basic(t *testing.T) {
 			},
 		})
 	}
-
 }

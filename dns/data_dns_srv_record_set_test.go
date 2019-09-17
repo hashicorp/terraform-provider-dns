@@ -29,6 +29,17 @@ func TestAccDataDnsSRVRecordSet_Basic(t *testing.T) {
 			},
 			"_http._tcp.mxtoolbox.com",
 		},
+		{
+			`
+			data "dns_srv_record_set" "non-existent" {
+			  service       = "_http._tcp.jolly.roger"
+			  ignore_errors = true
+			}
+			`,
+			"non-existent",
+			[]map[string]string{},
+			"_http._tcp.jolly.roger",
+		},
 	}
 
 	for _, test := range tests {

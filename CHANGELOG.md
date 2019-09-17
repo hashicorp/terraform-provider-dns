@@ -1,4 +1,11 @@
 ## 2.3.0 (Unreleased)
+
+* All data sources support an optional flag `ignore_errors` that allows to ignore
+  any DNS resolution errors instead of aborting the plan. This can be useful in
+  implementing conditional logic based on the presence of absence of DNS records.
+  A typical use case is retrieving DNS records that are configured outside of Terraform.
+  ([#75](https://github.com/terraform-providers/terraform-provider-dns/issues/75))
+
 ## 2.2.0 (July 24, 2019)
 
 * **New Data Source:** `dns_srv_record_set` [#70](https://github.com/terraform-providers/terraform-provider-dns/issues/70)

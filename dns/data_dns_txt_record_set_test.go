@@ -22,10 +22,24 @@ func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 			`,
 			"foo",
 			[]string{
+				// These results may change if terraform.io moves to a new DNS host.
+				// If you suspect the expected results have changed here, confirm
+				// with e.g. `dig terraform.io TXT`
 				"google-site-verification=LQZvxDzrGE-ZLudDpkpj-gcXN-5yF7Z6C-4Rljs3I_Q",
 				"google-site-verification=8d7FpfB8aOEYAIkoaVKxg7Ibj438CEypjZTH424Pews",
 			},
 			"terraform.io",
+		},
+		{
+			`
+			data "dns_txt_record_set" "non-existent" {
+			  host          = "jolly.roger"
+			  ignore_errors = true
+			}
+			`,
+			"non-existent",
+			[]string{},
+			"jolly.roger",
 		},
 	}
 

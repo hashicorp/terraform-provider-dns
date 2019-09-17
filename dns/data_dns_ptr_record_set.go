@@ -15,6 +15,11 @@ func dataSourceDnsPtrRecordSet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"ptr": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -25,15 +30,20 @@ func dataSourceDnsPtrRecordSet() *schema.Resource {
 
 func dataSourceDnsPtrRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	ipAddress := d.Get("ip_address").(string)
+	ignore := d.Get("ignore_errors").(bool)
+
 	names, err := net.LookupAddr(ipAddress)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up PTR records for %q: %s", ipAddress, err)
 	}
-	if len(names) == 0 {
+	if len(names) > 0 {
+		d.Set("ptr", names[0])
+	} else if ignore {
+		d.Set("ptr", "")
+	} else {
 		return fmt.Errorf("error looking up PTR records for %q: no records found", ipAddress)
 	}
 
-	d.Set("ptr", names[0])
 	d.SetId(ipAddress)
 
 	return nil

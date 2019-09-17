@@ -16,6 +16,11 @@ func dataSourceDnsNSRecordSet() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"nameservers": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -27,10 +32,14 @@ func dataSourceDnsNSRecordSet() *schema.Resource {
 
 func dataSourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	host := d.Get("host").(string)
+	ignore := d.Get("ignore_errors").(bool)
 
 	nsRecords, err := net.LookupNS(host)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up NS records for %q: %s", host, err)
+	}
+	if nsRecords == nil {
+		nsRecords = []*net.NS{}
 	}
 
 	nameservers := make([]string, len(nsRecords))

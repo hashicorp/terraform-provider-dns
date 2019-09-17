@@ -17,12 +17,15 @@ func dataSourceDnsTxtRecordSet() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-
+			"ignore_errors": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
 			"record": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-
 			"records": {
 				Type:     schema.TypeList,
 				Elem:     &schema.Schema{Type: schema.TypeString},
@@ -34,10 +37,14 @@ func dataSourceDnsTxtRecordSet() *schema.Resource {
 
 func dataSourceDnsTxtRecordSetRead(d *schema.ResourceData, meta interface{}) error {
 	host := d.Get("host").(string)
+	ignore := d.Get("ignore_errors").(bool)
 
 	records, err := net.LookupTXT(host)
-	if err != nil {
+	if err != nil && !ignore {
 		return fmt.Errorf("error looking up TXT records for %q: %s", host, err)
+	}
+	if records == nil {
+		records = []string{}
 	}
 
 	if len(records) > 0 {
