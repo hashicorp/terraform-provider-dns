@@ -24,6 +24,7 @@ func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 			[]string{
 				"google-site-verification=LQZvxDzrGE-ZLudDpkpj-gcXN-5yF7Z6C-4Rljs3I_Q",
 				"google-site-verification=8d7FpfB8aOEYAIkoaVKxg7Ibj438CEypjZTH424Pews",
+				"google-site-verification=y974ACvos30pN7_OBgEZb_byZV8qYtK0G6WZfE7OX8s",
 			},
 			"terraform.io",
 		},
