@@ -1,4 +1,9 @@
 ## 2.3.0 (Unreleased)
+
+BUG FIXES:
+
+* Fix `d/dns_txt_record_set_test` failing test, terraform.io now has 3 txt record [GH-99]
+
 ## 2.2.0 (July 24, 2019)
 
 * **New Data Source:** `dns_srv_record_set` [#70](https://github.com/terraform-providers/terraform-provider-dns/issues/70)
