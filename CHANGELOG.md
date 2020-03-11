@@ -1,5 +1,9 @@
 ## 2.3.0 (Unreleased)
 
+FEATURES:
+
+* Switch to standalone TF SDK v1.1 [GH-98]
+
 BUG FIXES:
 
 * Fix `d/dns_txt_record_set_test` failing test, terraform.io now has 3 txt record [GH-99]
