@@ -3,7 +3,7 @@ package dns
 import (
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func TestHashIPString(t *testing.T) {
