@@ -1,4 +1,4 @@
-module github.com/terraform-providers/terraform-provider-dns
+module github.com/hashicorp/terraform-provider-dns
 
 require (
 	github.com/hashicorp/hcl v1.0.0 // indirect

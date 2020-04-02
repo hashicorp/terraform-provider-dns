@@ -10,11 +10,11 @@ BUG FIXES:
 
 ## 2.2.0 (July 24, 2019)
 
-* **New Data Source:** `dns_srv_record_set` [#70](https://github.com/terraform-providers/terraform-provider-dns/issues/70)
-* **New Resource:** `dns_srv_record_set` [#70](https://github.com/terraform-providers/terraform-provider-dns/issues/70)
+* **New Data Source:** `dns_srv_record_set` [#70](https://github.com/hashicorp/terraform-provider-dns/issues/70)
+* **New Resource:** `dns_srv_record_set` [#70](https://github.com/hashicorp/terraform-provider-dns/issues/70)
 * This release includes a stable version of Terraform SDK v0.12.5.
   The provider should still retain full backwards compatibility with Terraform v0.11.x.
-* Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79](https://github.com/terraform-providers/terraform-provider-dns/issues/79)
+* Fix SOA detection logic to cover DNS servers returning a non-SOA record. [#79](https://github.com/hashicorp/terraform-provider-dns/issues/79)
 
 ## 2.1.1 (May 01, 2019)
 
@@ -24,12 +24,12 @@ BUG FIXES:
 
 NEW FEATURES:
 
-* **New Data Source:** `dns_mx_record_set` ([#71](https://github.com/terraform-providers/terraform-provider-dns/issues/71))
-* **New Resource:** `dns_mx_record_set` ([#71](https://github.com/terraform-providers/terraform-provider-dns/issues/71))
-* **New Resource:** `dns_txt_record_set` ([#72](https://github.com/terraform-providers/terraform-provider-dns/issues/72))
-* All resources can now be imported ([#37](https://github.com/terraform-providers/terraform-provider-dns/issues/37))
-* Allow the creation of apex records ([#69](https://github.com/terraform-providers/terraform-provider-dns/issues/69))
-* Retry DNS queries on timeout ([#68](https://github.com/terraform-providers/terraform-provider-dns/issues/68))
+* **New Data Source:** `dns_mx_record_set` ([#71](https://github.com/hashicorp/terraform-provider-dns/issues/71))
+* **New Resource:** `dns_mx_record_set` ([#71](https://github.com/hashicorp/terraform-provider-dns/issues/71))
+* **New Resource:** `dns_txt_record_set` ([#72](https://github.com/hashicorp/terraform-provider-dns/issues/72))
+* All resources can now be imported ([#37](https://github.com/hashicorp/terraform-provider-dns/issues/37))
+* Allow the creation of apex records ([#69](https://github.com/hashicorp/terraform-provider-dns/issues/69))
+* Retry DNS queries on timeout ([#68](https://github.com/hashicorp/terraform-provider-dns/issues/68))
 
 IMPROVEMENTS:
 
@@ -43,16 +43,16 @@ BACKWARDS INCOMPATIBILITIES / NOTES:
 
 NEW FEATURES:
 
-* Use signed requests when refreshing managed resources ([#35](https://github.com/terraform-providers/terraform-provider-dns/issues/35))
-* data/dns_ptr_record_set: Implement data source for PTR record. ([#32](https://github.com/terraform-providers/terraform-provider-dns/issues/32))
+* Use signed requests when refreshing managed resources ([#35](https://github.com/hashicorp/terraform-provider-dns/issues/35))
+* data/dns_ptr_record_set: Implement data source for PTR record. ([#32](https://github.com/hashicorp/terraform-provider-dns/issues/32))
 
 BUGS FIXED:
 
-* Normalize IP addresses before comparing them, so non-canonical forms don't cause errant diffs ([#13](https://github.com/terraform-providers/terraform-provider-dns/issues/13))
-* Validates zone names are fully qualified and that record names are not as these mistakes seems to be a common source of misconfiguration ([#36](https://github.com/terraform-providers/terraform-provider-dns/issues/36))
-* Properly handle IPv6 IP addresses as the update host. Previously this would create an invalid connection address due to not properly constructing the address format. ([#22](https://github.com/terraform-providers/terraform-provider-dns/issues/22))
-* When refreshing DNS record resources, `NXDOMAIN` errors are now properly marked as deletions in state rather than returning an error, thus allowing Terraform to plan to re-create the missing records. ([#33](https://github.com/terraform-providers/terraform-provider-dns/issues/33))
-* Now checks the type of record returned to prevent unexpected values causing a panic ([#39](https://github.com/terraform-providers/terraform-provider-dns/issues/39))
+* Normalize IP addresses before comparing them, so non-canonical forms don't cause errant diffs ([#13](https://github.com/hashicorp/terraform-provider-dns/issues/13))
+* Validates zone names are fully qualified and that record names are not as these mistakes seems to be a common source of misconfiguration ([#36](https://github.com/hashicorp/terraform-provider-dns/issues/36))
+* Properly handle IPv6 IP addresses as the update host. Previously this would create an invalid connection address due to not properly constructing the address format. ([#22](https://github.com/hashicorp/terraform-provider-dns/issues/22))
+* When refreshing DNS record resources, `NXDOMAIN` errors are now properly marked as deletions in state rather than returning an error, thus allowing Terraform to plan to re-create the missing records. ([#33](https://github.com/hashicorp/terraform-provider-dns/issues/33))
+* Now checks the type of record returned to prevent unexpected values causing a panic ([#39](https://github.com/hashicorp/terraform-provider-dns/issues/39))
 
 ## 1.0.0 (September 15, 2017)
 
@@ -62,9 +62,9 @@ BUGS FIXED:
 
 NEW FEATURES:
 
-* **`dns_aaaa_record_set` data source** for fetching IPv6 address records ([#9](https://github.com/terraform-providers/terraform-provider-dns/issues/9))
-* **`dns_ns_record_set` data source** for fetching nameserver records ([#10](https://github.com/terraform-providers/terraform-provider-dns/issues/10))
-* **`dns_ns_record_set` resource** for creating new nameserver records via the DNS update protocol ([#10](https://github.com/terraform-providers/terraform-provider-dns/issues/10))
+* **`dns_aaaa_record_set` data source** for fetching IPv6 address records ([#9](https://github.com/hashicorp/terraform-provider-dns/issues/9))
+* **`dns_ns_record_set` data source** for fetching nameserver records ([#10](https://github.com/hashicorp/terraform-provider-dns/issues/10))
+* **`dns_ns_record_set` resource** for creating new nameserver records via the DNS update protocol ([#10](https://github.com/hashicorp/terraform-provider-dns/issues/10))
 
 ## 0.1.0 (June 20, 2017)
 
