@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/miekg/dns"
 )
 
@@ -21,7 +20,7 @@ const (
 )
 
 // Provider returns a schema.Provider for DNS dynamic updates.
-func Provider() terraform.ResourceProvider {
+func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"update": {
@@ -50,17 +49,17 @@ func Provider() terraform.ResourceProvider {
 								return defaultPort, nil
 							},
 						},
-						"transport": &schema.Schema{
+						"transport": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TRANSPORT", defaultTransport),
 						},
-						"timeout": &schema.Schema{
+						"timeout": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TIMEOUT", defaultTimeout),
 						},
-						"retries": &schema.Schema{
+						"retries": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							DefaultFunc: func() (interface{}, error) {

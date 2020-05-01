@@ -5,18 +5,18 @@ import (
 	"net"
 	"sort"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 func dataSourceDnsMXRecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsMXRecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"domain": &schema.Schema{
+			"domain": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"mx": &schema.Schema{
+			"mx": {
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
