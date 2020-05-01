@@ -15,27 +15,6 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 	var name, zone string
 	resourceName := "dns_srv_record_set.foo"
 
-	deleteSRVRecordSet := func() {
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(zone)
-
-		fqdn := testResourceFQDN(name, zone)
-
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 SRV", fqdn))
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -50,14 +29,6 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 			},
 			{
 				Config: testAccDnsSRVRecordSet_update,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "srv.#", "2"),
-					testAccCheckDnsSRVRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
-				),
-			},
-			{
-				PreConfig: deleteSRVRecordSet,
-				Config:    testAccDnsSRVRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "srv.#", "2"),
 					testAccCheckDnsSRVRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),

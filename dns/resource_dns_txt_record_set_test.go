@@ -17,27 +17,6 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 	resourceName := "dns_txt_record_set.foo"
 	resourceRoot := "dns_txt_record_set.root"
 
-	deleteTXTRecordSet := func() {
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(zone)
-
-		fqdn := testResourceFQDN(name, zone)
-
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 TXT", fqdn))
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -52,14 +31,6 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 			},
 			{
 				Config: testAccDnsTXTRecordSet_update,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(t, resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
-				),
-			},
-			{
-				PreConfig: deleteTXTRecordSet,
-				Config:    testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
 					testAccCheckDnsTXTRecordSetExists(t, resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),

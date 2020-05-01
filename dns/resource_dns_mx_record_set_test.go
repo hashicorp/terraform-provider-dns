@@ -16,27 +16,6 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 	resourceName := "dns_mx_record_set.foo"
 	resourceRoot := "dns_mx_record_set.root"
 
-	deleteMXRecordSet := func() {
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(zone)
-
-		fqdn := testResourceFQDN(name, zone)
-
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 MX", fqdn))
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -51,14 +30,6 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 			},
 			{
 				Config: testAccDnsMXRecordSet_update,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "mx.#", "2"),
-					testAccCheckDnsMXRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
-				),
-			},
-			{
-				PreConfig: deleteMXRecordSet,
-				Config:    testAccDnsMXRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "mx.#", "2"),
 					testAccCheckDnsMXRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),

@@ -15,27 +15,6 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 	var rec_name, rec_zone string
 	resourceName := "dns_ns_record_set.foo"
 
-	deleteNSRecordSet := func() {
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(rec_zone)
-
-		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 NS", rec_fqdn))
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -50,14 +29,6 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 			},
 			{
 				Config: testAccDnsNSRecordSet_update,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
-					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
-				),
-			},
-			{
-				PreConfig: deleteNSRecordSet,
-				Config:    testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
 					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),

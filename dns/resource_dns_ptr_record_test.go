@@ -15,27 +15,6 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 	resourceName := "dns_ptr_record.foo"
 	resourceRoot := "dns_ptr_record.root"
 
-	deletePtrRecord := func() {
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(rec_zone)
-
-		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 PTR", rec_fqdn))
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
-
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -49,13 +28,6 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 			},
 			{
 				Config: testAccDnsPtrRecord_update,
-				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
-				),
-			},
-			{
-				PreConfig: deletePtrRecord,
-				Config:    testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDnsPtrRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
