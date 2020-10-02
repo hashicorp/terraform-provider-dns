@@ -56,7 +56,7 @@ $ make test
 
 In order to run acceptance tests, excluding ones requiring a `DNS_UPDATE_SERVER` run `make testacc`.
 
-To run the full suite of acceptance tests run `./dns/acceptance.sh`. You will need docker installed. 
+To run the full suite of acceptance tests run `./internal/provider/acceptance.sh`. You will need docker installed. 
 
 *Note:* Acceptance tests create real resources, and often cost money to run.
 
