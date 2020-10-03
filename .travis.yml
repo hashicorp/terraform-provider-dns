@@ -4,7 +4,8 @@ services:
 - docker
 language: go
 go:
-  - "1.11.x"
+  - stable
+  - tip
 env:
   - GO111MODULE=on GOFLAGS=-mod=vendor
 
@@ -17,9 +18,8 @@ install:
 
 script:
 - make test
-- bash dns/acceptance.sh
+- bash internal/provider/acceptance.sh
 - make vet
-- make website-test
 
 branches:
   only:
