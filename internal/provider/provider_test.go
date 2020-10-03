@@ -5,29 +5,29 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/miekg/dns"
 )
 
-var testAccProviders map[string]terraform.ResourceProvider
+var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
 
 func init() {
-	testAccProvider = New().(*schema.Provider)
-	testAccProviders = map[string]terraform.ResourceProvider{
+	testAccProvider = New()
+	testAccProviders = map[string]*schema.Provider{
 		"dns": testAccProvider,
 	}
 }
 
 func TestProvider(t *testing.T) {
-	if err := New().(*schema.Provider).InternalValidate(); err != nil {
+	if err := New().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
 }
 
 func TestProvider_impl(t *testing.T) {
-	var _ terraform.ResourceProvider = New()
+	var _ *schema.Provider = New()
 }
 
 func testAccPreCheck(t *testing.T) {

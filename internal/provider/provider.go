@@ -8,8 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/miekg/dns"
 )
 
@@ -20,8 +19,8 @@ const (
 	defaultTransport = "udp"
 )
 
-// New returns a schema.Provider for DNS dynamic updates.
-func New() terraform.ResourceProvider {
+// New returns a *schema.Provider for DNS dynamic updates.
+func New() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"update": {
