@@ -1,12 +1,10 @@
-## 2.3.0 (Unreleased)
+## 3.0.0 (Unreleased)
 
-FEATURES:
+Binary releases of this provider will now include the linux-arm64 platform.
 
-* Switch to standalone TF SDK v1.1 [GH-98]
+BREAKING CHANGES:
 
-BUG FIXES:
-
-* Fix `d/dns_txt_record_set_test` failing test, terraform.io now has 3 txt record [GH-99]
+* Upgrade to version 2 of the Terraform Plugin SDK, which drops support for Terraform 0.11. This provider will continue to work as expected for users of Terraform 0.11, which will not download the new version. [GH-110]
 
 ## 2.2.0 (July 24, 2019)
 
