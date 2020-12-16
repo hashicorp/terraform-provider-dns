@@ -471,7 +471,7 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, false, meta)
 		if err != nil {
 			return nil, fmt.Errorf("Error querying DNS record: %s", err)
 		}
