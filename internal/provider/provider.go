@@ -344,11 +344,11 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 
 	msg.RecursionDesired = false
 
-Retry:
 	if tsig && keyname != "" {
 		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
 	}
 
+Retry:
 	r, _, err := c.Exchange(msg, srv_addr)
 
 	switch err {
