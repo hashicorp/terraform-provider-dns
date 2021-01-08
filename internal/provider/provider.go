@@ -344,11 +344,11 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 
 	msg.RecursionDesired = false
 
-Retry:
 	if tsig && keyname != "" {
 		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
 	}
 
+Retry:
 	r, _, err := c.Exchange(msg, srv_addr)
 
 	switch err {
@@ -471,7 +471,7 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
 
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, true, meta)
 		if err != nil {
 			return nil, fmt.Errorf("Error querying DNS record: %s", err)
 		}
