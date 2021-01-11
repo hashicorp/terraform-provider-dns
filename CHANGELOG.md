@@ -1,8 +1,8 @@
-## 3.0.1 (Unreleased)
+## 3.0.1 (January 11, 2021)
 
 BUG FIXES:
 
-* Prevent multiple TSIG being added during retries [GH-116]
+* Prevent multiple TSIG being added during retries ([#116](https://github.com/terraform-providers/terraform-provider-dns/issues/116))
 
 ## 3.0.0 (October 14, 2020)
 
