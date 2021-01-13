@@ -3,45 +3,62 @@
 set -eu
 set -x
 
-# Test domains
-export DNS_DOMAIN_FORWARD="example.com."
-export DNS_DOMAIN_REVERSE="1.168.192.in-addr.arpa."
-
-DOCKER_CONTAINER_NAME=tf_acc_dns
-
 cleanup_docker() {
-	docker stop "$DOCKER_CONTAINER_NAME"
-	docker rm "$DOCKER_CONTAINER_NAME"
+	docker stop ns
+	docker stop kdc || :
 }
 failed() {
 	cleanup_docker
 	exit 1
 }
 
-# Run with no authentication
+docker buildx build --target kdc --tag kdc internal/provider/testdata/
+docker buildx build --target ns --tag ns internal/provider/testdata/
+docker buildx build --target keytab --output type=local,dest=internal/provider/testdata/ internal/provider/testdata/
 
 export DNS_UPDATE_SERVER=127.0.0.1
-export DNS_UPDATE_PORT=55354
-docker run -d -p "$DNS_UPDATE_PORT:53/udp" \
-	-e BIND_DOMAIN_FORWARD=${DNS_DOMAIN_FORWARD} \
-	-e BIND_DOMAIN_REVERSE=${DNS_DOMAIN_REVERSE} \
-	-e BIND_INSECURE=true \
-	--name "$DOCKER_CONTAINER_NAME" drebes/bind || failed
+export DNS_UPDATE_PORT=53
+
+# Run with no authentication
+
+docker run -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v $PWD/internal/provider/testdata/named.conf.none:/etc/named.conf:ro \
+	-p 127.0.0.1:53:53 \
+	-p 127.0.0.1:53:53/udp \
+	--rm --name ns --hostname ns.example.com ns || failed
 GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
 cleanup_docker
 
-# Run with authentication
+# Run with TSIG authentication
 
-export DNS_UPDATE_KEYNAME=${DNS_DOMAIN_FORWARD}
-export DNS_UPDATE_KEYALGORITHM="hmac-sha256"
-export DNS_UPDATE_KEYSECRET="04+m/0R3Hdn9Kd+LGQOxrUihU1n3sghtkGf8OJOuGSQ="
-docker run -d -p "$DNS_UPDATE_PORT:53/udp" \
-	-v $PWD/internal/provider/env_defaults.sh:/env_defaults.sh:ro \
-	-e BIND_DOMAIN_FORWARD=${DNS_DOMAIN_FORWARD} \
-	-e BIND_DOMAIN_REVERSE=${DNS_DOMAIN_REVERSE} \
-	-e BIND_KEY_NAME=${DNS_UPDATE_KEYNAME} \
-	-e BIND_KEY_ALGORITHM=${DNS_UPDATE_KEYALGORITHM} \
-	-e BIND_KEY_SECRET=${DNS_UPDATE_KEYSECRET} \
-	--name "$DOCKER_CONTAINER_NAME" drebes/bind || failed
-GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+docker run -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v $PWD/internal/provider/testdata/named.conf.tsig:/etc/named.conf:ro \
+	-p 127.0.0.1:53:53 \
+	-p 127.0.0.1:53:53/udp \
+	--rm --name ns --hostname ns.example.com ns || failed
+DNS_UPDATE_KEYNAME="tsig.example.com." DNS_UPDATE_KEYALGORITHM="hmac-sha256" DNS_UPDATE_KEYSECRET="UHeh4Iv/DVmPhi6LqCPDs6PixnyjLH4fjGESBjYnOyE=" GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+cleanup_docker
+
+# Run with Kerberos authentication
+
+docker run -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+	-v /etc/localtime:/etc/localtime:ro \
+	-p 127.0.0.1:88:88 \
+	-p 127.0.0.1:88:88/udp \
+	-p 127.0.0.1:464:464 \
+	-p 127.0.0.1:464:464/udp \
+	--rm --name kdc kdc || failed
+docker run -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v $PWD/internal/provider/testdata/named.conf.kerberos:/etc/named.conf:ro \
+	-p 127.0.0.1:53:53 \
+	-p 127.0.0.1:53:53/udp \
+	--rm --name ns --hostname ns.example.com ns || failed
+# FIXME Run Kerberos tests here
 cleanup_docker
