@@ -20,9 +20,11 @@ install:
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933
 - bash scripts/gogetcookie.sh
+- sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq krb5-user
 
 script:
 - make test
+- echo 127.0.0.1 ns.example.com | sudo tee -a /etc/hosts
 - bash internal/provider/acceptance.sh
 - make vet
 
