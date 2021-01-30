@@ -31,12 +31,24 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
 cleanup_docker
 
-# Run with TSIG authentication
+# Run with TSIG authentication (MD5)
 
 docker run -d --tmpfs /tmp --tmpfs /run \
 	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
 	-v /etc/localtime:/etc/localtime:ro \
-	-v $PWD/internal/provider/testdata/named.conf.tsig:/etc/named.conf:ro \
+	-v $PWD/internal/provider/testdata/named.conf.md5:/etc/named.conf:ro \
+	-p 127.0.0.1:53:53 \
+	-p 127.0.0.1:53:53/udp \
+	--rm --name ns --hostname ns.example.com ns || failed
+DNS_UPDATE_KEYNAME="tsig.example.com." DNS_UPDATE_KEYALGORITHM="hmac-md5" DNS_UPDATE_KEYSECRET="mX9XKfw/RXBj5ZnZKMy4Nw==" GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+cleanup_docker
+
+# Run with TSIG authentication (SHA256)
+
+docker run -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+	-v /etc/localtime:/etc/localtime:ro \
+	-v $PWD/internal/provider/testdata/named.conf.sha256:/etc/named.conf:ro \
 	-p 127.0.0.1:53:53 \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
