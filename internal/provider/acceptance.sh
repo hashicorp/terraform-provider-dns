@@ -33,9 +33,10 @@ cleanup_docker
 # Run with authentication
 
 export DNS_UPDATE_KEYNAME=${DNS_DOMAIN_FORWARD}
-export DNS_UPDATE_KEYALGORITHM="hmac-md5"
-export DNS_UPDATE_KEYSECRET="c3VwZXJzZWNyZXQ="
+export DNS_UPDATE_KEYALGORITHM="hmac-sha256"
+export DNS_UPDATE_KEYSECRET="04+m/0R3Hdn9Kd+LGQOxrUihU1n3sghtkGf8OJOuGSQ="
 docker run -d -p "$DNS_UPDATE_PORT:53/udp" \
+	-v $PWD/internal/provider/env_defaults.sh:/env_defaults.sh:ro \
 	-e BIND_DOMAIN_FORWARD=${DNS_DOMAIN_FORWARD} \
 	-e BIND_DOMAIN_REVERSE=${DNS_DOMAIN_REVERSE} \
 	-e BIND_KEY_NAME=${DNS_UPDATE_KEYNAME} \

@@ -350,9 +350,18 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 
 Retry:
 	r, _, err := c.Exchange(msg, srv_addr)
+	if err != nil {
+		if isTimeout(err) && retries > 0 {
+			retries--
+			goto Retry
+		}
+		return r, err
+	}
 
-	switch err {
-	case dns.ErrTruncated:
+	if r.Rcode == dns.RcodeServerFailure && retries > 0 {
+		retries--
+		goto Retry
+	} else if r.Truncated {
 		if retry_tcp {
 			switch c.Net {
 			case "udp":
@@ -372,16 +381,6 @@ Retry:
 		// Reset retries counter on protocol change
 		retries = meta.(*DNSClient).retries
 		goto Retry
-	case nil:
-		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
-			retries--
-			goto Retry
-		}
-	default:
-		if isTimeout(err) && retries > 0 {
-			retries--
-			goto Retry
-		}
 	}
 
 	return r, err
