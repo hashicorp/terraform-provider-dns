@@ -1,3 +1,11 @@
+## 3.1.0 (Unreleased)
+
+Binary releases of this provider now include the darwin-arm64 platform. 
+
+NEW FEATURES:
+
+* Support for GSSAPI/Kerberos signed updates [GH-30]
+
 ## 3.0.1 (January 11, 2021)
 
 BUG FIXES:
