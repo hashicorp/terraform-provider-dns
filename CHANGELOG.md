@@ -1,10 +1,10 @@
-## 3.1.0 (Unreleased)
+## 3.1.0 (February 19, 2021)
 
 Binary releases of this provider now include the darwin-arm64 platform. 
 
 NEW FEATURES:
 
-* Support for GSSAPI/Kerberos signed updates [GH-30]
+* Support for GSSAPI/Kerberos signed updates ([#30](https://github.com/terraform-providers/terraform-provider-dns/issues/30))
 
 ## 3.0.1 (January 11, 2021)
 
