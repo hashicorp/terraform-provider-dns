@@ -3,16 +3,18 @@ layout: "dns"
 page_title: "Provider: DNS"
 sidebar_current: "docs-dns-index"
 description: |-
-  The DNS provider supports DNS updates (RFC 2136). Additionally, the provider can be configured with secret key based transaction authentication (RFC 2845).
+  The DNS provider supports DNS updates (RFC 2136). Additionally, the provider can be configured with secret key based transaction authentication (RFC 2845) or can use GSS-TSIG (RFC 3645).
 ---
 
 # DNS Provider
 
-The DNS provider supports DNS updates (RFC 2136). Additionally, the provider can be configured with secret key based transaction authentication (RFC 2845).
+The DNS provider supports DNS updates (RFC 2136). Additionally, the provider can be configured with secret key based transaction authentication (RFC 2845) or can use GSS-TSIG (RFC 3645).
 
 Use the navigation to the left to read about the available resources.
 
 ## Example Usage
+
+Using secret key based transaction authentication (RFC 2845):
 
 ```hcl
 # Configure the DNS Provider
@@ -31,13 +33,33 @@ resource "dns_a_record_set" "www" {
 }
 ```
 
+Using GSS-TSIG (RFC 3645):
+
+```hcl
+provider "dns" {
+  update {
+    server = "ns.example.com" # Using the hostname is important in order for an SPN to match
+    gssapi {
+      realm    = "EXAMPLE.COM"
+      username = "user"
+      keytab   = "/path/to/keytab"
+    }
+  }
+}
+
+# Create a DNS A record set
+resource "dns_a_record_set" "www" {
+  # ...
+}
+```
+
 ## Configuration Reference
 
 `update` - (Optional) When the provider is used for DNS updates, this block is required. Structure is documented below.
 
 The `update` block supports the following attributes:
 
-* `server` - (Required) The IPv4 address of the DNS server to send updates to.
+* `server` - (Required) The hostname or IP address of the DNS server to send updates to.
 * `port` - (Optional) The target UDP port on the server where updates are sent to. Defaults to `53`.
 * `transport` - (Optional) Transport to use for DNS queries. Valid values are `udp`, `udp4`, `udp6`, `tcp`, `tcp4`, or `tcp6`. Any UDP transport will retry automatically with the equivalent TCP transport in the event of a truncated response. Defaults to `udp`.
 * `timeout` - (Optional) Timeout for DNS queries. Valid values are durations expressed as `500ms`, etc. or a plain number which is treated as whole seconds.
@@ -46,3 +68,13 @@ The `update` block supports the following attributes:
 * `key_algorithm` - (Optional; Required if `key_name` is set) When using TSIG authentication, the algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` or `hmac-sha512`.
 * `key_secret` - (Optional; Required if `key_name` is set)
     A Base64-encoded string containing the shared secret to be used for TSIG.
+* `gssapi` - (Optional) A `gssapi` block (documented below). Only one `gssapi` block may be in the configuration. Conflicts with use of `key_name`, `key_algorithm` and `key_secret`.
+
+### gssapi Configuration Block
+
+The `gssapi` configuration block supports the following arguments:
+
+* `realm` - (Required) The Kerberos realm or Active Directory domain.
+* `username` - (Optional) The name of the user to authenticate as. If not set the current user session will be used.
+* `password` - (Optional; This or `keytab` is required if `username` is set) The matching password for `username`.
+* `keytab` - (Optional; This or `password` is required if `username` is set, not supported on Windows) The path to a keytab file containing a key for `username`.

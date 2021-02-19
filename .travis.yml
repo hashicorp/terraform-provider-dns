@@ -1,4 +1,4 @@
-dist: trusty
+dist: focal
 sudo: required
 services:
 - docker
@@ -7,7 +7,12 @@ go:
   - stable
   - tip
 env:
-  - GO111MODULE=on GOFLAGS=-mod=vendor
+  - GO111MODULE=on GOFLAGS=-mod=vendor DOCKER_CLI_EXPERIMENTAL=enabled
+
+before_install:
+  - mkdir -vp ~/.docker/cli-plugins/
+  - curl --silent -L "https://github.com/docker/buildx/releases/download/v0.5.1/buildx-v0.5.1.linux-amd64" > ~/.docker/cli-plugins/docker-buildx
+  - chmod a+x ~/.docker/cli-plugins/docker-buildx
 
 install:
 # This script is used by the Travis build to install a cookie for
@@ -15,9 +20,11 @@ install:
 # packages that live there.
 # See: https://github.com/golang/go/issues/12933
 - bash scripts/gogetcookie.sh
+- sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq krb5-user
 
 script:
 - make test
+- echo 127.0.0.1 ns.example.com | sudo tee -a /etc/hosts
 - bash internal/provider/acceptance.sh
 - make vet
 
