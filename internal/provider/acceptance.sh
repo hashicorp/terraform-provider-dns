@@ -28,7 +28,7 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:53:53 \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
-GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
 
 # Run with TSIG authentication (MD5)
@@ -40,7 +40,7 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:53:53 \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
-DNS_UPDATE_KEYNAME="tsig.example.com." DNS_UPDATE_KEYALGORITHM="hmac-md5" DNS_UPDATE_KEYSECRET="mX9XKfw/RXBj5ZnZKMy4Nw==" GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+DNS_UPDATE_KEYNAME="tsig.example.com." DNS_UPDATE_KEYALGORITHM="hmac-md5" DNS_UPDATE_KEYSECRET="mX9XKfw/RXBj5ZnZKMy4Nw==" GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
 
 # Run with TSIG authentication (SHA256)
@@ -52,7 +52,7 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:53:53 \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
-DNS_UPDATE_KEYNAME="tsig.example.com." DNS_UPDATE_KEYALGORITHM="hmac-sha256" DNS_UPDATE_KEYSECRET="UHeh4Iv/DVmPhi6LqCPDs6PixnyjLH4fjGESBjYnOyE=" GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+DNS_UPDATE_KEYNAME="tsig.example.com." DNS_UPDATE_KEYALGORITHM="hmac-sha256" DNS_UPDATE_KEYSECRET="UHeh4Iv/DVmPhi6LqCPDs6PixnyjLH4fjGESBjYnOyE=" GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
 
 export KRB5_CONFIG="${PWD}/internal/provider/testdata/krb5.conf"
@@ -76,7 +76,7 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:53:53 \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
-DNS_UPDATE_USERNAME="test" DNS_UPDATE_PASSWORD="password" GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+DNS_UPDATE_USERNAME="test" DNS_UPDATE_PASSWORD="password" GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
 
 # Run with Kerberos authentication (keytab authentication)
@@ -96,7 +96,7 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:53:53 \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
-DNS_UPDATE_USERNAME="test" DNS_UPDATE_KEYTAB="${PWD}/internal/provider/testdata/test.keytab" GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+DNS_UPDATE_USERNAME="test" DNS_UPDATE_KEYTAB="${PWD}/internal/provider/testdata/test.keytab" GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
 
 # Run with Kerberos authentication (session authentication)
@@ -117,5 +117,5 @@ docker run -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:53:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
 echo "password" | kinit test@EXAMPLE.COM
-GO111MODULE=on GOFLAGS=-mod=vendor make testacc TEST=./internal/provider || failed
+GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
