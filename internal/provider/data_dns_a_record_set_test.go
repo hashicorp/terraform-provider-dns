@@ -1,65 +1,29 @@
 package provider
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
 func TestAccDataDnsARecordSet_Basic(t *testing.T) {
-	tests := []struct {
-		DataSourceBlock string
-		DataSourceName  string
-		Expected        []string
-		Host            string
-	}{
-		{
-			`
-			data "dns_a_record_set" "foo" {
-			  host = "127.0.0.1.nip.io"
-			}
-			`,
-			"foo",
-			[]string{
-				"127.0.0.1",
+	recordName := "data.dns_a_record_set.test"
+
+	resource.UnitTest(t, resource.TestCase{
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "dns_a_record_set" "test" {
+  host = "127.0.0.1.nip.io"
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(recordName, "addrs.#", "1"),
+					resource.TestCheckTypeSetElemAttr(recordName, "addrs.*", "127.0.0.1"),
+					resource.TestCheckResourceAttr(recordName, "id", "127.0.0.1.nip.io"),
+				),
 			},
-			"127.0.0.1.nip.io",
 		},
-		{
-			`
-			data "dns_a_record_set" "ntp" {
-			  host = "time-c.nist.gov"
-			}
-			`,
-			"ntp",
-			[]string{
-				"129.6.15.30",
-			},
-			"time-c.nist.gov",
-		},
-	}
-
-	for _, test := range tests {
-		recordName := fmt.Sprintf("data.dns_a_record_set.%s", test.DataSourceName)
-
-		resource.UnitTest(t, resource.TestCase{
-			Providers: testAccProviders,
-			Steps: []resource.TestStep{
-				{
-					Config: test.DataSourceBlock,
-					Check: resource.ComposeTestCheckFunc(
-						testCheckAttrStringArray(recordName, "addrs", test.Expected),
-					),
-				},
-				{
-					Config: test.DataSourceBlock,
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr(recordName, "id", test.Host),
-					),
-				},
-			},
-		})
-	}
-
+	})
 }

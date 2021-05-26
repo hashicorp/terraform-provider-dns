@@ -7,39 +7,22 @@ import (
 )
 
 func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
-	tests := []struct {
-		DataSourceBlock string
-		Expected        string
-		Host            string
-	}{
-		{
-			`
-			data "dns_cname_record_set" "foo" {
-			  host = "www.hashicorp.com"
-			}
-			`,
-			"cname.vercel-dns.com.",
-			"www.hashicorp.com",
-		},
-	}
+	recordName := "data.dns_cname_record_set.test"
 
-	for _, test := range tests {
-		resource.UnitTest(t, resource.TestCase{
-			Providers: testAccProviders,
-			Steps: []resource.TestStep{
-				{
-					Config: test.DataSourceBlock,
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.dns_cname_record_set.foo", "cname", test.Expected),
-					),
-				},
-				{
-					Config: test.DataSourceBlock,
-					Check: resource.ComposeTestCheckFunc(
-						resource.TestCheckResourceAttr("data.dns_cname_record_set.foo", "id", test.Host),
-					),
-				},
+	resource.UnitTest(t, resource.TestCase{
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "dns_cname_record_set" "test" {
+  host = "www.hashicorp.com"
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(recordName, "cname", "cname.vercel-dns.com."),
+					resource.TestCheckResourceAttr(recordName, "id", "www.hashicorp.com"),
+				),
 			},
-		})
-	}
+		},
+	})
 }
