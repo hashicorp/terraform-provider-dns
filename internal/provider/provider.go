@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strconv"
@@ -456,7 +457,12 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 	}
 
 Retry:
+	log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
+
 	r, _, err := c.Exchange(msg, srv_addr)
+
+	log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
+
 	if err != nil {
 		if isTimeout(err) && retries > 0 {
 			retries--
