@@ -18,7 +18,7 @@ data "dns_srv_record_set" "sip" {
 }
 
 output "sipserver" {
-  value = "${data.dns_srv_record_set.sip.srv.0.target}"
+  value = data.dns_srv_record_set.sip.srv.0.target
 }
 ```
 

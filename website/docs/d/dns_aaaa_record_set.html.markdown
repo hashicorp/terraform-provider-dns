@@ -18,7 +18,7 @@ data "dns_aaaa_record_set" "google" {
 }
 
 output "google_addrs" {
-  value = "${join(",", data.dns_aaaa_record_set.google.addrs)}"
+  value = join(",", data.dns_aaaa_record_set.google.addrs)
 }
 ```
 

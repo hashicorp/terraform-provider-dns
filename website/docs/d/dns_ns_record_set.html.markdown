@@ -18,7 +18,7 @@ data "dns_ns_record_set" "google" {
 }
 
 output "google_nameservers" {
-  value = "${join(",", data.dns_ns_record_set.google.nameservers)}"
+  value = join(",", data.dns_ns_record_set.google.nameservers)
 }
 ```
 

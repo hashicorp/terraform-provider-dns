@@ -18,7 +18,7 @@ data "dns_ptr_record_set" "hashicorp" {
 }
 
 output "hashi_ptr" {
-  value = "${data.dns_ptr_record_set.hashicorp.ptr}"
+  value = data.dns_ptr_record_set.hashicorp.ptr
 }
 ```
 

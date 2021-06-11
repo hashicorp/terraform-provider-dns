@@ -18,11 +18,11 @@ data "dns_txt_record_set" "hashicorp" {
 }
 
 output "hashi_txt" {
-  value = "${data.dns_txt_record_set.hashi.record}"
+  value = data.dns_txt_record_set.hashi.record
 }
 
 output "hashi_txts" {
-  value = "${join(",", data.dns_txt_record_set.hashi.records)}"
+  value = join(",", data.dns_txt_record_set.hashi.records)
 }
 ```
 
