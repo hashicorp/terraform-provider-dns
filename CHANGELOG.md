@@ -1,3 +1,9 @@
+## 3.2.0 (Unreleased)
+
+NEW FEATURES:
+
+* Add debug logging for resource DNS messages (GH-145)
+
 ## 3.1.0 (February 19, 2021)
 
 Binary releases of this provider now include the darwin-arm64 platform. 
