@@ -1,8 +1,8 @@
-## 3.2.0 (Unreleased)
+## 3.2.0 (June 14, 2021)
 
 NEW FEATURES:
 
-* Add debug logging for resource DNS messages (GH-145)
+* Add debug logging for resource DNS messages ([#145](https://github.com/terraform-providers/terraform-provider-dns/issues/145))
 
 ## 3.1.0 (February 19, 2021)
 
