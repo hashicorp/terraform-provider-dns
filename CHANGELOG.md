@@ -1,3 +1,11 @@
+## 3.2.1 (Unreleased)
+
+DEPENDENCIES:
+
+* Bump github.com/hashicorp/terraform-plugin-sdk/v2 from v2.6.1 to v2.7.0 [GH-153]
+* Bump github.com/miekg/dns from v1.1.36-0.20210109083720-731b191cabd1 to v1.1.43 [GH-155]
+* Bump github.com/jcmturner/gokrb5/v8 from v8.4.1 to v8.4.2 [GH-155]
+
 ## 3.2.0 (June 14, 2021)
 
 NEW FEATURES:
