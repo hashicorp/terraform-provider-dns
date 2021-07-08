@@ -58,6 +58,9 @@ jobs:
           - '1.0.2'
     steps:
 
+    - name: Add hosts entry
+      run: echo "127.0.0.1 ns.example.com" | sudo tee -a /etc/hosts
+
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
