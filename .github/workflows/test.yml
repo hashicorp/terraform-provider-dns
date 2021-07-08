@@ -61,6 +61,9 @@ jobs:
     - name: Add hosts entry
       run: echo "127.0.0.1 ns.example.com" | sudo tee -a /etc/hosts
 
+    - name: Install krb5-user
+      run: sudo apt-get install krb5-user
+
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
