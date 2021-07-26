@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
@@ -9,11 +8,31 @@ import (
 )
 
 func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
-	// KEM: This test does not work in the GitHub Actions runner, although
-	// it passes locally and on Travis. More investigation needed.
-	if isInGitHubActions := os.Getenv("GITHUB_ACTIONS"); isInGitHubActions == "true" {
-		t.Skip()
-	}
+	recordName := "data.dns_txt_record_set.test"
+
+	resource.UnitTest(t, resource.TestCase{
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "dns_txt_record_set" "test" {
+  host = "terraform-provider-dns-txt.hashicorptest.com"
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-txt.hashicorptest.com"),
+					resource.TestCheckResourceAttr(recordName, "record", "v=spf1 -all"),
+					resource.TestCheckResourceAttr(recordName, "records.#", "1"),
+					resource.TestCheckTypeSetElemAttr(recordName, "records.*", "v=spf1 -all"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataDnsTxtRecordSet_512Byte(t *testing.T) {
+	t.Skipf("TODO: Large TXT record handling (greater than 512 bytes) will return errors in some environments. Reference: https://github.com/hashicorp/terraform-provider-dns/issues/157")
+
 	recordName := "data.dns_txt_record_set.test"
 
 	resource.UnitTest(t, resource.TestCase{

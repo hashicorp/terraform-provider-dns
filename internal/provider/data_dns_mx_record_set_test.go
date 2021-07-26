@@ -15,31 +15,15 @@ func TestAccDataDnsMXRecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_mx_record_set" "test" {
-  domain = "google.com"
+  domain = "terraform-provider-dns-mx.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(recordName, "id", "google.com"),
-					resource.TestCheckResourceAttr(recordName, "mx.#", "5"),
+					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-mx.hashicorptest.com"),
+					resource.TestCheckResourceAttr(recordName, "mx.#", "1"),
 					resource.TestCheckTypeSetElemNestedAttrs(recordName, "mx.*", map[string]string{
-						"exchange":   "aspmx.l.google.com.",
+						"exchange":   "example.com.",
 						"preference": "10",
-					}),
-					resource.TestCheckTypeSetElemNestedAttrs(recordName, "mx.*", map[string]string{
-						"exchange":   "alt1.aspmx.l.google.com.",
-						"preference": "20",
-					}),
-					resource.TestCheckTypeSetElemNestedAttrs(recordName, "mx.*", map[string]string{
-						"exchange":   "alt2.aspmx.l.google.com.",
-						"preference": "30",
-					}),
-					resource.TestCheckTypeSetElemNestedAttrs(recordName, "mx.*", map[string]string{
-						"exchange":   "alt3.aspmx.l.google.com.",
-						"preference": "40",
-					}),
-					resource.TestCheckTypeSetElemNestedAttrs(recordName, "mx.*", map[string]string{
-						"exchange":   "alt4.aspmx.l.google.com.",
-						"preference": "50",
 					}),
 				),
 			},
