@@ -15,12 +15,12 @@ func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_cname_record_set" "test" {
-  host = "www.hashicorp.com"
+  host = "terraform-provider-dns-cname.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(recordName, "cname", "cname.vercel-dns.com."),
-					resource.TestCheckResourceAttr(recordName, "id", "www.hashicorp.com"),
+					resource.TestCheckResourceAttr(recordName, "cname", "example.com."),
+					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-cname.hashicorptest.com"),
 				),
 			},
 		},

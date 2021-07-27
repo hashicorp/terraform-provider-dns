@@ -15,17 +15,17 @@ func TestAccDataDnsSRVRecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_srv_record_set" "test" {
-  service = "_http._tcp.mxtoolbox.com"
+  service = "_sip._tls.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(recordName, "id", "_http._tcp.mxtoolbox.com"),
+					resource.TestCheckResourceAttr(recordName, "id", "_sip._tls.hashicorptest.com"),
 					resource.TestCheckResourceAttr(recordName, "srv.#", "1"),
 					resource.TestCheckTypeSetElemNestedAttrs(recordName, "srv.*", map[string]string{
-						"port":     "80",
-						"priority": "10",
-						"target":   "mxtoolbox.com.",
-						"weight":   "100",
+						"port":     "443",
+						"priority": "0",
+						"target":   "example.com.",
+						"weight":   "0",
 					}),
 				),
 			},
