@@ -16,7 +16,7 @@ command -v docker >/dev/null 2>&1 || { echo >&2 "docker command not installed or
 command -v go >/dev/null 2>&1 || { echo >&2 "go command not installed or in PATH"; exit 1; }
 command -v kinit >/dev/null 2>&1 || { echo >&2 "kinit command not installed or in PATH"; exit 1; }
 command -v make >/dev/null 2>&1 || { echo >&2 "make command not installed or in PATH"; exit 1; }
-command -v terraform >/dev/null 2>&1 || test -n "${TF_ACC_TERRAFORM_PATH:-}" || { echo >&2 "terraform command not installed or in PATH, TF_ACC_TERRAFORM_PATH not set"; exit 1; }
+# command -v terraform >/dev/null 2>&1 || test -n "${TF_ACC_TERRAFORM_PATH:-}" || { echo >&2 "terraform command not installed or in PATH, TF_ACC_TERRAFORM_PATH not set"; exit 1; }
 grep -q "ns.example.com" /etc/hosts || echo >&2 "127.0.0.1 ns.example.com not found in /etc/hosts, ensure this mapping is handled in DNS resolution configuration"
 
 docker buildx build --target kdc --tag kdc internal/provider/testdata/

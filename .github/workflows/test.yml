@@ -143,7 +143,9 @@ jobs:
     steps:
     - name: Install Docker
       run: |
-        brew install --cask docker
+        # brew install --cask docker
+        # docker version
+        brew install docker
         docker version
 
     - name: Set up Go
