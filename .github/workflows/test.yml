@@ -98,13 +98,13 @@ jobs:
           # - '0.14.5'
 
     steps:
-    - name: Update Docker
-      run: |
-        Get-Package -Name Docker -ProviderName DockerMsftProvider
-        Find-Package -Name Docker -ProviderName DockerMsftProvider
-        Install-Package -Name Docker -ProviderName DockerMsftProvider -Update -Force
-        New-Item -Path C:\ProgramData\docker\config -Name "daemon.json" -ItemType "file" -Value '{"experimental": "enabled"}'
-        Start-Service Docker
+    # - name: Update Docker
+    #   run: |
+    #     Get-Package -Name Docker -ProviderName DockerMsftProvider
+    #     Find-Package -Name Docker -ProviderName DockerMsftProvider
+    #     Install-Package -Name Docker -ProviderName DockerMsftProvider -Update -Force
+    #     New-Item -Path C:\ProgramData\docker\config -Name "daemon.json" -ItemType "file" -Value '{"experimental": "enabled"}'
+    #     Start-Service Docker
 
     - name: Add hosts entry
       run: Add-Content -Path $env:windir\System32\drivers\etc\hosts -Value "`n127.0.0.1`tns.example.com" -Force
