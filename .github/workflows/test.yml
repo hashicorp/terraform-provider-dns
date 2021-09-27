@@ -46,7 +46,7 @@ jobs:
     name: Matrix Test
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -74,7 +74,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: TF acceptance tests
-      timeout-minutes: 10
+      timeout-minutes: 30
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
