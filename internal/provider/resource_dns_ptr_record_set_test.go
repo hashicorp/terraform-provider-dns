@@ -60,7 +60,7 @@ func TestAccDnsPtrRecordSet_basic(t *testing.T) {
 				PreConfig: deletePtrRecordSet,
 				Config:    testAccDnsPtrRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "ptrs.#", "2"),
 					testAccCheckDnsPtrRecordSetExists(t, resourceName, []interface{}{"bar.example.com.", "baz.example.com"}, &rec_name, &rec_zone),
 				),
 			},
@@ -72,7 +72,7 @@ func TestAccDnsPtrRecordSet_basic(t *testing.T) {
 			{
 				Config: testAccDnsPtrRecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "3"),
+					resource.TestCheckResourceAttr(resourceRoot, "ptrs.#", "3"),
 					testAccCheckDnsPtrRecordSetExists(t, resourceRoot, []interface{}{"machine1.example.com.", "machine2.example.com.", "machine3.example.com."}, &rec_name, &rec_zone),
 				),
 			},
@@ -127,7 +127,7 @@ func testAccCheckDnsPtrRecordSetExists(t *testing.T, n string, pointers []interf
 			ptrs.Add(ptr)
 		}
 		if !ptrs.Equal(expected) {
-			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, addresses)
+			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, ptrs)
 		}
 		return nil
 	}
