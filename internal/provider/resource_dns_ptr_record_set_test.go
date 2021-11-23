@@ -61,7 +61,7 @@ func TestAccDnsPtrRecordSet_basic(t *testing.T) {
 				Config:    testAccDnsPtrRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "ptrs.#", "2"),
-					testAccCheckDnsPtrRecordSetExists(t, resourceName, []interface{}{"bar.example.com.", "baz.example.com"}, &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordSetExists(t, resourceName, []interface{}{"bar.example.com.", "baz.example.com."}, &rec_name, &rec_zone),
 				),
 			},
 			{
