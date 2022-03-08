@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_mx_record_set"
-sidebar_current: "docs-dns-mx-record-set"
 description: |-
   Creates an MX type DNS record set.
 ---

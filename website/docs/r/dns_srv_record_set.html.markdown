@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_srv_record_set"
-sidebar_current: "docs-dns-srv-record-set"
 description: |-
   Creates an SRV type DNS record set.
 ---

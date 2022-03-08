@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_txt_record_set"
-sidebar_current: "docs-dns-txt-record-set"
 description: |-
   Creates a TXT type DNS record set.
 ---

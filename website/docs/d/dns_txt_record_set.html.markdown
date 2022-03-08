@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_txt_record_set"
-sidebar_current: "docs-dns-datasource-txt-record-set"
 description: |-
   Get DNS TXT record set.
 ---

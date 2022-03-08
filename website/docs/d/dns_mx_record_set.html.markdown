@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_mx_record_set"
-sidebar_current: "docs-dns-datasource-mx-record-set"
 description: |-
   Get DNS MX record set.
 ---

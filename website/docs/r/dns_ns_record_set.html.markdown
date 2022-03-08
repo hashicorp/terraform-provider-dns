@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_ns_record_set"
-sidebar_current: "docs-dns-ns-record-set"
 description: |-
   Creates a NS type DNS record set.
 ---
