@@ -154,6 +154,7 @@ func New() *schema.Provider {
 			"dns_mx_record_set":   resourceDnsMXRecordSet(),
 			"dns_ns_record_set":   resourceDnsNSRecordSet(),
 			"dns_ptr_record":      resourceDnsPtrRecord(),
+			"dns_ptr_record_set":  resourceDnsPtrRecordSet(),
 			"dns_srv_record_set":  resourceDnsSRVRecordSet(),
 			"dns_txt_record_set":  resourceDnsTXTRecordSet(),
 		},
