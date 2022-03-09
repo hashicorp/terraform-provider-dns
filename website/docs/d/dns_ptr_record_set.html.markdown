@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_ptr_record_set"
-sidebar_current: "docs-dns-datasource-ptr-record-set"
 description: |-
   Get DNS PTR record set.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "Provider: DNS"
-sidebar_current: "docs-dns-index"
 description: |-
   The DNS provider supports DNS updates (RFC 2136). Additionally, the provider can be configured with secret key based transaction authentication (RFC 2845) or can use GSS-TSIG (RFC 3645).
 ---

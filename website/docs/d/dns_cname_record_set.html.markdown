@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_cname_record_set"
-sidebar_current: "docs-dns-datasource-cname-record-set"
 description: |-
   Get DNS CNAME record set.
 ---

@@ -1,7 +1,6 @@
 ---
 layout: "dns"
 page_title: "DNS: dns_ns_record_set"
-sidebar_current: "docs-dns-datasource-ns-record-set"
 description: |-
   Get DNS ns record set.
 ---
