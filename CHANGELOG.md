@@ -1,3 +1,11 @@
+## 3.2.2 (March 21, 2022)
+
+BUG FIXES:
+
+* provider: Prevented potential EDNS TCP KeepAlive timeout issues ([#187](https://github.com/hashicorp/terraform-provider-dns/pull/187))
+* provider: Prevented potential EDNS Expire issues ([#187](https://github.com/hashicorp/terraform-provider-dns/pull/195))
+* provider: Prevented "cannot unmarshal DNS" error for responses without EDNS and greater than 512 bytes
+
 ## 3.2.1 (July 08, 2021)
 
 DEPENDENCIES:
