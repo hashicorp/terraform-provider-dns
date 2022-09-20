@@ -110,12 +110,20 @@ func resourceDnsNSRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 
 			// Loop through all the old nameservers and remove them
 			for _, nameserver := range remove {
-				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d NS %s", rec_fqdn, ttl, nameserver.(string)))
+				rr_remove, err := dns.NewRR(fmt.Sprintf("%s %d NS %s", rec_fqdn, ttl, nameserver.(string)))
+				if err != nil {
+					return fmt.Errorf("error reading DNS record: %s", err)
+				}
+
 				msg.Remove([]dns.RR{rr_remove})
 			}
 			// Loop through all the new nameservers and insert them
 			for _, nameserver := range add {
-				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d NS %s", rec_fqdn, ttl, nameserver.(string)))
+				rr_insert, err := dns.NewRR(fmt.Sprintf("%s %d NS %s", rec_fqdn, ttl, nameserver.(string)))
+				if err != nil {
+					return fmt.Errorf("error reading DNS record: %s", err)
+				}
+
 				msg.Insert([]dns.RR{rr_insert})
 			}
 

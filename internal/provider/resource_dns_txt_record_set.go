@@ -107,12 +107,20 @@ func resourceDnsTXTRecordSetUpdate(d *schema.ResourceData, meta interface{}) err
 
 			// Loop through all the old addresses and remove them
 			for _, txt := range remove {
-				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d TXT \"%s\"", fqdn, ttl, txt))
+				rr_remove, err := dns.NewRR(fmt.Sprintf("%s %d TXT \"%s\"", fqdn, ttl, txt))
+				if err != nil {
+					return fmt.Errorf("error reading DNS record: %s", err)
+				}
+
 				msg.Remove([]dns.RR{rr_remove})
 			}
 			// Loop through all the new addresses and insert them
 			for _, txt := range add {
-				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d TXT \"%s\"", fqdn, ttl, txt))
+				rr_insert, err := dns.NewRR(fmt.Sprintf("%s %d TXT \"%s\"", fqdn, ttl, txt))
+				if err != nil {
+					return fmt.Errorf("error reading DNS record: %s", err)
+				}
+
 				msg.Insert([]dns.RR{rr_insert})
 			}
 

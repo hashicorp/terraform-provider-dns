@@ -619,7 +619,11 @@ func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) 
 
 		msg.SetUpdate(d.Get("zone").(string))
 
-		rr, _ := dns.NewRR(fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType]))
+		rr, err := dns.NewRR(fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType]))
+		if err != nil {
+			return fmt.Errorf("error reading DNS record: %s", err)
+		}
+
 		msg.RemoveRRset([]dns.RR{rr})
 
 		r, err := exchange(msg, true, meta)

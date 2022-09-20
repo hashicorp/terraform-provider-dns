@@ -24,7 +24,11 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 
 		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
 
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 NS", rec_fqdn))
+		rr_remove, err := dns.NewRR(fmt.Sprintf("%s 0 NS", rec_fqdn))
+		if err != nil {
+			t.Fatalf("Error reading DNS record: %s", err)
+		}
+
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
 		r, err := exchange(msg, true, meta)
