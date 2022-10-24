@@ -1,3 +1,11 @@
+## 3.2.4 (unreleased)
+
+BUG FIXES:
+
+* provider: Prevent panic by returning errors from miekg/dns to practitioners ([#233](https://github.com/hashicorp/terraform-provider-dns/pull/233))
+* resource/dns_a_record_set: Strip leading zeros from IPv4 addresses ([#233](https://github.com/hashicorp/terraform-provider-dns/pull/233))
+* resource/dns_aaaa_record_set: Strip leading zeros from IPv4 addresses ([#233](https://github.com/hashicorp/terraform-provider-dns/pull/233))
+
 ## 3.2.3 (March 21, 2022)
 
 BUG FIXES:

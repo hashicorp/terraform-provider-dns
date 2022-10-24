@@ -24,7 +24,13 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 
 		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
 
-		rr_remove, _ := dns.NewRR(fmt.Sprintf("%s 0 PTR", rec_fqdn))
+		rrStr := fmt.Sprintf("%s 0 PTR", rec_fqdn)
+
+		rr_remove, err := dns.NewRR(rrStr)
+		if err != nil {
+			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
+		}
+
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
 		r, err := exchange(msg, true, meta)

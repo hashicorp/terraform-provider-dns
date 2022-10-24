@@ -94,11 +94,23 @@ func resourceDnsCnameRecordUpdate(d *schema.ResourceData, meta interface{}) erro
 			o, n := d.GetChange("cname")
 
 			if o != "" {
-				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d CNAME %s", rec_fqdn, ttl, o))
+				rrStr := fmt.Sprintf("%s %d CNAME %s", rec_fqdn, ttl, o)
+
+				rr_remove, err := dns.NewRR(rrStr)
+				if err != nil {
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+				}
+
 				msg.Remove([]dns.RR{rr_remove})
 			}
 			if n != "" {
-				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d CNAME %s", rec_fqdn, ttl, n))
+				rrStr := fmt.Sprintf("%s %d CNAME %s", rec_fqdn, ttl, n)
+
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+				}
+
 				msg.Insert([]dns.RR{rr_insert})
 			}
 

@@ -106,12 +106,24 @@ func resourceDnsAAAARecordSetUpdate(d *schema.ResourceData, meta interface{}) er
 
 			// Loop through all the old addresses and remove them
 			for _, addr := range remove {
-				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, addr.(string)))
+				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
+
+				rr_remove, err := dns.NewRR(rrStr)
+				if err != nil {
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+				}
+
 				msg.Remove([]dns.RR{rr_remove})
 			}
 			// Loop through all the new addresses and insert them
 			for _, addr := range add {
-				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, addr.(string)))
+				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
+
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+				}
+
 				msg.Insert([]dns.RR{rr_insert})
 			}
 

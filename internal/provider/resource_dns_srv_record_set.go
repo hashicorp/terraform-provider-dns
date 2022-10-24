@@ -6,8 +6,9 @@ import (
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-provider-dns/internal/hashcode"
 	"github.com/miekg/dns"
+
+	"github.com/hashicorp/terraform-provider-dns/internal/hashcode"
 )
 
 func resourceDnsSRVRecordSet() *schema.Resource {
@@ -135,13 +136,25 @@ func resourceDnsSRVRecordSetUpdate(d *schema.ResourceData, meta interface{}) err
 			// Loop through all the old addresses and remove them
 			for _, srv := range remove {
 				s := srv.(map[string]interface{})
-				rr_remove, _ := dns.NewRR(fmt.Sprintf("%s %d SRV %d %d %d %s", fqdn, ttl, s["priority"], s["weight"], s["port"], s["target"]))
+				rrStr := fmt.Sprintf("%s %d SRV %d %d %d %s", fqdn, ttl, s["priority"], s["weight"], s["port"], s["target"])
+
+				rr_remove, err := dns.NewRR(rrStr)
+				if err != nil {
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+				}
+
 				msg.Remove([]dns.RR{rr_remove})
 			}
 			// Loop through all the new addresses and insert them
 			for _, srv := range add {
 				s := srv.(map[string]interface{})
-				rr_insert, _ := dns.NewRR(fmt.Sprintf("%s %d SRV %d %d %d %s", fqdn, ttl, s["priority"], s["weight"], s["port"], s["target"]))
+				rrStr := fmt.Sprintf("%s %d SRV %d %d %d %s", fqdn, ttl, s["priority"], s["weight"], s["port"], s["target"])
+
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+				}
+
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
