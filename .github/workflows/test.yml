@@ -22,7 +22,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: '1.16'
+        go-version: '1.18'
       id: go
 
     - name: Check out code into the Go module directory
@@ -51,11 +51,14 @@ jobs:
       fail-fast: false
       matrix:
         terraform:
-          - '0.12.31'
-          - '0.13.7'
-          - '0.14.11'
-          - '0.15.5'
-          - '1.0.2'
+          - '0.12.*'
+          - '0.13.*'
+          - '0.14.*'
+          - '0.15.*'
+          - '1.0.*'
+          - '1.1.*'
+          - '1.2.*'
+          - '1.3.*'
     steps:
 
     - name: Add hosts entry
@@ -67,7 +70,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: '1.16'
+        go-version: '1.18'
       id: go
 
     - name: Check out code into the Go module directory
