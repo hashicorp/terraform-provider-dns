@@ -126,9 +126,11 @@ func resourceDnsMXRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 			// Loop through all the old addresses and remove them
 			for _, mx := range remove {
 				m := mx.(map[string]interface{})
-				rr_remove, err := dns.NewRR(fmt.Sprintf("%s %d MX %d %s", fqdn, ttl, m["preference"], m["exchange"]))
+				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, ttl, m["preference"], m["exchange"])
+
+				rr_remove, err := dns.NewRR(rrStr)
 				if err != nil {
-					return fmt.Errorf("error reading DNS record: %s", err)
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
 				}
 
 				msg.Remove([]dns.RR{rr_remove})
@@ -136,9 +138,11 @@ func resourceDnsMXRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 			// Loop through all the new addresses and insert them
 			for _, mx := range add {
 				m := mx.(map[string]interface{})
-				rr_insert, err := dns.NewRR(fmt.Sprintf("%s %d MX %d %s", fqdn, ttl, m["preference"], m["exchange"]))
+				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, ttl, m["preference"], m["exchange"])
+
+				rr_insert, err := dns.NewRR(rrStr)
 				if err != nil {
-					return fmt.Errorf("error reading DNS record: %s", err)
+					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
 				}
 
 				msg.Insert([]dns.RR{rr_insert})
