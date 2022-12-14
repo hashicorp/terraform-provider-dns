@@ -21,10 +21,10 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
       - name: goreleaser check
         continue-on-error: true
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
           args: check
       - name: goreleaser build
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
           args: build --snapshot
