@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-20.04
         terraform:
           - '0.12.*'
           - '0.13.*'
