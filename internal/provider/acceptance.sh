@@ -28,8 +28,8 @@ export DNS_UPDATE_PORT=15353
 
 # Run with no authentication
 
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v $PWD/internal/provider/testdata/named.conf.none:/etc/named.conf:ro \
 	-p 127.0.0.1:15353:53 \
@@ -40,8 +40,8 @@ cleanup_docker
 
 # Run with TSIG authentication (MD5)
 
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v $PWD/internal/provider/testdata/named.conf.md5:/etc/named.conf:ro \
 	-p 127.0.0.1:15353:53 \
@@ -52,8 +52,8 @@ cleanup_docker
 
 # Run with TSIG authentication (SHA256)
 
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v $PWD/internal/provider/testdata/named.conf.sha256:/etc/named.conf:ro \
 	-p 127.0.0.1:15353:53 \
@@ -68,16 +68,16 @@ export DNS_UPDATE_SERVER="ns.example.com"
 
 # Run with Kerberos authentication (password authentication)
 
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-p 127.0.0.1:18888:88 \
 	-p 127.0.0.1:18888:88/udp \
 	-p 127.0.0.1:464:464 \
 	-p 127.0.0.1:464:464/udp \
 	--rm --name kdc kdc || failed
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v $PWD/internal/provider/testdata/named.conf.kerberos:/etc/named.conf:ro \
 	-p 127.0.0.1:15353:53 \
@@ -88,16 +88,16 @@ cleanup_docker
 
 # Run with Kerberos authentication (keytab authentication)
 
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-p 127.0.0.1:18888:88 \
 	-p 127.0.0.1:18888:88/udp \
 	-p 127.0.0.1:464:464 \
 	-p 127.0.0.1:464:464/udp \
 	--rm --name kdc kdc || failed
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v $PWD/internal/provider/testdata/named.conf.kerberos:/etc/named.conf:ro \
 	-p 127.0.0.1:15353:53 \
@@ -108,16 +108,16 @@ cleanup_docker
 
 # Run with Kerberos authentication (session authentication)
 
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-p 127.0.0.1:18888:88 \
 	-p 127.0.0.1:18888:88/udp \
 	-p 127.0.0.1:464:464 \
 	-p 127.0.0.1:464:464/udp \
 	--rm --name kdc kdc || failed
-docker run -d --tmpfs /tmp --tmpfs /run \
-	-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
+	-v /sys/fs/cgroup:/sys/fs/cgroup:rw \
 	-v /etc/localtime:/etc/localtime:ro \
 	-v $PWD/internal/provider/testdata/named.conf.kerberos:/etc/named.conf:ro \
 	-p 127.0.0.1:15353:53 \
