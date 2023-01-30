@@ -6,6 +6,11 @@ EXPOSE 464
 
 STOPSIGNAL SIGRTMIN+3
 
+# Systemd backport
+RUN yum -y install  wget
+RUN wget --no-check-certificate https://copr.fedorainfracloud.org/coprs/jsynacek/systemd-backports-for-centos-7/repo/epel-7/jsynacek-systemd-backports-for-centos-7-epel-7.repo -O /etc/yum.repos.d/jsynacek-systemd-centos-7.repo
+RUN yum -y update systemd ; yum clean all
+
 # Install Kerberos client packages and copy in configuration
 RUN yum install -y krb5-workstation && yum update -y && yum clean all
 COPY --chown=root:root krb5.conf /etc/krb5.conf
