@@ -1,4 +1,4 @@
-## 3.2.4 (unreleased)
+## 3.2.4 (February 06, 2023)
 
 BUG FIXES:
 
