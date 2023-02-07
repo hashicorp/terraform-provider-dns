@@ -13,16 +13,20 @@ func dataSourceDnsCnameRecordSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"host": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Host to look up.",
 			},
 
 			"cname": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "A CNAME record associated with host.",
 			},
 		},
+
+		Description: "Use this data source to get DNS CNAME record set of the host.",
 	}
 }
 

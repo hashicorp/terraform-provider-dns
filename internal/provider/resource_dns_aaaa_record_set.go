@@ -24,26 +24,34 @@ func resourceDnsAAAARecordSet() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateZone,
+				Description: "DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing " +
+					"dot.",
 			},
 			"name": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validateName,
+				Description: "The name of the record set. The `zone` argument will be appended to this value to " +
+					"create the full record path.",
 			},
 			"addresses": {
-				Type:     schema.TypeSet,
-				Required: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Set:      hashIPString,
+				Type:        schema.TypeSet,
+				Required:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Set:         hashIPString,
+				Description: "The IPv6 addresses this record set will point to.",
 			},
 			"ttl": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
-				Default:  3600,
+				Type:        schema.TypeInt,
+				Optional:    true,
+				ForceNew:    true,
+				Default:     3600,
+				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
 		},
+
+		Description: "Creates an AAAA type DNS record set.",
 	}
 }
 

@@ -13,8 +13,9 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 		Read: dataSourceDnsMXRecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"domain": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Domain to look up.",
 			},
 			"mx": {
 				Type: schema.TypeList,
@@ -31,8 +32,11 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 					},
 				},
 				Computed: true,
+				Description: "A list of records. They are sorted by ascending preference then alphabetically by " +
+					"exchange to stay consistent across runs.",
 			},
 		},
+		Description: "Use this data source to get DNS MX records for a domain.",
 	}
 }
 

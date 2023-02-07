@@ -12,15 +12,18 @@ func dataSourceDnsARecordSet() *schema.Resource {
 		Read: dataSourceDnsARecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"host": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Host to look up.",
 			},
 			"addrs": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
+				Description: "A list of IP addresses. IP addresses are always sorted to avoid constant changing plans.",
 			},
 		},
+		Description: "Use this data source to get DNS A records of the host.",
 	}
 }
 

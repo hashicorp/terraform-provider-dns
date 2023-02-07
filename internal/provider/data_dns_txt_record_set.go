@@ -13,22 +13,27 @@ func dataSourceDnsTxtRecordSet() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"host": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: "Host to look up.",
 			},
 
 			"record": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The first TXT record.",
 			},
 
 			"records": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
+				Description: "A list of TXT records.",
 			},
 		},
+
+		Description: "Use this data source to get DNS TXT record set of the host.",
 	}
 }
 

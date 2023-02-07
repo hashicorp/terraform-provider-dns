@@ -27,15 +27,17 @@ func New() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"update": {
-				Type:     schema.TypeList,
-				MaxItems: 1,
-				Optional: true,
+				Type:        schema.TypeList,
+				MaxItems:    1,
+				Optional:    true,
+				Description: "When the provider is used for DNS updates, this block is required.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"server": {
 							Type:        schema.TypeString,
 							Required:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_SERVER", nil),
+							Description: "The hostname or IP address of the DNS server to send updates to.",
 						},
 						"port": {
 							Type:     schema.TypeInt,
@@ -51,16 +53,22 @@ func New() *schema.Provider {
 
 								return defaultPort, nil
 							},
+							Description: "The target UDP port on the server where updates are sent to. Defaults to `53`.",
 						},
 						"transport": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TRANSPORT", defaultTransport),
+							Description: "Transport to use for DNS queries. Valid values are `udp`, `udp4`, `udp6`, " +
+								"`tcp`, `tcp4`, or `tcp6`. Any UDP transport will retry automatically with the " +
+								"equivalent TCP transport in the event of a truncated response. Defaults to `udp`.",
 						},
 						"timeout": {
 							Type:        schema.TypeString,
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_TIMEOUT", defaultTimeout),
+							Description: "Timeout for DNS queries. Valid values are durations expressed as `500ms`, " +
+								"etc. or a plain number which is treated as whole seconds.",
 						},
 						"retries": {
 							Type:     schema.TypeInt,
@@ -76,6 +84,7 @@ func New() *schema.Provider {
 
 								return defaultRetries, nil
 							},
+							Description: "How many times to retry on connection timeout. Defaults to `3`.",
 						},
 						"key_name": {
 							Type:          schema.TypeString,
@@ -83,6 +92,7 @@ func New() *schema.Provider {
 							DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYNAME", nil),
 							ConflictsWith: []string{"update.0.gssapi.0"},
 							RequiredWith:  []string{"update.0.key_algorithm", "update.0.key_secret"},
+							Description:   "The name of the TSIG key used to sign the DNS update messages.",
 						},
 						"key_algorithm": {
 							Type:          schema.TypeString,
@@ -90,6 +100,9 @@ func New() *schema.Provider {
 							DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYALGORITHM", nil),
 							ConflictsWith: []string{"update.0.gssapi.0"},
 							RequiredWith:  []string{"update.0.key_name", "update.0.key_secret"},
+							Description: "Required if `key_name` is set. When using TSIG authentication, the " +
+								"algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` " +
+								"or `hmac-sha512`.",
 						},
 						"key_secret": {
 							Type:          schema.TypeString,
@@ -97,22 +110,29 @@ func New() *schema.Provider {
 							DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYSECRET", nil),
 							ConflictsWith: []string{"update.0.gssapi.0"},
 							RequiredWith:  []string{"update.0.key_name", "update.0.key_algorithm"},
+							Description: "Required if `key_name` is set\nA Base64-encoded string containing the " +
+								"shared secret to be used for TSIG.",
 						},
 						"gssapi": {
 							Type:     schema.TypeList,
 							MaxItems: 1,
 							Optional: true,
+							Description: "A `gssapi` block. Only one `gssapi` block may be in the configuration. " +
+								"Conflicts with use of `key_name`, `key_algorithm` and `key_secret`.",
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"realm": {
 										Type:        schema.TypeString,
 										Required:    true,
 										DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_REALM", nil),
+										Description: "The Kerberos realm or Active Directory domain.",
 									},
 									"username": {
 										Type:        schema.TypeString,
 										Optional:    true,
 										DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_USERNAME", nil),
+										Description: "The name of the user to authenticate as. If not set the current " +
+											"user session will be used.",
 									},
 									"password": {
 										Type:          schema.TypeString,
@@ -121,6 +141,8 @@ func New() *schema.Provider {
 										ConflictsWith: []string{"update.0.gssapi.0.keytab"},
 										RequiredWith:  []string{"update.0.gssapi.0.username"},
 										Sensitive:     true,
+										Description: "This or `keytab` is required if `username` is set. The matching " +
+											"password for `username`.",
 									},
 									"keytab": {
 										Type:          schema.TypeString,
@@ -128,6 +150,9 @@ func New() *schema.Provider {
 										DefaultFunc:   schema.EnvDefaultFunc("DNS_UPDATE_KEYTAB", nil),
 										ConflictsWith: []string{"update.0.gssapi.0.password"},
 										RequiredWith:  []string{"update.0.gssapi.0.username"},
+										Description: "This or `password` is required if `username` is set, not " +
+											"supported on Windows. The path to a keytab file containing a key for " +
+											"`username`.",
 									},
 								},
 							},

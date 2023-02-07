@@ -13,15 +13,18 @@ func dataSourceDnsNSRecordSet() *schema.Resource {
 		Read: dataSourceDnsNSRecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"host": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Host to look up.",
 			},
 			"nameservers": {
-				Type:     schema.TypeList,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				Computed: true,
+				Type:        schema.TypeList,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Computed:    true,
+				Description: "A list of nameservers. Nameservers are always sorted to avoid constant changing plans.",
 			},
 		},
+		Description: "Use this data source to get DNS ns records of the host.",
 	}
 }
 

@@ -13,8 +13,9 @@ func dataSourceDnsSRVRecordSet() *schema.Resource {
 		Read: dataSourceDnsSRVRecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"service": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Service to look up.",
 			},
 			"srv": {
 				Type: schema.TypeList,
@@ -38,9 +39,11 @@ func dataSourceDnsSRVRecordSet() *schema.Resource {
 						},
 					},
 				},
-				Computed: true,
+				Computed:    true,
+				Description: "A list of records. They are sorted to stay consistent across runs.",
 			},
 		},
+		Description: "Use this data source to get DNS SRV records for a service.",
 	}
 }
 

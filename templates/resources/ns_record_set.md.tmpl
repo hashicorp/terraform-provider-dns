@@ -1,0 +1,25 @@
+---
+page_title: "{{.Name}} {{.Type}} - {{.ProviderName}}"
+subcategory: ""
+description: |-
+{{ .Description | plainmarkdown | trimspace | prefixlines "  " }}
+---
+
+# {{.Name}} ({{.Type}})
+
+{{ .Description | trimspace }}
+
+## Example Usage
+
+{{ tffile "examples/resources/resource_ns_record_set.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Import
+
+Records can be imported using the FQDN, e.g.
+
+```shell
+terraform import dns_ns_record_set.www www.example.com.
+```
+

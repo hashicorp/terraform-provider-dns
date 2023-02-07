@@ -12,14 +12,17 @@ func dataSourceDnsPtrRecordSet() *schema.Resource {
 		Read: dataSourceDnsPtrRecordSetRead,
 		Schema: map[string]*schema.Schema{
 			"ip_address": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "IP address to look up.",
 			},
 			"ptr": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "A PTR record associated with `ip_address`.",
 			},
 		},
+		Description: "Use this data source to get DNS PTR record set of the ip address.",
 	}
 }
 
