@@ -53,14 +53,14 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsTXTRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "2"),
-					testAccCheckDnsTXTRecordSetExists(t, resourceName, []interface{}{"foo", "bar"}, &name, &zone),
+					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar"}, &name, &zone),
 				),
 			},
 			{
 				Config: testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(t, resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
 				),
 			},
 			{
@@ -68,7 +68,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				Config:    testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(t, resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
 				),
 			},
 			{
@@ -80,7 +80,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsTXTRecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "txt.#", "1"),
-					testAccCheckDnsTXTRecordSetExists(t, resourceRoot, []interface{}{"foo"}, &name, &zone),
+					testAccCheckDnsTXTRecordSetExists(resourceRoot, []interface{}{"foo"}, &name, &zone),
 				),
 			},
 			{
@@ -92,11 +92,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDnsTXTRecordSetDestroy(s *terraform.State) error {
-	return testAccCheckDnsDestroy(s, "dns_txt_record_set", dns.TypeTXT)
-}
-
-func testAccCheckDnsTXTRecordSetExists(t *testing.T, n string, txt []interface{}, name, zone *string) resource.TestCheckFunc {
+func testAccCheckDnsTXTRecordSetExists(n string, txt []interface{}, name, zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -140,25 +136,25 @@ func testAccCheckDnsTXTRecordSetExists(t *testing.T, n string, txt []interface{}
 	}
 }
 
-var testAccDnsTXTRecordSet_basic = fmt.Sprintf(`
+var testAccDnsTXTRecordSet_basic = `
   resource "dns_txt_record_set" "foo" {
     zone = "example.com."
     name = "foo"
     txt = ["foo", "bar"]
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsTXTRecordSet_update = fmt.Sprintf(`
+var testAccDnsTXTRecordSet_update = `
   resource "dns_txt_record_set" "foo" {
     zone = "example.com."
     name = "foo"
     txt = ["foo", "bar", "baz"]
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsTXTRecordSet_root = fmt.Sprintf(`
+var testAccDnsTXTRecordSet_root = `
   resource "dns_txt_record_set" "root" {
     zone = "example.com."
     txt = ["foo"]
     ttl = 300
-  }`)
+  }`

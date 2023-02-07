@@ -12,11 +12,11 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsMXRecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"domain": &schema.Schema{
+			"domain": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"mx": &schema.Schema{
+			"mx": {
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -37,6 +37,7 @@ func dataSourceDnsMXRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsMXRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	domain := d.Get("domain").(string)
 
 	records, err := net.LookupMX(domain)

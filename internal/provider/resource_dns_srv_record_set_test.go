@@ -51,14 +51,14 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsSRVRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "srv.#", "1"),
-					testAccCheckDnsSRVRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}}, &name, &zone),
+					testAccCheckDnsSRVRecordSetExists(resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}}, &name, &zone),
 				),
 			},
 			{
 				Config: testAccDnsSRVRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "srv.#", "2"),
-					testAccCheckDnsSRVRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
+					testAccCheckDnsSRVRecordSetExists(resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
 				),
 			},
 			{
@@ -66,7 +66,7 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 				Config:    testAccDnsSRVRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "srv.#", "2"),
-					testAccCheckDnsSRVRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
+					testAccCheckDnsSRVRecordSetExists(resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
 				),
 			},
 			{
@@ -82,7 +82,7 @@ func testAccCheckDnsSRVRecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_srv_record_set", dns.TypeSRV)
 }
 
-func testAccCheckDnsSRVRecordSetExists(t *testing.T, n string, srv []interface{}, name, zone *string) resource.TestCheckFunc {
+func testAccCheckDnsSRVRecordSetExists(n string, srv []interface{}, name, zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -132,7 +132,7 @@ func testAccCheckDnsSRVRecordSetExists(t *testing.T, n string, srv []interface{}
 	}
 }
 
-var testAccDnsSRVRecordSet_basic = fmt.Sprintf(`
+var testAccDnsSRVRecordSet_basic = `
   resource "dns_srv_record_set" "foo" {
     zone = "example.com."
     name = "_sip._tcp"
@@ -143,9 +143,9 @@ var testAccDnsSRVRecordSet_basic = fmt.Sprintf(`
       target = "bigbox.example.com."
     }
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsSRVRecordSet_update = fmt.Sprintf(`
+var testAccDnsSRVRecordSet_update = `
   resource "dns_srv_record_set" "foo" {
     zone = "example.com."
     name = "_sip._tcp"
@@ -162,4 +162,4 @@ var testAccDnsSRVRecordSet_update = fmt.Sprintf(`
       target = "backupbox.example.com."
     }
     ttl = 300
-  }`)
+  }`

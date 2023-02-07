@@ -22,19 +22,19 @@ func resourceDnsMXRecordSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"zone": &schema.Schema{
+			"zone": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateZone,
 			},
-			"name": &schema.Schema{
+			"name": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validateName,
 			},
-			"mx": &schema.Schema{
+			"mx": {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
@@ -52,7 +52,7 @@ func resourceDnsMXRecordSet() *schema.Resource {
 				},
 				Set: resourceDnsMXRecordSetHash,
 			},
-			"ttl": &schema.Schema{
+			"ttl": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
@@ -96,7 +96,9 @@ func resourceDnsMXRecordSetRead(d *schema.ResourceData, meta interface{}) error 
 		}
 		sort.Sort(ttl)
 
+		//nolint:errcheck
 		d.Set("mx", mx)
+		//nolint:errcheck
 		d.Set("ttl", ttl[0])
 	} else {
 		d.SetId("")
@@ -109,22 +111,27 @@ func resourceDnsMXRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	if meta != nil {
 
+		//nolint:forcetypeassert
 		ttl := d.Get("ttl").(int)
 		fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 
+		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		if d.HasChange("mx") {
 			o, n := d.GetChange("mx")
+			//nolint:forcetypeassert
 			os := o.(*schema.Set)
+			//nolint:forcetypeassert
 			ns := n.(*schema.Set)
 			remove := os.Difference(ns).List()
 			add := ns.Difference(os).List()
 
 			// Loop through all the old addresses and remove them
 			for _, mx := range remove {
+				//nolint:forcetypeassert
 				m := mx.(map[string]interface{})
 				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, ttl, m["preference"], m["exchange"])
 
@@ -137,6 +144,7 @@ func resourceDnsMXRecordSetUpdate(d *schema.ResourceData, meta interface{}) erro
 			}
 			// Loop through all the new addresses and insert them
 			for _, mx := range add {
+				//nolint:forcetypeassert
 				m := mx.(map[string]interface{})
 				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, ttl, m["preference"], m["exchange"])
 
@@ -172,8 +180,11 @@ func resourceDnsMXRecordSetDelete(d *schema.ResourceData, meta interface{}) erro
 
 func resourceDnsMXRecordSetHash(v interface{}) int {
 	var buf bytes.Buffer
+	//nolint:forcetypeassert
 	m := v.(map[string]interface{})
+	//nolint:forcetypeassert
 	buf.WriteString(fmt.Sprintf("%d-", m["preference"].(int)))
+	//nolint:forcetypeassert
 	buf.WriteString(fmt.Sprintf("%s-", m["exchange"].(string)))
 
 	return hashcode.String(buf.String())

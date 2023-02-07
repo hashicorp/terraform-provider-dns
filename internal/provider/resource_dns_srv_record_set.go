@@ -22,19 +22,19 @@ func resourceDnsSRVRecordSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"zone": &schema.Schema{
+			"zone": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateZone,
 			},
-			"name": &schema.Schema{
+			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateName,
 			},
-			"srv": &schema.Schema{
+			"srv": {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Resource{
@@ -60,7 +60,7 @@ func resourceDnsSRVRecordSet() *schema.Resource {
 				},
 				Set: resourceDnsSRVRecordSetHash,
 			},
-			"ttl": &schema.Schema{
+			"ttl": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
@@ -106,7 +106,9 @@ func resourceDnsSRVRecordSetRead(d *schema.ResourceData, meta interface{}) error
 		}
 		sort.Sort(ttl)
 
+		//nolint:errcheck
 		d.Set("srv", srv)
+		//nolint:errcheck
 		d.Set("ttl", ttl[0])
 	} else {
 		d.SetId("")
@@ -119,22 +121,27 @@ func resourceDnsSRVRecordSetUpdate(d *schema.ResourceData, meta interface{}) err
 
 	if meta != nil {
 
+		//nolint:forcetypeassert
 		ttl := d.Get("ttl").(int)
 		fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 
+		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		if d.HasChange("srv") {
 			o, n := d.GetChange("srv")
+			//nolint:forcetypeassert
 			os := o.(*schema.Set)
+			//nolint:forcetypeassert
 			ns := n.(*schema.Set)
 			remove := os.Difference(ns).List()
 			add := ns.Difference(os).List()
 
 			// Loop through all the old addresses and remove them
 			for _, srv := range remove {
+				//nolint:forcetypeassert
 				s := srv.(map[string]interface{})
 				rrStr := fmt.Sprintf("%s %d SRV %d %d %d %s", fqdn, ttl, s["priority"], s["weight"], s["port"], s["target"])
 
@@ -147,6 +154,7 @@ func resourceDnsSRVRecordSetUpdate(d *schema.ResourceData, meta interface{}) err
 			}
 			// Loop through all the new addresses and insert them
 			for _, srv := range add {
+				//nolint:forcetypeassert
 				s := srv.(map[string]interface{})
 				rrStr := fmt.Sprintf("%s %d SRV %d %d %d %s", fqdn, ttl, s["priority"], s["weight"], s["port"], s["target"])
 
@@ -182,10 +190,15 @@ func resourceDnsSRVRecordSetDelete(d *schema.ResourceData, meta interface{}) err
 
 func resourceDnsSRVRecordSetHash(v interface{}) int {
 	var buf bytes.Buffer
+	//nolint:forcetypeassert
 	m := v.(map[string]interface{})
+	//nolint:forcetypeassert
 	buf.WriteString(fmt.Sprintf("%d-", m["priority"].(int)))
+	//nolint:forcetypeassert
 	buf.WriteString(fmt.Sprintf("%d-", m["weight"].(int)))
+	//nolint:forcetypeassert
 	buf.WriteString(fmt.Sprintf("%d-", m["port"].(int)))
+	//nolint:forcetypeassert
 	buf.WriteString(fmt.Sprintf("%s-", m["target"].(string)))
 
 	return hashcode.String(buf.String())

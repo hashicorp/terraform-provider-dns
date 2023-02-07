@@ -12,11 +12,11 @@ func dataSourceDnsSRVRecordSet() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceDnsSRVRecordSetRead,
 		Schema: map[string]*schema.Schema{
-			"service": &schema.Schema{
+			"service": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"srv": &schema.Schema{
+			"srv": {
 				Type: schema.TypeList,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -45,6 +45,7 @@ func dataSourceDnsSRVRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsSRVRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	service := d.Get("service").(string)
 
 	_, records, err := net.LookupSRV("", "", service)

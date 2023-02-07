@@ -171,43 +171,58 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
+		//nolint:forcetypeassert
 		update := v.([]interface{})[0].(map[string]interface{})
 		if val, ok := update["port"]; ok {
-			port = int(val.(int))
+			//nolint:forcetypeassert
+			port = val.(int)
 		}
 		if val, ok := update["server"]; ok {
+			//nolint:forcetypeassert
 			server = val.(string)
 		}
 		if val, ok := update["transport"]; ok {
+			//nolint:forcetypeassert
 			transport = val.(string)
 		}
 		if val, ok := update["timeout"]; ok {
+			//nolint:forcetypeassert
 			timeout = val.(string)
 		}
 		if val, ok := update["retries"]; ok {
-			retries = int(val.(int))
+			//nolint:forcetypeassert
+			retries = val.(int)
 		}
 		if val, ok := update["key_name"]; ok {
+			//nolint:forcetypeassert
 			keyname = val.(string)
 		}
 		if val, ok := update["key_algorithm"]; ok {
+			//nolint:forcetypeassert
 			keyalgo = val.(string)
 		}
 		if val, ok := update["key_secret"]; ok {
+			//nolint:forcetypeassert
 			keysecret = val.(string)
 		}
+		//nolint:forcetypeassert
 		if val, ok := update["gssapi"]; ok && len(val.([]interface{})) > 0 {
+			//nolint:forcetypeassert
 			g := val.([]interface{})[0].(map[string]interface{})
 			if val, ok := g["realm"]; ok {
+				//nolint:forcetypeassert
 				realm = val.(string)
 			}
 			if val, ok := g["username"]; ok {
+				//nolint:forcetypeassert
 				username = val.(string)
 			}
 			if val, ok := g["password"]; ok {
+				//nolint:forcetypeassert
 				password = val.(string)
 			}
 			if val, ok := g["keytab"]; ok {
+				//nolint:forcetypeassert
 				keytab = val.(string)
 			}
 			gssapi = true
@@ -317,6 +332,7 @@ func getAVal(record interface{}) (string, int, error) {
 		return "", 0, fmt.Errorf("didn't get a A record")
 	}
 
+	//nolint:forcetypeassert
 	recstr := record.(*dns.A).String()
 	var name, class, typ, addr string
 	var ttl int
@@ -336,6 +352,7 @@ func getNSVal(record interface{}) (string, int, error) {
 		return "", 0, fmt.Errorf("didn't get a NS record")
 	}
 
+	//nolint:forcetypeassert
 	recstr := record.(*dns.NS).String()
 	var name, class, typ, nameserver string
 	var ttl int
@@ -355,6 +372,7 @@ func getAAAAVal(record interface{}) (string, int, error) {
 		return "", 0, fmt.Errorf("didn't get a AAAA record")
 	}
 
+	//nolint:forcetypeassert
 	recstr := record.(*dns.AAAA).String()
 	var name, class, typ, addr string
 	var ttl int
@@ -374,6 +392,7 @@ func getCnameVal(record interface{}) (string, int, error) {
 		return "", 0, fmt.Errorf("didn't get a CNAME record")
 	}
 
+	//nolint:forcetypeassert
 	recstr := record.(*dns.CNAME).String()
 	var name, class, typ, cname string
 	var ttl int
@@ -393,6 +412,7 @@ func getPtrVal(record interface{}) (string, int, error) {
 		return "", 0, fmt.Errorf("didn't get a PTR record")
 	}
 
+	//nolint:forcetypeassert
 	recstr := record.(*dns.PTR).String()
 	var name, class, typ, ptr string
 	var ttl int
@@ -407,26 +427,38 @@ func getPtrVal(record interface{}) (string, int, error) {
 
 func isTimeout(err error) bool {
 
+	//nolint:forcetypeassert
 	timeout, ok := err.(net.Error)
 	return ok && timeout.Timeout()
 }
 
 func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 
+	//nolint:forcetypeassert
 	c := meta.(*DNSClient).c
+	//nolint:forcetypeassert
 	srv_addr := meta.(*DNSClient).srv_addr
+	//nolint:forcetypeassert
 	keyname := meta.(*DNSClient).keyname
+	//nolint:forcetypeassert
 	keyalgo := meta.(*DNSClient).keyalgo
+	//nolint:forcetypeassert
 	c.Net = meta.(*DNSClient).transport
+	//nolint:forcetypeassert
 	retries := meta.(*DNSClient).retries
+	//nolint:forcetypeassert
 	g := meta.(*DNSClient).gssClient
 	retry_tcp := false
 
 	// GSS-TSIG
 	if tsig && g != nil {
+		//nolint:forcetypeassert
 		realm := meta.(*DNSClient).realm
+		//nolint:forcetypeassert
 		username := meta.(*DNSClient).username
+		//nolint:forcetypeassert
 		password := meta.(*DNSClient).password
+		//nolint:forcetypeassert
 		keytab := meta.(*DNSClient).keytab
 
 		var k string
@@ -445,6 +477,7 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 			return nil, fmt.Errorf("Error negotiating GSS context: %s", err)
 		}
 
+		//nolint:errcheck
 		defer g.DeleteContext(k)
 
 		keyname = k
@@ -492,6 +525,7 @@ Retry:
 		}
 
 		// Reset retries counter on protocol change
+		//nolint:forcetypeassert
 		retries = meta.(*DNSClient).retries
 		goto Retry
 	}
@@ -555,8 +589,10 @@ Loop:
 		return nil, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
 	}
 
+	//nolint:errcheck
 	d.Set("zone", *zone)
 	if name := strings.Join(labels[:len(labels)-common], "."); name != "" {
+		//nolint:errcheck
 		d.Set("name", name)
 	}
 
@@ -565,9 +601,11 @@ Loop:
 
 func resourceFQDN(d *schema.ResourceData) string {
 
+	//nolint:forcetypeassert
 	fqdn := d.Get("zone").(string)
 
 	if name, ok := d.GetOk("name"); ok {
+		//nolint:forcetypeassert
 		fqdn = fmt.Sprintf("%s.%s", name.(string), fqdn)
 	}
 
@@ -615,8 +653,10 @@ func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) 
 
 		fqdn := resourceFQDN(d)
 
+		//nolint:forcetypeassert
 		msg := new(dns.Msg)
 
+		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		rrStr := fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType])

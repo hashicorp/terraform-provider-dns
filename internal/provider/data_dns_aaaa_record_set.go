@@ -25,6 +25,7 @@ func dataSourceDnsAAAARecordSet() *schema.Resource {
 }
 
 func dataSourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	host := d.Get("host").(string)
 
 	_, aaaa, err := lookupIP(host)
@@ -33,6 +34,7 @@ func dataSourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) er
 	}
 	sort.Strings(aaaa)
 
+	//nolint:errcheck
 	d.Set("addrs", aaaa)
 	d.SetId(host)
 

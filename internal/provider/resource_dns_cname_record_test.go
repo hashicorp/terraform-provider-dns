@@ -49,20 +49,20 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 			{
 				Config: testAccDnsCnameRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, resourceName, "bar.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsCnameRecordExists(resourceName, "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deleteCnameRecord,
 				Config:    testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -78,7 +78,7 @@ func testAccCheckDnsCnameRecordDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_cname_record", dns.TypeCNAME)
 }
 
-func testAccCheckDnsCnameRecordExists(t *testing.T, n string, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
+func testAccCheckDnsCnameRecordExists(n, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -120,18 +120,18 @@ func testAccCheckDnsCnameRecordExists(t *testing.T, n string, expected string, r
 	}
 }
 
-var testAccDnsCnameRecord_basic = fmt.Sprintf(`
+var testAccDnsCnameRecord_basic = `
   resource "dns_cname_record" "foo" {
     zone = "example.com."
     name = "foo"
     cname = "bar.example.com."
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsCnameRecord_update = fmt.Sprintf(`
+var testAccDnsCnameRecord_update = `
   resource "dns_cname_record" "foo" {
     zone = "example.com."
     name = "foo"
     cname = "baz.example.com."
     ttl = 300
-  }`)
+  }`

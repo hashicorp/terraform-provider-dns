@@ -50,20 +50,20 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 			{
 				Config: testAccDnsPtrRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, resourceName, "bar.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(resourceName, "bar.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
 				PreConfig: deletePtrRecord,
 				Config:    testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -74,7 +74,7 @@ func TestAccDnsPtrRecord_basic(t *testing.T) {
 			{
 				Config: testAccDnsPtrRecord_root,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsPtrRecordExists(t, resourceRoot, "baz.example.com.", &rec_name, &rec_zone),
+					testAccCheckDnsPtrRecordExists(resourceRoot, "baz.example.com.", &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -90,7 +90,7 @@ func testAccCheckDnsPtrRecordDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_ptr_record", dns.TypePTR)
 }
 
-func testAccCheckDnsPtrRecordExists(t *testing.T, n string, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
+func testAccCheckDnsPtrRecordExists(n, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -132,25 +132,25 @@ func testAccCheckDnsPtrRecordExists(t *testing.T, n string, expected string, rec
 	}
 }
 
-var testAccDnsPtrRecord_basic = fmt.Sprintf(`
+var testAccDnsPtrRecord_basic = `
   resource "dns_ptr_record" "foo" {
     zone = "example.com."
     name = "r._dns-sd._udp"
     ptr = "bar.example.com."
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsPtrRecord_update = fmt.Sprintf(`
+var testAccDnsPtrRecord_update = `
   resource "dns_ptr_record" "foo" {
     zone = "example.com."
     name = "r._dns-sd._udp"
     ptr = "baz.example.com."
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsPtrRecord_root = fmt.Sprintf(`
+var testAccDnsPtrRecord_root = `
   resource "dns_ptr_record" "root" {
     zone = "example.com."
     ptr = "baz.example.com."
     ttl = 300
-  }`)
+  }`

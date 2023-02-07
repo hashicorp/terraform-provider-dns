@@ -33,6 +33,7 @@ func dataSourceDnsTxtRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsTxtRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	host := d.Get("host").(string)
 
 	records, err := net.LookupTXT(host)
@@ -41,10 +42,13 @@ func dataSourceDnsTxtRecordSetRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	if len(records) > 0 {
+		//nolint:errcheck
 		d.Set("record", records[0])
 	} else {
+		//nolint:errcheck
 		d.Set("record", "")
 	}
+	//nolint:errcheck
 	d.Set("records", records)
 	d.SetId(host)
 

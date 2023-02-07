@@ -27,6 +27,7 @@ func dataSourceDnsCnameRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsCnameRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	host := d.Get("host").(string)
 
 	cname, err := net.LookupCNAME(host)
@@ -34,6 +35,7 @@ func dataSourceDnsCnameRecordSetRead(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("error looking up CNAME records for %q: %s", host, err)
 	}
 
+	//nolint:errcheck
 	d.Set("cname", cname)
 	d.SetId(host)
 

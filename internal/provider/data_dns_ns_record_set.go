@@ -26,6 +26,7 @@ func dataSourceDnsNSRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	host := d.Get("host").(string)
 
 	nsRecords, err := net.LookupNS(host)

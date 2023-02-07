@@ -44,7 +44,7 @@ type DNSClient struct {
 	keytab    string
 }
 
-// Configures and returns a fully initialized DNSClient
+// Configures and returns a fully initialized DNSClient.
 func (c *Config) Client() (interface{}, error) {
 	log.Println("[INFO] Building DNSClient config structure")
 
@@ -97,7 +97,7 @@ func (c *Config) Client() (interface{}, error) {
 	return &client, nil
 }
 
-// Validates and converts HMAC algorithm
+// Validates and converts HMAC algorithm.
 func convertHMACAlgorithm(name string) (string, error) {
 	switch name {
 	case "hmac-md5":

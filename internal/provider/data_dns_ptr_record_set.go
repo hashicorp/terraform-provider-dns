@@ -24,6 +24,7 @@ func dataSourceDnsPtrRecordSet() *schema.Resource {
 }
 
 func dataSourceDnsPtrRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	//nolint:forcetypeassert
 	ipAddress := d.Get("ip_address").(string)
 	names, err := net.LookupAddr(ipAddress)
 	if err != nil {
@@ -33,6 +34,7 @@ func dataSourceDnsPtrRecordSetRead(d *schema.ResourceData, meta interface{}) err
 		return fmt.Errorf("error looking up PTR records for %q: no records found", ipAddress)
 	}
 
+	//nolint:errcheck
 	d.Set("ptr", names[0])
 	d.SetId(ipAddress)
 

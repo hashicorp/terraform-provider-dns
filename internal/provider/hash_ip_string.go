@@ -8,6 +8,7 @@ import (
 )
 
 func hashIPString(v interface{}) int {
+	//nolint:forcetypeassert
 	addr := v.(string)
 	ip := net.ParseIP(addr)
 	if ip != nil {

@@ -76,7 +76,9 @@ func resourceDnsAAAARecordSetRead(d *schema.ResourceData, meta interface{}) erro
 		}
 		sort.Sort(ttl)
 
+		//nolint:errcheck
 		d.Set("addresses", addresses)
+		//nolint:errcheck
 		d.Set("ttl", ttl[0])
 	} else {
 		d.SetId("")
@@ -89,23 +91,28 @@ func resourceDnsAAAARecordSetUpdate(d *schema.ResourceData, meta interface{}) er
 
 	if meta != nil {
 
+		//nolint:forcetypeassert
 		ttl := d.Get("ttl").(int)
 
 		rec_fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 
+		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		if d.HasChange("addresses") {
 			o, n := d.GetChange("addresses")
+			//nolint:forcetypeassert
 			os := o.(*schema.Set)
+			//nolint:forcetypeassert
 			ns := n.(*schema.Set)
 			remove := os.Difference(ns).List()
 			add := ns.Difference(os).List()
 
 			// Loop through all the old addresses and remove them
 			for _, addr := range remove {
+				//nolint:forcetypeassert
 				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
 
 				rr_remove, err := dns.NewRR(rrStr)
@@ -117,6 +124,7 @@ func resourceDnsAAAARecordSetUpdate(d *schema.ResourceData, meta interface{}) er
 			}
 			// Loop through all the new addresses and insert them
 			for _, addr := range add {
+				//nolint:forcetypeassert
 				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
 
 				rr_insert, err := dns.NewRR(rrStr)

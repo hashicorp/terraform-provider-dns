@@ -69,7 +69,9 @@ func resourceDnsCnameRecordRead(d *schema.ResourceData, meta interface{}) error 
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
+		//nolint:errcheck
 		d.Set("cname", cname)
+		//nolint:errcheck
 		d.Set("ttl", ttl)
 	} else {
 		d.SetId("")
@@ -82,12 +84,14 @@ func resourceDnsCnameRecordUpdate(d *schema.ResourceData, meta interface{}) erro
 
 	if meta != nil {
 
+		//nolint:forcetypeassert
 		ttl := d.Get("ttl").(int)
 
 		rec_fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 
+		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		if d.HasChange("cname") {

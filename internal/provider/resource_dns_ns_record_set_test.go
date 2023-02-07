@@ -51,14 +51,14 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsNSRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "2"),
-					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}, &rec_name, &rec_zone),
+					testAccCheckDnsNSRecordSetExists(resourceName, []interface{}{"ns1.testdns.co.uk.", "ns2.testdns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
-					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
+					testAccCheckDnsNSRecordSetExists(resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -66,7 +66,7 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 				Config:    testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
-					testAccCheckDnsNSRecordSetExists(t, resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
+					testAccCheckDnsNSRecordSetExists(resourceName, []interface{}{"ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk."}, &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -82,7 +82,7 @@ func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_ns_record_set", dns.TypeNS)
 }
 
-func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
+func testAccCheckDnsNSRecordSetExists(n string, nameserver []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -127,7 +127,7 @@ func testAccCheckDnsNSRecordSetExists(t *testing.T, n string, nameserver []inter
 	}
 }
 
-var testAccDnsNSRecordSet_basic = fmt.Sprintf(`
+var testAccDnsNSRecordSet_basic = `
   resource "dns_ns_record_set" "foo" {
     zone = "example.com."
     name = "foo"
@@ -136,12 +136,12 @@ var testAccDnsNSRecordSet_basic = fmt.Sprintf(`
 		"ns2.testdns.co.uk.",
 		]
     ttl = 60
-  }`)
+  }`
 
-var testAccDnsNSRecordSet_update = fmt.Sprintf(`
+var testAccDnsNSRecordSet_update = `
   resource "dns_ns_record_set" "foo" {
     zone = "example.com."
     name = "foo"
     nameservers = ["ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk.",]
     ttl = 60
-  }`)
+  }`

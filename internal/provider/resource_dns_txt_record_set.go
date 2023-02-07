@@ -20,25 +20,25 @@ func resourceDnsTXTRecordSet() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"zone": &schema.Schema{
+			"zone": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateZone,
 			},
-			"name": &schema.Schema{
+			"name": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validateName,
 			},
-			"txt": &schema.Schema{
+			"txt": {
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
 			},
-			"ttl": &schema.Schema{
+			"ttl": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
@@ -78,7 +78,9 @@ func resourceDnsTXTRecordSetRead(d *schema.ResourceData, meta interface{}) error
 		}
 		sort.Sort(ttl)
 
+		//nolint:errcheck
 		d.Set("txt", txt)
+		//nolint:errcheck
 		d.Set("ttl", ttl[0])
 	} else {
 		d.SetId("")
@@ -91,16 +93,20 @@ func resourceDnsTXTRecordSetUpdate(d *schema.ResourceData, meta interface{}) err
 
 	if meta != nil {
 
+		//nolint:forcetypeassert
 		ttl := d.Get("ttl").(int)
 		fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 
+		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		if d.HasChange("txt") {
 			o, n := d.GetChange("txt")
+			//nolint:forcetypeassert
 			os := o.(*schema.Set)
+			//nolint:forcetypeassert
 			ns := n.(*schema.Set)
 			remove := os.Difference(ns).List()
 			add := ns.Difference(os).List()

@@ -52,14 +52,14 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsMXRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "mx.#", "1"),
-					testAccCheckDnsMXRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}}, &name, &zone),
+					testAccCheckDnsMXRecordSetExists(resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}}, &name, &zone),
 				),
 			},
 			{
 				Config: testAccDnsMXRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "mx.#", "2"),
-					testAccCheckDnsMXRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
+					testAccCheckDnsMXRecordSetExists(resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
 				),
 			},
 			{
@@ -67,7 +67,7 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 				Config:    testAccDnsMXRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "mx.#", "2"),
-					testAccCheckDnsMXRecordSetExists(t, resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
+					testAccCheckDnsMXRecordSetExists(resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
 				),
 			},
 			{
@@ -79,7 +79,7 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsMXRecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "mx.#", "1"),
-					testAccCheckDnsMXRecordSetExists(t, resourceRoot, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}}, &name, &zone),
+					testAccCheckDnsMXRecordSetExists(resourceRoot, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}}, &name, &zone),
 				),
 			},
 			{
@@ -95,7 +95,7 @@ func testAccCheckDnsMXRecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_mx_record_set", dns.TypeMX)
 }
 
-func testAccCheckDnsMXRecordSetExists(t *testing.T, n string, mx []interface{}, name, zone *string) resource.TestCheckFunc {
+func testAccCheckDnsMXRecordSetExists(n string, mx []interface{}, name, zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -143,7 +143,7 @@ func testAccCheckDnsMXRecordSetExists(t *testing.T, n string, mx []interface{}, 
 	}
 }
 
-var testAccDnsMXRecordSet_basic = fmt.Sprintf(`
+var testAccDnsMXRecordSet_basic = `
   resource "dns_mx_record_set" "foo" {
     zone = "example.com."
     name = "foo"
@@ -152,9 +152,9 @@ var testAccDnsMXRecordSet_basic = fmt.Sprintf(`
       exchange = "smtp.example.org."
     }
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsMXRecordSet_update = fmt.Sprintf(`
+var testAccDnsMXRecordSet_update = `
   resource "dns_mx_record_set" "foo" {
     zone = "example.com."
     name = "foo"
@@ -167,9 +167,9 @@ var testAccDnsMXRecordSet_update = fmt.Sprintf(`
       exchange = "backup.example.org."
     }
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsMXRecordSet_root = fmt.Sprintf(`
+var testAccDnsMXRecordSet_root = `
   resource "dns_mx_record_set" "root" {
     zone = "example.com."
     mx {
@@ -177,4 +177,4 @@ var testAccDnsMXRecordSet_root = fmt.Sprintf(`
       exchange = "smtp.example.org."
     }
     ttl = 300
-  }`)
+  }`

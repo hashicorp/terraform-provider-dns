@@ -52,14 +52,14 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config: testAccDnsARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					testAccCheckDnsARecordSetExists(t, resourceName, []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
+					testAccCheckDnsARecordSetExists(resourceName, []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			{
 				Config: testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(t, resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+					testAccCheckDnsARecordSetExists(resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -67,7 +67,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config:    testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(t, resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+					testAccCheckDnsARecordSetExists(resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -79,7 +79,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config: testAccDnsARecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
-					testAccCheckDnsARecordSetExists(t, resourceRoot, []interface{}{"192.168.0.1"}, &rec_name, &rec_zone),
+					testAccCheckDnsARecordSetExists(resourceRoot, []interface{}{"192.168.0.1"}, &rec_name, &rec_zone),
 				),
 			},
 			{
@@ -95,7 +95,7 @@ func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_a_record_set", dns.TypeA)
 }
 
-func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
+func testAccCheckDnsARecordSetExists(n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -138,25 +138,25 @@ func testAccCheckDnsARecordSetExists(t *testing.T, n string, addr []interface{},
 	}
 }
 
-var testAccDnsARecordSet_basic = fmt.Sprintf(`
+var testAccDnsARecordSet_basic = `
   resource "dns_a_record_set" "foo" {
     zone = "example.com."
     name = "foo"
     addresses = ["192.168.000.001", "192.168.000.002"]
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsARecordSet_update = fmt.Sprintf(`
+var testAccDnsARecordSet_update = `
   resource "dns_a_record_set" "foo" {
     zone = "example.com."
     name = "foo"
     addresses = ["10.0.0.1", "10.0.0.2", "10.0.0.3"]
     ttl = 300
-  }`)
+  }`
 
-var testAccDnsARecordSet_root = fmt.Sprintf(`
+var testAccDnsARecordSet_root = `
   resource "dns_a_record_set" "root" {
     zone = "example.com."
     addresses = ["192.168.0.1"]
     ttl = 300
-  }`)
+  }`
