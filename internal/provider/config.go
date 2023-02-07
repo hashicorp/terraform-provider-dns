@@ -1,8 +1,8 @@
 package provider
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -10,6 +10,8 @@ import (
 
 	"github.com/bodgit/tsig"
 	"github.com/bodgit/tsig/gss"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/miekg/dns"
 )
 
@@ -44,9 +46,9 @@ type DNSClient struct {
 	keytab    string
 }
 
-// Configures and returns a fully initialized DNSClient.
-func (c *Config) Client() (interface{}, error) {
-	log.Println("[INFO] Building DNSClient config structure")
+// Client configures and returns a fully initialized DNSClient.
+func (c *Config) Client(ctx context.Context) (interface{}, diag.Diagnostics) {
+	tflog.Info(ctx, "[INFO] Building DNSClient config structure")
 
 	var client DNSClient
 	client.srv_addr = net.JoinHostPort(c.server, strconv.Itoa(c.port))
@@ -56,10 +58,10 @@ func (c *Config) Client() (interface{}, error) {
 	if c.gssapi && // GSSAPI requested
 		!(c.realm != "" && ((c.username == "" && c.password == "" && c.keytab == "") || // Rely on current user session
 			(c.username != "" && (c.password != "" || c.keytab != "")))) { // Supplied credentials with either password or keytab
-		return nil, fmt.Errorf("Error configuring provider: when using GSSAPI, \"realm\", \"username\" and either \"password\" or \"keytab\" should be non empty")
+		return nil, diag.Errorf("Error configuring provider: when using GSSAPI, \"realm\", \"username\" and either \"password\" or \"keytab\" should be non empty")
 	} else if !((c.keyname == "" && c.keysecret == "" && c.keyalgo == "") || // No TSIG required
 		(c.keyname != "" && c.keysecret != "" && c.keyalgo != "")) { // Supplied key name, secret and algorithm
-		return nil, fmt.Errorf("Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty")
+		return nil, diag.Errorf("Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty")
 	}
 
 	client.c = new(dns.Client)
@@ -73,21 +75,21 @@ func (c *Config) Client() (interface{}, error) {
 	client.keytab = c.keytab
 	if !c.gssapi && c.keyname != "" {
 		if !dns.IsFqdn(c.keyname) {
-			return nil, fmt.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
+			return nil, diag.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
 		}
 		keyname := strings.ToLower(c.keyname)
 		client.keyname = keyname
 		client.keysecret = c.keysecret
 		keyalgo, err := convertHMACAlgorithm(c.keyalgo)
 		if err != nil {
-			return nil, fmt.Errorf("Error configuring provider: %s", err)
+			return nil, diag.Errorf("Error configuring provider: %s", err)
 		}
 		client.keyalgo = keyalgo
 		client.c.TsigProvider = tsig.HMAC{keyname: c.keysecret}
 	} else if c.gssapi {
 		g, err := gss.NewClient(client.c)
 		if err != nil {
-			return nil, fmt.Errorf("Error initializing GSS library: %s", err)
+			return nil, diag.Errorf("Error initializing GSS library: %s", err)
 		}
 
 		client.gssClient = g

@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/miekg/dns"
 )
@@ -158,11 +160,11 @@ func New() *schema.Provider {
 			"dns_txt_record_set":  resourceDnsTXTRecordSet(),
 		},
 
-		ConfigureFunc: configureProvider,
+		ConfigureContextFunc: configureProvider,
 	}
 }
 
-func configureProvider(d *schema.ResourceData) (interface{}, error) {
+func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
@@ -238,7 +240,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 			portStr := os.Getenv("DNS_UPDATE_PORT")
 			port, err = strconv.Atoi(portStr)
 			if err != nil {
-				return nil, fmt.Errorf("invalid DNS_UPDATE_PORT environment variable: %s", err)
+				return nil, diag.Errorf("invalid DNS_UPDATE_PORT environment variable: %s", err)
 			}
 		} else {
 			port = defaultPort
@@ -258,7 +260,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 			env := os.Getenv("DNS_UPDATE_RETRIES")
 			retries, err = strconv.Atoi(env)
 			if err != nil {
-				return nil, fmt.Errorf("invalid DNS_UPDATE_RETRIES environment variable: %s", err)
+				return nil, diag.Errorf(fmt.Sprintf("invalid DNS_UPDATE_RETRIES environment variable: %s", err))
 			}
 		} else {
 			retries = defaultRetries
@@ -297,12 +299,12 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 			// Failing that, convert to an integer and treat as seconds
 			seconds, err := strconv.Atoi(timeout)
 			if err != nil {
-				return nil, fmt.Errorf("invalid timeout: %s", timeout)
+				return nil, diag.Errorf("invalid timeout: %s", timeout)
 			}
 			duration = time.Duration(seconds) * time.Second
 		}
 		if duration < 0 {
-			return nil, fmt.Errorf("timeout cannot be negative: %s", duration)
+			return nil, diag.Errorf("timeout cannot be negative: %s", duration)
 		}
 	}
 
@@ -322,7 +324,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		keytab:    keytab,
 	}
 
-	return config.Client()
+	return config.Client(ctx)
 }
 
 func getAVal(record interface{}) (string, int, error) {
