@@ -3,7 +3,7 @@ module github.com/hashicorp/terraform-provider-dns
 go 1.18
 
 require (
-	github.com/bodgit/tsig v1.2.1
+	github.com/bodgit/tsig v1.2.2
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.1
 	github.com/miekg/dns v1.1.50
