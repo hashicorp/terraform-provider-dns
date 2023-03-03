@@ -1,6 +1,6 @@
 module github.com/hashicorp/terraform-provider-dns
 
-go 1.18
+go 1.19
 
 require (
 	github.com/bodgit/tsig v1.2.2
