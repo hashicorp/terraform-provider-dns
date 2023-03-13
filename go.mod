@@ -6,7 +6,7 @@ require (
 	github.com/bodgit/tsig v1.2.2
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.25.0
-	github.com/miekg/dns v1.1.51
+	github.com/miekg/dns v1.1.52
 )
 
 require (
