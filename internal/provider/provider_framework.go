@@ -174,11 +174,15 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 }
 
 func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return nil
+	return []func() datasource.DataSource{
+		NewDnsARecordSetDataSource,
+	}
 }
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return nil
+	return []func() resource.Resource{
+		NewDnsARecordSetResource,
+	}
 }
 
 func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
@@ -338,7 +342,7 @@ type providerGssapiModel struct {
 	Keytab   types.String `tfsdk:"keytab"`
 }
 
-func exchange_framework(msg *dns.Msg, tsig bool, client DNSClient) (*dns.Msg, error) {
+func exchange_framework(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 
 	c := client.c
 	srv_addr := client.srv_addr
@@ -427,11 +431,12 @@ Retry:
 	return r, err
 }
 
-func resourceDnsImport_framework(id string, config dnsConfig, client DNSClient) (dnsConfig, error) {
+func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, error) {
+	var config dnsConfig
 
 	record := id
 	if !dns.IsFqdn(record) {
-		return dnsConfig{}, fmt.Errorf("Not a fully-qualified DNS name: %s", record)
+		return config, fmt.Errorf("Not a fully-qualified DNS name: %s", record)
 	}
 
 	labels := dns.SplitDomainName(record)
@@ -447,7 +452,7 @@ Loop:
 
 		r, err := exchange_framework(msg, true, client)
 		if err != nil {
-			return dnsConfig{}, fmt.Errorf("Error querying DNS record: %s", err)
+			return config, fmt.Errorf("Error querying DNS record: %s", err)
 		}
 
 		switch r.Rcode {
@@ -470,17 +475,17 @@ Loop:
 		case dns.RcodeNameError:
 			continue
 		default:
-			return dnsConfig{}, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+			return config, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 		}
 	}
 
 	if zone == nil {
-		return dnsConfig{}, fmt.Errorf("No SOA record in authority section in response for %s", record)
+		return config, fmt.Errorf("No SOA record in authority section in response for %s", record)
 	}
 
 	common := dns.CompareDomainName(record, *zone)
 	if common == 0 {
-		return dnsConfig{}, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
+		return config, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
 	}
 
 	config.Zone = *zone
@@ -499,7 +504,7 @@ func resourceFQDN_framework(config dnsConfig) string {
 	return fqdn
 }
 
-func resourceDnsRead_framework(config dnsConfig, client DNSClient, rrType uint16) ([]dns.RR, error) {
+func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, error) {
 
 	fqdn := resourceFQDN_framework(config)
 
@@ -529,39 +534,34 @@ func resourceDnsRead_framework(config dnsConfig, client DNSClient, rrType uint16
 	return r.Answer, nil
 }
 
-func resourceDnsDelete_framework(config dnsConfig, meta interface{}, rrType uint16) error {
+func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uint16) error {
 
-	if meta != nil {
+	fqdn := resourceFQDN_framework(config)
 
-		fqdn := resourceFQDN_framework(config)
+	//nolint:forcetypeassert
+	msg := new(dns.Msg)
 
-		//nolint:forcetypeassert
-		msg := new(dns.Msg)
+	//nolint:forcetypeassert
+	msg.SetUpdate(config.Zone)
 
-		//nolint:forcetypeassert
-		msg.SetUpdate(config.Zone)
+	rrStr := fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType])
 
-		rrStr := fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType])
-
-		rr, err := dns.NewRR(rrStr)
-		if err != nil {
-			return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
-		}
-
-		msg.RemoveRRset([]dns.RR{rr})
-
-		r, err := exchange(msg, true, meta)
-		if err != nil {
-			return fmt.Errorf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error deleting DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
-		}
-
-		return nil
-	} else {
-		return fmt.Errorf("update server is not set")
+	rr, err := dns.NewRR(rrStr)
+	if err != nil {
+		return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
 	}
+
+	msg.RemoveRRset([]dns.RR{rr})
+
+	r, err := exchange_framework(msg, true, client)
+	if err != nil {
+		return fmt.Errorf("Error deleting DNS record: %s", err)
+	}
+	if r.Rcode != dns.RcodeSuccess {
+		return fmt.Errorf("Error deleting DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+	}
+
+	return nil
 }
 
 type dnsConfig struct {

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -14,6 +15,7 @@ import (
 
 var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
+var testAccProviderFramework provider.Provider
 
 var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
 	"dns": providerserver.NewProtocol5WithError(NewFrameworkProvider()),
@@ -21,6 +23,7 @@ var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, 
 
 func init() {
 	testAccProvider = New()
+	//testAccProviderFramework = NewFrameworkProvider()
 	testAccProviders = map[string]*schema.Provider{
 		"dns": testAccProvider,
 	}
