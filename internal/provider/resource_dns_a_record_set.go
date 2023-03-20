@@ -17,6 +17,7 @@ import (
 	"github.com/miekg/dns"
 
 	"github.com/hashicorp/terraform-provider-dns/internal/modifiers/int64modifier"
+	"github.com/hashicorp/terraform-provider-dns/internal/modifiers/setmodifier"
 	"github.com/hashicorp/terraform-provider-dns/internal/validators/dnsvalidator"
 )
 
@@ -30,20 +31,13 @@ func NewDnsARecordSetResource() resource.Resource {
 	return &dnsARecordSetResource{}
 }
 
-func testProvider() dnsARecordSetResource {
-	return dnsARecordSetResource{}
-}
-
 type dnsARecordSetResource struct {
 	client *DNSClient
 }
 
 func (d *dnsARecordSetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
-		resp.Diagnostics.AddError(
-			"No Provider Configuration",
-			"DNS update server is not set",
-		)
+		return
 	}
 
 	client, ok := req.ProviderData.(*DNSClient)
@@ -93,6 +87,9 @@ func (d *dnsARecordSetResource) Schema(ctx context.Context, req resource.SchemaR
 			"addresses": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
+				PlanModifiers: []planmodifier.Set{
+					setmodifier.StripLeadingZeroesModifier(),
+				},
 				Description: "The IPv4 addresses this record set will point to.",
 			},
 			"ttl": schema.Int64Attribute{
@@ -170,8 +167,9 @@ func (d *dnsARecordSetResource) Create(ctx context.Context, req resource.CreateR
 			return
 		}
 		var convertDiags diag.Diagnostics
-		plan.Addresses, convertDiags = types.SetValueFrom(ctx, plan.Addresses.Type(ctx), addresses)
+		plan.Addresses, convertDiags = types.SetValueFrom(ctx, types.StringType, addresses)
 		if convertDiags.HasError() {
+			resp.Diagnostics.Append(convertDiags...)
 			return
 		}
 		plan.TTL = types.Int64Value(int64(ttl[0]))

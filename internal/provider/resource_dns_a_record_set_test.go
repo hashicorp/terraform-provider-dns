@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	resource2 "github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -17,7 +19,18 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 	resourceRoot := "dns_a_record_set.root"
 
 	deleteARecordSet := func() {
-		meta := testAccProvider.Meta()
+		var req *resource2.ConfigureRequest
+		//NewDnsARecordSetResource().Configure(context.Background(), *req, nil)
+
+		//var configureResource resource2.ResourceWithConfigure
+
+		configureResource, convErr := (NewDnsARecordSetResource()).(resource2.ResourceWithConfigure)
+		if convErr {
+			//TODO: handle
+		}
+
+		configureResource.Configure(context.Background(), *req, nil)
+		meta := req
 
 		msg := new(dns.Msg)
 
@@ -44,9 +57,9 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDnsARecordSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDnsARecordSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDnsARecordSet_basic,
