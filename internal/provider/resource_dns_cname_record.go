@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -14,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/miekg/dns"
 
-	"github.com/hashicorp/terraform-provider-dns/internal/modifiers/int64modifier"
 	"github.com/hashicorp/terraform-provider-dns/internal/validators/dnsvalidator"
 )
 
@@ -89,8 +89,9 @@ func (d *dnsCNAMERecordSetResource) Schema(ctx context.Context, req resource.Sch
 			},
 			"ttl": schema.Int64Attribute{
 				Optional: true,
+				Computed: true,
+				Default:  int64default.StaticInt64(3600),
 				PlanModifiers: []planmodifier.Int64{
-					int64modifier.Int64Default(3600),
 					int64planmodifier.RequiresReplace(),
 				},
 				Description: "The TTL of the record set. Defaults to `3600`.",
