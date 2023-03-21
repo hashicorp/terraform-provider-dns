@@ -177,6 +177,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 	return []func() datasource.DataSource{
 		NewDnsARecordSetDataSource,
 		NewDnsAAAARecordSetDataSource,
+		NewDnsCNAMERecordSetDataSource,
 	}
 }
 

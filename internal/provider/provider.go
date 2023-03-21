@@ -164,12 +164,11 @@ func New() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"dns_cname_record_set": dataSourceDnsCnameRecordSet(),
-			"dns_mx_record_set":    dataSourceDnsMXRecordSet(),
-			"dns_ns_record_set":    dataSourceDnsNSRecordSet(),
-			"dns_ptr_record_set":   dataSourceDnsPtrRecordSet(),
-			"dns_srv_record_set":   dataSourceDnsSRVRecordSet(),
-			"dns_txt_record_set":   dataSourceDnsTxtRecordSet(),
+			"dns_mx_record_set":  dataSourceDnsMXRecordSet(),
+			"dns_ns_record_set":  dataSourceDnsNSRecordSet(),
+			"dns_ptr_record_set": dataSourceDnsPtrRecordSet(),
+			"dns_srv_record_set": dataSourceDnsSRVRecordSet(),
+			"dns_txt_record_set": dataSourceDnsTxtRecordSet(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
