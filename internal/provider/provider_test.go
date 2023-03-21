@@ -1,9 +1,12 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
@@ -75,4 +78,120 @@ func testAccCheckDnsDestroy(s *terraform.State, resourceType string, rrType uint
 	}
 
 	return nil
+}
+
+func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
+	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
+	var port, retries int
+	var duration time.Duration
+	var gssapi bool
+
+	if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
+		server = os.Getenv("DNS_UPDATE_SERVER")
+	}
+
+	if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
+		portStr := os.Getenv("DNS_UPDATE_PORT")
+		envPort, err := strconv.Atoi(portStr)
+		if err != nil {
+			return &DNSClient{}, err
+		}
+		port = envPort
+	} else {
+		port = defaultPort
+	}
+
+	if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
+		transport = os.Getenv("DNS_UPDATE_TRANSPORT")
+	} else {
+		transport = defaultTransport
+	}
+
+	if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
+		timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
+	} else {
+		timeout = defaultTimeout
+	}
+
+	// Try parsing as a duration
+	var err error
+	duration, err = time.ParseDuration(timeout)
+	if err != nil {
+		// Failing that, convert to an integer and treat as seconds
+		var seconds int
+		seconds, err = strconv.Atoi(timeout)
+		if err != nil {
+			return &DNSClient{}, nil
+		}
+		duration = time.Duration(seconds) * time.Second
+	}
+	if duration < 0 {
+		return &DNSClient{}, fmt.Errorf("timeout cannot be negative: %s", err.Error())
+	}
+
+	if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
+		retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
+
+		var err error
+		retries, err = strconv.Atoi(retriesStr)
+		if err != nil {
+			return &DNSClient{}, fmt.Errorf("invalid DNS_UPDATE_RETRIES environment variable: %s", err.Error())
+		}
+	} else {
+		retries = defaultRetries
+	}
+	if len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
+		keyname = os.Getenv("DNS_UPDATE_KEYNAME")
+	}
+	if len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
+		keyalgo = os.Getenv("DNS_UPDATE_KEYALGORITHM")
+	}
+	if len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
+		keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
+	}
+
+	if len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
+		realm = os.Getenv("DNS_UPDATE_REALM")
+	}
+	if len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
+		username = os.Getenv("DNS_UPDATE_USERNAME")
+	}
+	if len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
+		password = os.Getenv("DNS_UPDATE_PASSWORD")
+	}
+	if len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
+		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
+	}
+	if realm != "" || username != "" || password != "" || keytab != "" {
+		gssapi = true
+	}
+
+	config := Config{
+		server:    server,
+		port:      port,
+		transport: transport,
+		timeout:   duration,
+		retries:   retries,
+		keyname:   keyname,
+		keyalgo:   keyalgo,
+		keysecret: keysecret,
+		gssapi:    gssapi,
+		realm:     realm,
+		username:  username,
+		password:  password,
+		keytab:    keytab,
+	}
+
+	var client, diags = config.Client(ctx)
+	if diags.HasError() {
+		return &DNSClient{}, fmt.Errorf("error creating DNS Client")
+	}
+
+	dnsClient, ok := client.(*DNSClient)
+
+	if !ok {
+		return &DNSClient{}, fmt.Errorf("error converting client to DNSClient type")
+	}
+
+	return dnsClient, nil
 }
