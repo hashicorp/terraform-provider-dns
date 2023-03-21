@@ -21,13 +21,13 @@ func NewDnsARecordSetDataSource() datasource.DataSource {
 
 type dnsARecordSetDataSource struct{}
 
-func (d dnsARecordSetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *dnsARecordSetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_a_record_set"
 }
 
-func (d dnsARecordSetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *dnsARecordSetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "",
+		Description: "Use this data source to get DNS A records of the host.",
 		Attributes: map[string]schema.Attribute{
 			"host": schema.StringAttribute{
 				Required:    true,
@@ -46,7 +46,7 @@ func (d dnsARecordSetDataSource) Schema(ctx context.Context, req datasource.Sche
 	}
 }
 
-func (d dnsARecordSetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *dnsARecordSetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config aRecordSetConfig
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)

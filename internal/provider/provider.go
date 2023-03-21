@@ -164,7 +164,6 @@ func New() *schema.Provider {
 		},
 
 		DataSourcesMap: map[string]*schema.Resource{
-			"dns_aaaa_record_set":  dataSourceDnsAAAARecordSet(),
 			"dns_cname_record_set": dataSourceDnsCnameRecordSet(),
 			"dns_mx_record_set":    dataSourceDnsMXRecordSet(),
 			"dns_ns_record_set":    dataSourceDnsNSRecordSet(),

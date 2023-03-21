@@ -176,6 +176,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewDnsARecordSetDataSource,
+		NewDnsAAAARecordSetDataSource,
 	}
 }
 
