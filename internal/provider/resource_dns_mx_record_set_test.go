@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -8,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/miekg/dns"
+
+	"github.com/hashicorp/terraform-provider-dns/internal/hashcode"
 )
 
 func TestAccDnsMXRecordSet_Basic(t *testing.T) {
@@ -44,9 +47,9 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDnsMXRecordSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDnsMXRecordSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDnsMXRecordSet_basic,
@@ -178,3 +181,15 @@ var testAccDnsMXRecordSet_root = `
     }
     ttl = 300
   }`
+
+func resourceDnsMXRecordSetHash(v interface{}) int {
+	var buf bytes.Buffer
+	//nolint:forcetypeassert
+	m := v.(map[string]interface{})
+	//nolint:forcetypeassert
+	buf.WriteString(fmt.Sprintf("%d-", m["preference"].(int)))
+	//nolint:forcetypeassert
+	buf.WriteString(fmt.Sprintf("%s-", m["exchange"].(string)))
+
+	return hashcode.String(buf.String())
+}
