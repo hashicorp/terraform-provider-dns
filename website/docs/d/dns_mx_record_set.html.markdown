@@ -17,7 +17,7 @@ data "dns_mx_record_set" "mail" {
 }
 
 output "mailserver" {
-  value = "${data.dns_mx_record_set.mail.mx.0.exchange}"
+  value = data.dns_mx_record_set.mail.mx[0].exchange
 }
 ```
 
@@ -33,3 +33,5 @@ The following attributes are exported:
 
  * `id` - Set to `service`.
  * `mx` - A list of records. They are sorted by ascending preference then alphabetically by exchange to stay consistent across runs.
+   * `exchange` - Fully qualified domain name (FQDN) of the mail exchanger.
+   * `preference` - Preference value of this MX record.

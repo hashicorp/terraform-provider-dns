@@ -17,7 +17,7 @@ data "dns_cname_record_set" "hashicorp" {
 }
 
 output "hashi_cname" {
-  value = "${data.dns_cname_record_set.hashicorp.cname}"
+  value = data.dns_cname_record_set.hashicorp.cname
 }
 ```
 

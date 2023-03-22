@@ -17,11 +17,11 @@ data "dns_txt_record_set" "hashicorp" {
 }
 
 output "hashi_txt" {
-  value = "${data.dns_txt_record_set.hashi.record}"
+  value = data.dns_txt_record_set.hashicorp.record
 }
 
 output "hashi_txts" {
-  value = "${join(",", data.dns_txt_record_set.hashi.records)}"
+  value = join(",", data.dns_txt_record_set.hashicorp.records)
 }
 ```
 
@@ -36,7 +36,5 @@ The following arguments are supported:
 The following attributes are exported:
 
  * `id` - Set to `host`.
-
  * `record` - The first TXT record.
-
  * `records` - A list of TXT records.

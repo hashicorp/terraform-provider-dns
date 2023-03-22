@@ -17,7 +17,7 @@ data "dns_ptr_record_set" "hashicorp" {
 }
 
 output "hashi_ptr" {
-  value = "${data.dns_ptr_record_set.hashicorp.ptr}"
+  value = data.dns_ptr_record_set.hashicorp.ptr
 }
 ```
 
@@ -32,7 +32,6 @@ The following arguments are supported:
 The following attributes are exported:
 
  * `id` - Set to `ip_address`.
-
  * `ptr` - A PTR record associated with `ip_address`.
 
  __NOTE__: Only the first result is taken from the query.

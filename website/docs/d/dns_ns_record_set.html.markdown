@@ -17,7 +17,7 @@ data "dns_ns_record_set" "google" {
 }
 
 output "google_nameservers" {
-  value = "${join(",", data.dns_ns_record_set.google.nameservers)}"
+  value = join(",", data.dns_ns_record_set.google.nameservers)
 }
 ```
 
@@ -32,5 +32,4 @@ The following arguments are supported:
 The following attributes are exported:
 
  * `id` - Set to `host`.
-
  * `nameservers` - A list of nameservers. Nameservers are always sorted to avoid constant changing plans.
