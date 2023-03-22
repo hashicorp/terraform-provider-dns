@@ -19,20 +19,20 @@ import (
 )
 
 var (
-	_ resource.Resource                = (*dnsCNAMERecordSetResource)(nil)
-	_ resource.ResourceWithImportState = (*dnsCNAMERecordSetResource)(nil)
-	_ resource.ResourceWithConfigure   = (*dnsCNAMERecordSetResource)(nil)
+	_ resource.Resource                = (*dnsCNAMERecordResource)(nil)
+	_ resource.ResourceWithImportState = (*dnsCNAMERecordResource)(nil)
+	_ resource.ResourceWithConfigure   = (*dnsCNAMERecordResource)(nil)
 )
 
-func NewDnsCNAMERecordSetResource() resource.Resource {
-	return &dnsCNAMERecordSetResource{}
+func NewDnsCNAMERecordResource() resource.Resource {
+	return &dnsCNAMERecordResource{}
 }
 
-type dnsCNAMERecordSetResource struct {
+type dnsCNAMERecordResource struct {
 	client *DNSClient
 }
 
-func (d *dnsCNAMERecordSetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (d *dnsCNAMERecordResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -51,11 +51,11 @@ func (d *dnsCNAMERecordSetResource) Configure(ctx context.Context, req resource.
 	d.client = client
 }
 
-func (d *dnsCNAMERecordSetResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (d *dnsCNAMERecordResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_cname_record"
 }
 
-func (d *dnsCNAMERecordSetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (d *dnsCNAMERecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Creates an A type DNS record set.",
 		Attributes: map[string]schema.Attribute{
@@ -98,14 +98,14 @@ func (d *dnsCNAMERecordSetResource) Schema(ctx context.Context, req resource.Sch
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Always set to the fully qualified domain name of the record set",
+				Description: "Always set to the fully qualified domain name of the record",
 			},
 		},
 	}
 }
 
-func (d *dnsCNAMERecordSetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan cnameRecordSetResourceModel
+func (d *dnsCNAMERecordResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan cnameRecordResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -176,8 +176,8 @@ func (d *dnsCNAMERecordSetResource) Create(ctx context.Context, req resource.Cre
 
 }
 
-func (d *dnsCNAMERecordSetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state cnameRecordSetResourceModel
+func (d *dnsCNAMERecordResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state cnameRecordResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -218,8 +218,8 @@ func (d *dnsCNAMERecordSetResource) Read(ctx context.Context, req resource.ReadR
 	}
 }
 
-func (d *dnsCNAMERecordSetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state cnameRecordSetResourceModel
+func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state cnameRecordResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -307,8 +307,8 @@ func (d *dnsCNAMERecordSetResource) Update(ctx context.Context, req resource.Upd
 	}
 }
 
-func (d *dnsCNAMERecordSetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state cnameRecordSetResourceModel
+func (d *dnsCNAMERecordResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state cnameRecordResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -326,7 +326,7 @@ func (d *dnsCNAMERecordSetResource) Delete(ctx context.Context, req resource.Del
 	}
 }
 
-func (d *dnsCNAMERecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (d *dnsCNAMERecordResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
 	config, err := resourceDnsImport_framework(req.ID, d.client)
 	if err != nil {
@@ -339,7 +339,7 @@ func (d *dnsCNAMERecordSetResource) ImportState(ctx context.Context, req resourc
 	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
 }
 
-type cnameRecordSetResourceModel struct {
+type cnameRecordResourceModel struct {
 	ID    types.String `tfsdk:"id"`
 	Zone  types.String `tfsdk:"zone"`
 	Name  types.String `tfsdk:"name"`

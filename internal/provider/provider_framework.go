@@ -184,7 +184,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewDnsCNAMERecordSetResource,
+		NewDnsCNAMERecordResource,
 	}
 }
 
@@ -503,7 +503,9 @@ Loop:
 func resourceFQDN_framework(config dnsConfig) string {
 
 	fqdn := config.Zone
-	fqdn = fmt.Sprintf("%s.%s", config.Name, fqdn)
+	if config.Name != "" {
+		fqdn = fmt.Sprintf("%s.%s", config.Name, fqdn)
+	}
 	return fqdn
 }
 
