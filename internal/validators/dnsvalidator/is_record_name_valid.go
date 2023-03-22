@@ -45,7 +45,6 @@ func (validator dnsRecordNameValidator) ValidateString(ctx context.Context, req 
 			req.ConfigValue.ValueString(),
 		))
 	}
-	return
 }
 
 // IsRecordNameValid returns an AttributeValidator which ensures that any configured
@@ -56,7 +55,6 @@ func (validator dnsRecordNameValidator) ValidateString(ctx context.Context, req 
 //   - Is NOT a fully qualified DNS zone name.
 //
 // Null (unconfigured) and unknown (known after apply) values are skipped.
-
 func IsRecordNameValid() validator.String {
 	return dnsRecordNameValidator{}
 }

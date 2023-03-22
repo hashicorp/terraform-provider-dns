@@ -346,6 +346,7 @@ type providerGssapiModel struct {
 	Keytab   types.String `tfsdk:"keytab"`
 }
 
+//nolint:unparam
 func exchange_framework(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 
 	c := client.c

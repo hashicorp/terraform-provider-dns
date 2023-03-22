@@ -44,7 +44,6 @@ func (validator dnsZoneNameValidator) ValidateString(ctx context.Context, req va
 			req.ConfigValue.ValueString(),
 		))
 	}
-	return
 }
 
 // IsZoneNameValid returns an AttributeValidator which ensures that any configured

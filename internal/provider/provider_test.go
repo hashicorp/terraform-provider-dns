@@ -121,7 +121,7 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 		var seconds int
 		seconds, err = strconv.Atoi(timeout)
 		if err != nil {
-			return &DNSClient{}, nil
+			return &DNSClient{}, err
 		}
 		duration = time.Duration(seconds) * time.Second
 	}
