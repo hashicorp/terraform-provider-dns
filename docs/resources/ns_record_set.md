@@ -38,7 +38,7 @@ resource "dns_ns_record_set" "www" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the fully qualified domain name of the record set
 
 ## Import
 

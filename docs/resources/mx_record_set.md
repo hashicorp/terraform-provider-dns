@@ -58,17 +58,17 @@ resource "dns_mx_record_set" "mx" {
 
 ### Required
 
-- `mx` (Block Set, Min: 1) Can be specified multiple times for each MX record. (see [below for nested schema](#nestedblock--mx))
 - `zone` (String) DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.
 
 ### Optional
 
+- `mx` (Block Set) Can be specified multiple times for each MX record. (see [below for nested schema](#nestedblock--mx))
 - `name` (String) The name of the record set. The `zone` argument will be appended to this value to create the full record path.
 - `ttl` (Number) The TTL of the record set. Defaults to `3600`.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the fully qualified domain name of the record set
 
 <a id="nestedblock--mx"></a>
 ### Nested Schema for `mx`

@@ -28,7 +28,7 @@ func (d *dnsNSRecordSetDataSource) Metadata(ctx context.Context, req datasource.
 
 func (d *dnsNSRecordSetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Use this data source to get DNS NS records for a domain.",
+		Description: "Use this data source to get DNS NS records of the host.",
 		Attributes: map[string]schema.Attribute{
 			"host": schema.StringAttribute{
 				Required:    true,

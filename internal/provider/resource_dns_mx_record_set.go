@@ -69,7 +69,7 @@ func (d *dnsMXRecordSetResource) Schema(ctx context.Context, req resource.Schema
 				Validators: []validator.String{
 					dnsvalidator.IsZoneNameValid(),
 				},
-				Description: "DNS zone the record belongs to. It must be an FQDN, that is, include the trailing dot.",
+				Description: "DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.",
 			},
 			"name": schema.StringAttribute{
 				Optional: true,
@@ -79,7 +79,7 @@ func (d *dnsMXRecordSetResource) Schema(ctx context.Context, req resource.Schema
 				Validators: []validator.String{
 					dnsvalidator.IsRecordNameValid(),
 				},
-				Description: "The name of the record. The `zone` argument will be appended to this value to create " +
+				Description: "The name of the record set. The `zone` argument will be appended to this value to create " +
 					"the full record path.",
 			},
 			"ttl": schema.Int64Attribute{

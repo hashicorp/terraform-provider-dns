@@ -57,7 +57,7 @@ func (d *dnsCNAMERecordResource) Metadata(ctx context.Context, req resource.Meta
 
 func (d *dnsCNAMERecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Creates an A type DNS record set.",
+		Description: "Creates a CNAME type DNS record.",
 		Attributes: map[string]schema.Attribute{
 			"zone": schema.StringAttribute{
 				Required: true,

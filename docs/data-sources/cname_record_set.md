@@ -31,4 +31,4 @@ output "hashi_cname" {
 ### Read-Only
 
 - `cname` (String) A CNAME record associated with host.
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the host

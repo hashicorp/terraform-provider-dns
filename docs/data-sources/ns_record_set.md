@@ -2,12 +2,12 @@
 page_title: "dns_ns_record_set Data Source - terraform-provider-dns"
 subcategory: ""
 description: |-
-  Use this data source to get DNS ns records of the host.
+  Use this data source to get DNS NS records of the host.
 ---
 
 # dns_ns_record_set (Data Source)
 
-Use this data source to get DNS ns records of the host.
+Use this data source to get DNS NS records of the host.
 
 ## Example Usage
 
@@ -30,5 +30,5 @@ output "google_nameservers" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the domain
 - `nameservers` (List of String) A list of nameservers. Nameservers are always sorted to avoid constant changing plans.

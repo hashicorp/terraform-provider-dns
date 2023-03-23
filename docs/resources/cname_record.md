@@ -35,7 +35,7 @@ resource "dns_cname_record" "foo" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the fully qualified domain name of the record
 
 ## Import
 
