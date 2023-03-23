@@ -45,7 +45,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	var duration time.Duration
 	var gssapi bool
 
-	//TODO change to resp.diags.adderror
+	//TODO: change to resp.diags.adderror
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfig)...)
 	if resp.Diagnostics.HasError() {
@@ -179,6 +179,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewDnsAAAARecordSetDataSource,
 		NewDnsCNAMERecordSetDataSource,
 		NewDnsMXRecordSetDataSource,
+		NewDnsNSRecordSetDataSource,
 	}
 }
 

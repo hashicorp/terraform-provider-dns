@@ -1,40 +1,65 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sort"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func dataSourceDnsNSRecordSet() *schema.Resource {
-	return &schema.Resource{
-		Read: dataSourceDnsNSRecordSetRead,
-		Schema: map[string]*schema.Schema{
-			"host": {
-				Type:        schema.TypeString,
+var (
+	_ datasource.DataSource = (*dnsNSRecordSetDataSource)(nil)
+)
+
+func NewDnsNSRecordSetDataSource() datasource.DataSource {
+	return &dnsNSRecordSetDataSource{}
+}
+
+type dnsNSRecordSetDataSource struct{}
+
+func (d *dnsNSRecordSetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_ns_record_set"
+}
+
+func (d *dnsNSRecordSetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Use this data source to get DNS NS records for a domain.",
+		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
 				Required:    true,
 				Description: "Host to look up.",
 			},
-			"nameservers": {
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+			"nameservers": schema.ListAttribute{
 				Computed:    true,
+				ElementType: types.StringType,
 				Description: "A list of nameservers. Nameservers are always sorted to avoid constant changing plans.",
 			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Always set to the domain",
+			},
 		},
-		Description: "Use this data source to get DNS ns records of the host.",
 	}
 }
 
-func dataSourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) error {
-	//nolint:forcetypeassert
-	host := d.Get("host").(string)
+func (d *dnsNSRecordSetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config nsRecordSetConfig
 
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	host := config.Host.ValueString()
 	nsRecords, err := net.LookupNS(host)
 	if err != nil {
-		return fmt.Errorf("error looking up NS records for %q: %s", host, err)
+		resp.Diagnostics.AddError(fmt.Sprintf("error looking up NS records for %q: ", host), err.Error())
+		return
 	}
 
 	nameservers := make([]string, len(nsRecords))
@@ -43,11 +68,19 @@ func dataSourceDnsNSRecordSetRead(d *schema.ResourceData, meta interface{}) erro
 	}
 	sort.Strings(nameservers)
 
-	err = d.Set("nameservers", nameservers)
-	if err != nil {
-		return err
+	var convertDiags diag.Diagnostics
+	config.Nameservers, convertDiags = types.ListValueFrom(ctx, config.Nameservers.ElementType(ctx), nameservers)
+	if convertDiags.HasError() {
+		resp.Diagnostics.Append(convertDiags...)
+		return
 	}
-	d.SetId(host)
 
-	return nil
+	config.ID = config.Host
+	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
+}
+
+type nsRecordSetConfig struct {
+	ID          types.String `tfsdk:"id"`
+	Host        types.String `tfsdk:"host"`
+	Nameservers types.List   `tfsdk:"nameservers"`
 }

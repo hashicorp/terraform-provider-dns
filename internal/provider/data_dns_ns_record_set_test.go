@@ -10,7 +10,7 @@ func TestAccDataDnsNSRecordSet_Basic(t *testing.T) {
 	recordName := "data.dns_ns_record_set.test"
 
 	resource.UnitTest(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
