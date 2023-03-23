@@ -2,6 +2,7 @@ package provider
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 
@@ -20,7 +21,10 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 	resourceRoot := "dns_mx_record_set.root"
 
 	deleteMXRecordSet := func() {
-		meta := testAccProvider.Meta()
+		meta, err := initializeDNSClient(context.Background())
+		if err != nil {
+			t.Fatalf("Error creating DNS Client: %s", err.Error())
+		}
 
 		msg := new(dns.Msg)
 
