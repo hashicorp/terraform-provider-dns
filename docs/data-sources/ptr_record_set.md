@@ -30,7 +30,7 @@ output "hashi_ptr" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the IP address
 - `ptr` (String) A PTR record associated with `ip_address`.
 
  __NOTE__: Only the first result is taken from the query.

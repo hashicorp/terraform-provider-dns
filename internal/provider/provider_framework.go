@@ -180,6 +180,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewDnsCNAMERecordSetDataSource,
 		NewDnsMXRecordSetDataSource,
 		NewDnsNSRecordSetDataSource,
+		NewDnsPTRRecordSetDataSource,
 	}
 }
 
