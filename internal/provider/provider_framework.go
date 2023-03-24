@@ -189,6 +189,7 @@ func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource 
 		NewDnsCNAMERecordResource,
 		NewDnsMXRecordSetResource,
 		NewDnsNSRecordSetResource,
+		NewDnsPTRRecordResource,
 	}
 }
 
