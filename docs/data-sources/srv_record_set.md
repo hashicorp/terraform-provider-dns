@@ -30,7 +30,7 @@ output "sipserver" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the service.
 - `srv` (List of Object) A list of records. They are sorted to stay consistent across runs. (see [below for nested schema](#nestedatt--srv))
 
 <a id="nestedatt--srv"></a>
