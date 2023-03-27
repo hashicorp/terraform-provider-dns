@@ -114,7 +114,7 @@ func resourceDnsPtrRecordUpdate(d *schema.ResourceData, meta interface{}) error 
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
-			r, err := exchange(msg, true, meta)
+			r, err := exchange(msg, true, meta, true)
 			if err != nil {
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %s", err)

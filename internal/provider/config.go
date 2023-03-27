@@ -19,6 +19,7 @@ type Config struct {
 	transport string
 	timeout   time.Duration
 	retries   int
+	backoff   int
 	keyname   string
 	keyalgo   string
 	keysecret string
@@ -34,6 +35,7 @@ type DNSClient struct {
 	srv_addr  string
 	transport string
 	retries   int
+	backoff   int
 	keyname   string
 	keysecret string
 	keyalgo   string
@@ -67,6 +69,7 @@ func (c *Config) Client() (interface{}, error) {
 	client.transport = c.transport
 	client.c.Timeout = c.timeout
 	client.retries = c.retries
+	client.backoff = c.backoff
 	client.realm = c.realm
 	client.username = c.username
 	client.password = c.password

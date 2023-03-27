@@ -16,6 +16,7 @@ import (
 const (
 	defaultPort      = 53
 	defaultRetries   = 3
+	defaultBackoff   = 0
 	defaultTimeout   = "0"
 	defaultTransport = "udp"
 )
@@ -73,6 +74,21 @@ func New() *schema.Provider {
 								}
 
 								return defaultRetries, nil
+							},
+						},
+						"backoff": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							DefaultFunc: func() (interface{}, error) {
+								if env := os.Getenv("DNS_UPDATE_BACKOFF"); env != "" {
+									backoff, err := strconv.Atoi(env)
+									if err != nil {
+										err = fmt.Errorf("invalid DNS_UPDATE_BACKOFF environment variable: %s", err)
+									}
+									return backoff, err
+								}
+
+								return defaultBackoff, nil
 							},
 						},
 						"key_name": {
@@ -165,7 +181,7 @@ func New() *schema.Provider {
 func configureProvider(d *schema.ResourceData) (interface{}, error) {
 
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
-	var port, retries int
+	var port, retries, backoff int
 	var duration time.Duration
 	var gssapi bool
 
@@ -186,6 +202,9 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		}
 		if val, ok := update["retries"]; ok {
 			retries = int(val.(int))
+		}
+		if val, ok := update["backoff"]; ok {
+			backoff = int(val.(int))
 		}
 		if val, ok := update["key_name"]; ok {
 			keyname = val.(string)
@@ -248,6 +267,16 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		} else {
 			retries = defaultRetries
 		}
+		if len(os.Getenv("DNS_UPDATE_BACKOFF")) > 0 {
+			var err error
+			env := os.Getenv("DNS_UPDATE_BACKOFF")
+			backoff, err = strconv.Atoi(env)
+			if err != nil {
+				return nil, fmt.Errorf("invalid DNS_UPDATE_BACKOFF environment variable: %s", err)
+			}
+		} else {
+			backoff = defaultBackoff
+		}
 		if len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
 			keyname = os.Getenv("DNS_UPDATE_KEYNAME")
 		}
@@ -297,6 +326,7 @@ func configureProvider(d *schema.ResourceData) (interface{}, error) {
 		transport: transport,
 		timeout:   duration,
 		retries:   retries,
+		backoff:   backoff,
 		keyname:   keyname,
 		keyalgo:   keyalgo,
 		keysecret: keysecret,
@@ -406,12 +436,11 @@ func getPtrVal(record interface{}) (string, int, error) {
 }
 
 func isTimeout(err error) bool {
-
 	timeout, ok := err.(net.Error)
 	return ok && timeout.Timeout()
 }
 
-func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
+func exchange(msg *dns.Msg, tsig bool, meta interface{}, update ...bool) (*dns.Msg, error) {
 
 	c := meta.(*DNSClient).c
 	srv_addr := meta.(*DNSClient).srv_addr
@@ -419,6 +448,7 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 	keyalgo := meta.(*DNSClient).keyalgo
 	c.Net = meta.(*DNSClient).transport
 	retries := meta.(*DNSClient).retries
+	backoff := meta.(*DNSClient).backoff
 	g := meta.(*DNSClient).gssClient
 	retry_tcp := false
 
@@ -493,6 +523,24 @@ Retry:
 
 		// Reset retries counter on protocol change
 		retries = meta.(*DNSClient).retries
+		goto Retry
+	}
+
+	// Retry logic for load balanced or otherwise slowly propagated DNS environments
+	if len(r.Answer) == 0 && len(update) > 0 && backoff != defaultBackoff {
+		question := new(dns.Msg).SetQuestion(msg.Ns[0].Header().Name, 255)
+		for i := 1; i <= retries; i++ {
+			log.Println("[DEBUG] Backing off as DNS answer is empty")
+			time.Sleep(time.Duration(backoff) * time.Millisecond)
+			qr, _, err := c.Exchange(question, srv_addr)
+			if err != nil {
+				return r, err
+			}
+			if len(qr.Answer) > 0 {
+				return r, nil
+			}
+		}
+		retries--
 		goto Retry
 	}
 

@@ -158,7 +158,7 @@ func resourceDnsSRVRecordSetUpdate(d *schema.ResourceData, meta interface{}) err
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
-			r, err := exchange(msg, true, meta)
+			r, err := exchange(msg, true, meta, true)
 			if err != nil {
 				d.SetId("")
 				return fmt.Errorf("Error updating DNS record: %s", err)

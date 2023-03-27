@@ -63,6 +63,7 @@ The `update` block supports the following attributes:
 * `transport` - (Optional) Transport to use for DNS queries. Valid values are `udp`, `udp4`, `udp6`, `tcp`, `tcp4`, or `tcp6`. Any UDP transport will retry automatically with the equivalent TCP transport in the event of a truncated response. Defaults to `udp`.
 * `timeout` - (Optional) Timeout for DNS queries. Valid values are durations expressed as `500ms`, etc. or a plain number which is treated as whole seconds.
 * `retries` - (Optional) How many times to retry on connection timeout. Defaults to `3`.
+* `backoff` - (Optional) How many milliseconds the provider should back off requerying the DNS server for validation after pushing record updates. Should only be used in load balanced or otherwise slowly propagated environments. Defaults to `0`.
 * `key_name` - (Optional) The name of the TSIG key used to sign the DNS update messages.
 * `key_algorithm` - (Optional; Required if `key_name` is set) When using TSIG authentication, the algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` or `hmac-sha512`.
 * `key_secret` - (Optional; Required if `key_name` is set)
