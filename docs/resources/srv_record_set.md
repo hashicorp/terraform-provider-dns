@@ -43,16 +43,16 @@ resource "dns_srv_record_set" "sip" {
 ### Required
 
 - `name` (String) The name of the record set. The `zone` argument will be appended to this value to create the full record path.
-- `srv` (Block Set, Min: 1) Can be specified multiple times for each SRV record. (see [below for nested schema](#nestedblock--srv))
 - `zone` (String) DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.
 
 ### Optional
 
+- `srv` (Block Set) Can be specified multiple times for each SRV record. (see [below for nested schema](#nestedblock--srv))
 - `ttl` (Number) The TTL of the record set. Defaults to `3600`.
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the fully qualified domain name of the record set
 
 <a id="nestedblock--srv"></a>
 ### Nested Schema for `srv`

@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/miekg/dns"
+
+	"github.com/hashicorp/terraform-provider-dns/internal/hashcode"
 )
 
 func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
@@ -16,7 +20,10 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 	resourceName := "dns_srv_record_set.foo"
 
 	deleteSRVRecordSet := func() {
-		meta := testAccProvider.Meta()
+		meta, err := initializeDNSClient(context.Background())
+		if err != nil {
+			t.Fatalf("Error creating DNS Client: %s", err.Error())
+		}
 
 		msg := new(dns.Msg)
 
@@ -43,9 +50,9 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDnsSRVRecordSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDnsSRVRecordSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDnsSRVRecordSet_basic,
@@ -163,3 +170,19 @@ var testAccDnsSRVRecordSet_update = `
     }
     ttl = 300
   }`
+
+func resourceDnsSRVRecordSetHash(v interface{}) int {
+	var buf bytes.Buffer
+	//nolint:forcetypeassert
+	m := v.(map[string]interface{})
+	//nolint:forcetypeassert
+	buf.WriteString(fmt.Sprintf("%d-", m["priority"].(int)))
+	//nolint:forcetypeassert
+	buf.WriteString(fmt.Sprintf("%d-", m["weight"].(int)))
+	//nolint:forcetypeassert
+	buf.WriteString(fmt.Sprintf("%d-", m["port"].(int)))
+	//nolint:forcetypeassert
+	buf.WriteString(fmt.Sprintf("%s-", m["target"].(string)))
+
+	return hashcode.String(buf.String())
+}

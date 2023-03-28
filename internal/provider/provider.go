@@ -170,7 +170,6 @@ func New() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"dns_a_record_set":    resourceDnsARecordSet(),
 			"dns_aaaa_record_set": resourceDnsAAAARecordSet(),
-			"dns_srv_record_set":  resourceDnsSRVRecordSet(),
 			"dns_txt_record_set":  resourceDnsTXTRecordSet(),
 		},
 
