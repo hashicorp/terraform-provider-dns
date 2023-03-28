@@ -34,25 +34,6 @@ type dnsSRVRecordSetResource struct {
 	client *DNSClient
 }
 
-func (d *dnsSRVRecordSetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*DNSClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
-}
-
 func (d *dnsSRVRecordSetResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_srv_record_set"
 }
@@ -127,6 +108,25 @@ func (d *dnsSRVRecordSetResource) Schema(ctx context.Context, req resource.Schem
 	}
 }
 
+func (d *dnsSRVRecordSetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*DNSClient)
+
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
+}
+
 func (d *dnsSRVRecordSetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan srvRecordSetResourceModel
 
@@ -142,7 +142,6 @@ func (d *dnsSRVRecordSetResource) Create(ctx context.Context, req resource.Creat
 	fqdn := resourceFQDN_framework(config)
 	plan.ID = types.StringValue(fqdn)
 
-	//call update
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 

@@ -32,25 +32,6 @@ type dnsPTRRecordResource struct {
 	client *DNSClient
 }
 
-func (d *dnsPTRRecordResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	client, ok := req.ProviderData.(*DNSClient)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
-		return
-	}
-
-	d.client = client
-}
-
 func (d *dnsPTRRecordResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_ptr_record"
 }
@@ -103,6 +84,25 @@ func (d *dnsPTRRecordResource) Schema(ctx context.Context, req resource.SchemaRe
 			},
 		},
 	}
+}
+
+func (d *dnsPTRRecordResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*DNSClient)
+
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
 }
 
 func (d *dnsPTRRecordResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
