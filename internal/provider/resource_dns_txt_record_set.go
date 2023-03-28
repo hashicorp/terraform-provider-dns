@@ -1,165 +1,423 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/miekg/dns"
+
+	"github.com/hashicorp/terraform-provider-dns/internal/validators/dnsvalidator"
 )
 
-func resourceDnsTXTRecordSet() *schema.Resource {
-	return &schema.Resource{
-		Create: resourceDnsTXTRecordSetCreate,
-		Read:   resourceDnsTXTRecordSetRead,
-		Update: resourceDnsTXTRecordSetUpdate,
-		Delete: resourceDnsTXTRecordSetDelete,
-		Importer: &schema.ResourceImporter{
-			State: resourceDnsImport,
-		},
+var (
+	_ resource.Resource                = (*dnsTXTRecordSetResource)(nil)
+	_ resource.ResourceWithImportState = (*dnsTXTRecordSetResource)(nil)
+	_ resource.ResourceWithConfigure   = (*dnsTXTRecordSetResource)(nil)
+)
 
-		Schema: map[string]*schema.Schema{
-			"zone": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validateZone,
-				Description: "DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing " +
-					"dot.",
+func NewDnsTXTRecordSetResource() resource.Resource {
+	return &dnsTXTRecordSetResource{}
+}
+
+type dnsTXTRecordSetResource struct {
+	client *DNSClient
+}
+
+func (d *dnsTXTRecordSetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*DNSClient)
+
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = client
+}
+
+func (d *dnsTXTRecordSetResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_txt_record_set"
+}
+
+func (d *dnsTXTRecordSetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Creates a TXT type DNS record set.",
+		Attributes: map[string]schema.Attribute{
+			"zone": schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					dnsvalidator.IsZoneNameValid(),
+				},
+				Description: "DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.",
 			},
-			"name": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validateName,
-				Description: "The name of the record set. The `zone` argument will be appended to this value to " +
-					"create the full record path.",
+			"name": schema.StringAttribute{
+				Optional: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					dnsvalidator.IsRecordNameValid(),
+				},
+				Description: "The name of the record set. The `zone` argument will be appended to this value to create " +
+					"the full record path.",
 			},
-			"txt": {
-				Type:        schema.TypeSet,
+			"txt": schema.SetAttribute{
 				Required:    true,
-				Elem:        &schema.Schema{Type: schema.TypeString},
-				Set:         schema.HashString,
+				ElementType: types.StringType,
 				Description: "The text records this record set will be set to.",
 			},
-			"ttl": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				ForceNew:    true,
-				Default:     3600,
+			"ttl": schema.Int64Attribute{
+				Optional: true,
+				Computed: true,
+				Default:  int64default.StaticInt64(3600),
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Always set to the fully qualified domain name of the record set",
+			},
 		},
-
-		Description: "Creates a TXT type DNS record set.",
 	}
 }
 
-func resourceDnsTXTRecordSetCreate(d *schema.ResourceData, meta interface{}) error {
+func (d *dnsTXTRecordSetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan txtRecordSetResourceModel
 
-	d.SetId(resourceFQDN(d))
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	return resourceDnsTXTRecordSetUpdate(d, meta)
-}
+	config := dnsConfig{
+		Name: plan.Name.ValueString(),
+		Zone: plan.Zone.ValueString(),
+	}
+	fqdn := resourceFQDN_framework(config)
+	plan.ID = types.StringValue(fqdn)
 
-func resourceDnsTXTRecordSetRead(d *schema.ResourceData, meta interface{}) error {
+	msg := new(dns.Msg)
+	msg.SetUpdate(plan.Zone.ValueString())
 
-	answers, err := resourceDnsRead(d, meta, dns.TypeTXT)
+	var planTXT []string
+
+	resp.Diagnostics.Append(plan.TXT.ElementsAs(ctx, &planTXT, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Loop through all the new addresses and insert them
+	for _, txt := range planTXT {
+		rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
+
+		rr_insert, err := dns.NewRR(rrStr)
+		if err != nil {
+			resp.Diagnostics.AddError("DNS TXT record create error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+			return
+		}
+
+		msg.Insert([]dns.RR{rr_insert})
+	}
+
+	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
-		return err
+		resp.State.RemoveResource(ctx)
+		resp.Diagnostics.AddError("DNS TXT record create error",
+			fmt.Sprintf("Error updating DNS record: %s", err))
+		return
+	}
+	if r.Rcode != dns.RcodeSuccess {
+		resp.State.RemoveResource(ctx)
+		resp.Diagnostics.AddError("DNS TXT record create error",
+			fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+		return
+	}
+
+	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
+	if err != nil {
+		resp.Diagnostics.AddError("DNS TXT record create error", err.Error())
+		return
 	}
 
 	if len(answers) > 0 {
-
 		var ttl sort.IntSlice
+		var txt []string
 
-		txt := schema.NewSet(schema.HashString, nil)
 		for _, record := range answers {
 			switch r := record.(type) {
 			case *dns.TXT:
-				txt.Add(strings.Join(r.Txt, ""))
+				txt = append(txt, strings.Join(r.Txt, ""))
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				return fmt.Errorf("didn't get an TXT record")
+				resp.Diagnostics.AddError("DNS TXT record create error",
+					"Error querying DNS record: didn't get an TXT record")
+				return
 			}
 		}
 		sort.Sort(ttl)
 
-		//nolint:errcheck
-		d.Set("txt", txt)
-		//nolint:errcheck
-		d.Set("ttl", ttl[0])
-	} else {
-		d.SetId("")
-	}
-
-	return nil
-}
-
-func resourceDnsTXTRecordSetUpdate(d *schema.ResourceData, meta interface{}) error {
-
-	if meta != nil {
-
-		//nolint:forcetypeassert
-		ttl := d.Get("ttl").(int)
-		fqdn := resourceFQDN(d)
-
-		msg := new(dns.Msg)
-
-		//nolint:forcetypeassert
-		msg.SetUpdate(d.Get("zone").(string))
-
-		if d.HasChange("txt") {
-			o, n := d.GetChange("txt")
-			//nolint:forcetypeassert
-			os := o.(*schema.Set)
-			//nolint:forcetypeassert
-			ns := n.(*schema.Set)
-			remove := os.Difference(ns).List()
-			add := ns.Difference(os).List()
-
-			// Loop through all the old addresses and remove them
-			for _, txt := range remove {
-				rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, ttl, txt)
-
-				rr_remove, err := dns.NewRR(rrStr)
-				if err != nil {
-					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
-				}
-
-				msg.Remove([]dns.RR{rr_remove})
-			}
-			// Loop through all the new addresses and insert them
-			for _, txt := range add {
-				rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, ttl, txt)
-
-				rr_insert, err := dns.NewRR(rrStr)
-				if err != nil {
-					return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
-				}
-
-				msg.Insert([]dns.RR{rr_insert})
-			}
-
-			r, err := exchange(msg, true, meta)
-			if err != nil {
-				d.SetId("")
-				return fmt.Errorf("Error updating DNS record: %s", err)
-			}
-			if r.Rcode != dns.RcodeSuccess {
-				d.SetId("")
-				return fmt.Errorf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
-			}
+		var convertDiags diag.Diagnostics
+		plan.TXT, convertDiags = types.SetValueFrom(ctx, plan.TXT.ElementType(ctx), txt)
+		if convertDiags.HasError() {
+			resp.Diagnostics.Append(convertDiags...)
+			return
 		}
 
-		return resourceDnsTXTRecordSetRead(d, meta)
+		plan.TTL = types.Int64Value(int64(ttl[0]))
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	} else {
-		return fmt.Errorf("update server is not set")
+		resp.State.RemoveResource(ctx)
 	}
 }
 
-func resourceDnsTXTRecordSetDelete(d *schema.ResourceData, meta interface{}) error {
+func (d *dnsTXTRecordSetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state txtRecordSetResourceModel
 
-	return resourceDnsDelete(d, meta, dns.TypeTXT)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	config := dnsConfig{
+		Name: state.Name.ValueString(),
+		Zone: state.Zone.ValueString(),
+	}
+
+	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
+	if err != nil {
+		resp.Diagnostics.AddError("DNS TXT record read error", err.Error())
+		return
+	}
+
+	if len(answers) > 0 {
+		var ttl sort.IntSlice
+		var txt []string
+
+		for _, record := range answers {
+			switch r := record.(type) {
+			case *dns.TXT:
+				txt = append(txt, strings.Join(r.Txt, ""))
+				ttl = append(ttl, int(r.Hdr.Ttl))
+			default:
+				resp.Diagnostics.AddError("DNS TXT record read error",
+					"Error querying DNS record: didn't get an TXT record")
+				return
+			}
+		}
+		sort.Sort(ttl)
+
+		var convertDiags diag.Diagnostics
+		state.TXT, convertDiags = types.SetValueFrom(ctx, state.TXT.ElementType(ctx), txt)
+		if convertDiags.HasError() {
+			resp.Diagnostics.Append(convertDiags...)
+			return
+		}
+
+		state.TTL = types.Int64Value(int64(ttl[0]))
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	} else {
+		resp.State.RemoveResource(ctx)
+	}
+}
+
+func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state txtRecordSetResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	config := dnsConfig{
+		Name: plan.Name.ValueString(),
+		Zone: plan.Zone.ValueString(),
+	}
+	fqdn := resourceFQDN_framework(config)
+
+	msg := new(dns.Msg)
+	msg.SetUpdate(plan.Zone.ValueString())
+
+	if !plan.TXT.Equal(state.TXT) {
+
+		var planTXT, stateTXT []string
+
+		resp.Diagnostics.Append(plan.TXT.ElementsAs(ctx, &planTXT, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		resp.Diagnostics.Append(state.TXT.ElementsAs(ctx, &stateTXT, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		var add []string
+		for _, newTXT := range planTXT {
+			for _, oldTXT := range stateTXT {
+				if oldTXT == newTXT {
+					continue
+				}
+			}
+			add = append(add, newTXT)
+		}
+
+		var remove []string
+		for _, oldTXT := range stateTXT {
+			for _, newTXT := range planTXT {
+				if oldTXT == newTXT {
+					continue
+				}
+			}
+			remove = append(remove, oldTXT)
+		}
+
+		// Loop through all the old addresses and remove them
+		for _, txt := range remove {
+			rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
+
+			rr_remove, err := dns.NewRR(rrStr)
+			if err != nil {
+				resp.Diagnostics.AddError("DNS TXT record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				return
+			}
+
+			msg.Remove([]dns.RR{rr_remove})
+		}
+		// Loop through all the new addresses and insert them
+		for _, txt := range add {
+			rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
+
+			rr_insert, err := dns.NewRR(rrStr)
+			if err != nil {
+				resp.Diagnostics.AddError("DNS TXT record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				return
+			}
+
+			msg.Insert([]dns.RR{rr_insert})
+		}
+
+		r, err := exchange_framework(msg, true, d.client)
+		if err != nil {
+			resp.State.RemoveResource(ctx)
+			resp.Diagnostics.AddError("DNS TXT record update error",
+				fmt.Sprintf("Error updating DNS record: %s", err))
+			return
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			resp.State.RemoveResource(ctx)
+			resp.Diagnostics.AddError("DNS TXT record update error",
+				fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+			return
+		}
+	}
+
+	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
+	if err != nil {
+		resp.Diagnostics.AddError("DNS TXT record read error", err.Error())
+		return
+	}
+
+	if len(answers) > 0 {
+		var ttl sort.IntSlice
+		var txt []string
+
+		for _, record := range answers {
+			switch r := record.(type) {
+			case *dns.TXT:
+				txt = append(txt, strings.Join(r.Txt, ""))
+				ttl = append(ttl, int(r.Hdr.Ttl))
+			default:
+				resp.Diagnostics.AddError("DNS TXT record update error",
+					"Error querying DNS record: didn't get an TXT record")
+				return
+			}
+		}
+		sort.Sort(ttl)
+
+		var convertDiags diag.Diagnostics
+		state.TXT, convertDiags = types.SetValueFrom(ctx, state.TXT.ElementType(ctx), txt)
+		if convertDiags.HasError() {
+			resp.Diagnostics.Append(convertDiags...)
+			return
+		}
+
+		state.TTL = types.Int64Value(int64(ttl[0]))
+
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	} else {
+		resp.State.RemoveResource(ctx)
+	}
+}
+
+func (d *dnsTXTRecordSetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state txtRecordSetResourceModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	config := dnsConfig{
+		Name: state.Name.ValueString(),
+		Zone: state.Zone.ValueString(),
+	}
+	err := resourceDnsDelete_framework(config, d.client, dns.TypeTXT)
+	if err != nil {
+		resp.Diagnostics.AddError("Delete resource error", err.Error())
+		return
+	}
+}
+
+func (d *dnsTXTRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+
+	config, err := resourceDnsImport_framework(req.ID, d.client)
+	if err != nil {
+		resp.Diagnostics.AddError("Import resource error", err.Error())
+		return
+	}
+
+	resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
+	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
+	if config.Name != "" {
+		resp.State.SetAttribute(ctx, path.Root("name"), config.Name)
+	}
+}
+
+type txtRecordSetResourceModel struct {
+	ID   types.String `tfsdk:"id"`
+	Zone types.String `tfsdk:"zone"`
+	Name types.String `tfsdk:"name"`
+	TXT  types.Set    `tfsdk:"txt"`
+	TTL  types.Int64  `tfsdk:"ttl"`
 }

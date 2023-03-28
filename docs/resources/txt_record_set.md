@@ -36,7 +36,7 @@ resource "dns_txt_record_set" "google" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the fully qualified domain name of the record set
 
 ## Import
 

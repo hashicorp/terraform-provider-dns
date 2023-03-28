@@ -166,7 +166,6 @@ func New() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"dns_a_record_set":    resourceDnsARecordSet(),
 			"dns_aaaa_record_set": resourceDnsAAAARecordSet(),
-			"dns_txt_record_set":  resourceDnsTXTRecordSet(),
 		},
 
 		ConfigureContextFunc: configureProvider,

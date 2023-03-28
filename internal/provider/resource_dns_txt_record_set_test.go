@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -18,7 +19,10 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 	resourceRoot := "dns_txt_record_set.root"
 
 	deleteTXTRecordSet := func() {
-		meta := testAccProvider.Meta()
+		meta, err := initializeDNSClient(context.Background())
+		if err != nil {
+			t.Fatalf("Error creating DNS Client: %s", err.Error())
+		}
 
 		msg := new(dns.Msg)
 
@@ -45,9 +49,9 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDnsARecordSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDnsARecordSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDnsTXTRecordSet_basic,
