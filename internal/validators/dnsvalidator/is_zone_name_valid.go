@@ -49,7 +49,7 @@ func (validator dnsZoneNameValidator) ValidateString(ctx context.Context, req va
 // IsZoneNameValid returns an AttributeValidator which ensures that any configured
 // attribute value:
 //
-//   - Is a String.
+//   - Is a non-empty String.
 //   - Contains no whitespace.
 //   - Is a fully qualified DNS zone name.
 //
