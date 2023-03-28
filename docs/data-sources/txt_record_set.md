@@ -34,6 +34,6 @@ output "hashi_txts" {
 
 ### Read-Only
 
-- `id` (String) The ID of this resource.
+- `id` (String) Always set to the host.
 - `record` (String) The first TXT record.
 - `records` (List of String) A list of TXT records.

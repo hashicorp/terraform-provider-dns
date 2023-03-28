@@ -182,6 +182,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewDnsNSRecordSetDataSource,
 		NewDnsPTRRecordSetDataSource,
 		NewDnsSRVRecordSetDataSource,
+		NewDnsTXTRecordSetDataSource,
 	}
 }
 

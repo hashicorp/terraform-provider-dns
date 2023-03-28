@@ -1,61 +1,90 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"net"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func dataSourceDnsTxtRecordSet() *schema.Resource {
-	return &schema.Resource{
-		Read: dataSourceDnsTxtRecordSetRead,
+var (
+	_ datasource.DataSource = (*dnsTXTRecordSetDataSource)(nil)
+)
 
-		Schema: map[string]*schema.Schema{
-			"host": {
-				Type:        schema.TypeString,
+func NewDnsTXTRecordSetDataSource() datasource.DataSource {
+	return &dnsTXTRecordSetDataSource{}
+}
+
+type dnsTXTRecordSetDataSource struct{}
+
+func (d *dnsTXTRecordSetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_txt_record_set"
+}
+
+func (d *dnsTXTRecordSetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Use this data source to get DNS TXT record set of the host.",
+		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
 				Required:    true,
-				ForceNew:    true,
 				Description: "Host to look up.",
 			},
-
-			"record": {
-				Type:        schema.TypeString,
+			"record": schema.StringAttribute{
 				Computed:    true,
 				Description: "The first TXT record.",
 			},
-
-			"records": {
-				Type:        schema.TypeList,
-				Elem:        &schema.Schema{Type: schema.TypeString},
+			"records": schema.ListAttribute{
 				Computed:    true,
+				ElementType: types.StringType,
 				Description: "A list of TXT records.",
 			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Always set to the host.",
+			},
 		},
-
-		Description: "Use this data source to get DNS TXT record set of the host.",
 	}
 }
 
-func dataSourceDnsTxtRecordSetRead(d *schema.ResourceData, meta interface{}) error {
-	//nolint:forcetypeassert
-	host := d.Get("host").(string)
+func (d *dnsTXTRecordSetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config txtRecordSetConfig
 
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	host := config.Host.ValueString()
 	records, err := net.LookupTXT(host)
 	if err != nil {
-		return fmt.Errorf("error looking up TXT records for %q: %s", host, err)
+		resp.Diagnostics.AddError(fmt.Sprintf("error looking up TXT records for %q: ", host), err.Error())
+		return
 	}
 
 	if len(records) > 0 {
-		//nolint:errcheck
-		d.Set("record", records[0])
+		config.Record = types.StringValue(records[0])
 	} else {
-		//nolint:errcheck
-		d.Set("record", "")
+		config.Record = types.StringNull()
 	}
-	//nolint:errcheck
-	d.Set("records", records)
-	d.SetId(host)
 
-	return nil
+	var convertDiags diag.Diagnostics
+	config.Records, convertDiags = types.ListValueFrom(ctx, config.Records.ElementType(ctx), records)
+	if convertDiags.HasError() {
+		resp.Diagnostics.Append(convertDiags...)
+		return
+	}
+
+	config.ID = config.Host
+	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
+}
+
+type txtRecordSetConfig struct {
+	ID      types.String `tfsdk:"id"`
+	Host    types.String `tfsdk:"host"`
+	Record  types.String `tfsdk:"record"`
+	Records types.List   `tfsdk:"records"`
 }
