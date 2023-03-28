@@ -543,7 +543,7 @@ Retry:
 	return r, err
 }
 
-func resourceDnsImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceDnsImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 
 	record := d.Id()
 	if !dns.IsFqdn(record) {
@@ -622,7 +622,7 @@ func resourceFQDN(d *schema.ResourceData) string {
 	return fqdn
 }
 
-func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([]dns.RR, error) {
+func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([]dns.RR, diag.Diagnostics) {
 
 	if meta != nil {
 
@@ -633,7 +633,7 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 
 		r, err := exchange(msg, true, meta)
 		if err != nil {
-			return nil, fmt.Errorf("Error querying DNS record: %s", err)
+			return nil, diag.Errorf("Error querying DNS record: %s", err)
 		}
 		switch r.Rcode {
 		case dns.RcodeSuccess:
@@ -645,7 +645,7 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		case dns.RcodeNameError:
 			return nil, nil
 		default:
-			return nil, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+			return nil, diag.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 		}
 
 		if rrType == dns.TypeNS {
@@ -653,11 +653,11 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		}
 		return r.Answer, nil
 	} else {
-		return nil, fmt.Errorf("update server is not set")
+		return nil, diag.Errorf("update server is not set")
 	}
 }
 
-func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) error {
+func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) diag.Diagnostics {
 
 	if meta != nil {
 
@@ -673,21 +673,21 @@ func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) 
 
 		rr, err := dns.NewRR(rrStr)
 		if err != nil {
-			return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+			return diag.Errorf("error reading DNS record (%s): %s", rrStr, err)
 		}
 
 		msg.RemoveRRset([]dns.RR{rr})
 
 		r, err := exchange(msg, true, meta)
 		if err != nil {
-			return fmt.Errorf("Error deleting DNS record: %s", err)
+			return diag.Errorf("Error deleting DNS record: %s", err)
 		}
 		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error deleting DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+			return diag.Errorf("Error deleting DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
 		}
 
 		return nil
 	} else {
-		return fmt.Errorf("update server is not set")
+		return diag.Errorf("update server is not set")
 	}
 }
