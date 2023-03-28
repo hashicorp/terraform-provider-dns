@@ -35,13 +35,7 @@ func (d *dnsMXRecordSetDataSource) Schema(ctx context.Context, req datasource.Sc
 				Required:    true,
 				Description: "Domain to look up.",
 			},
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "Always set to the domain",
-			},
 			"mx": schema.ListAttribute{
-				Description: "A list of records. They are sorted by ascending preference then alphabetically by " +
-					"exchange to stay consistent across runs.",
 				Computed: true,
 				ElementType: types.ObjectType{
 					AttrTypes: map[string]attr.Type{
@@ -49,6 +43,12 @@ func (d *dnsMXRecordSetDataSource) Schema(ctx context.Context, req datasource.Sc
 						"exchange":   types.StringType,
 					},
 				},
+				Description: "A list of records. They are sorted by ascending preference then alphabetically by " +
+					"exchange to stay consistent across runs.",
+			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Always set to the domain",
 			},
 		},
 	}
