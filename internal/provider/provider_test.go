@@ -31,12 +31,7 @@ var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
 
 func init() {
 	testAccProvider = New()
-	var err error
-	dnsClient, err = initializeDNSClient(context.Background())
-	if err != nil {
-		fmt.Errorf("Error creating DNS Client: %s", err.Error())
-	}
-
+	dnsClient, _ = initializeDNSClient(context.Background())
 }
 
 func TestProvider(t *testing.T) {
@@ -96,7 +91,7 @@ func TestAccProvider_Validators(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				//multiple update blocks
-				Config: fmt.Sprintf(`provider "dns" {
+				Config: `provider "dns" {
 					update {
 						server        = "192.168.0.1"
 						key_algorithm = "hmac-md5"
@@ -109,12 +104,12 @@ func TestAccProvider_Validators(t *testing.T) {
 					}
 				}
 
-				resource "dns_a_record_set" "foo" {}`),
+				resource "dns_a_record_set" "foo" {}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Value`),
 			},
 			{
 				//multiple gssapi blocks
-				Config: fmt.Sprintf(`provider "dns" {
+				Config: `provider "dns" {
 					update {
 						server        = "192.168.0.1"
 						gssapi {
@@ -130,12 +125,12 @@ func TestAccProvider_Validators(t *testing.T) {
 					}
 				}
 
-				resource "dns_a_record_set" "foo" {}`),
+				resource "dns_a_record_set" "foo" {}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Value`),
 			},
 			{
 				//missing key_name (required with key_algorithm and key_secret)
-				Config: fmt.Sprintf(`provider "dns" {
+				Config: `provider "dns" {
 					update {
 						server        = "192.168.0.1"
 						key_algorithm = "hmac-md5"
@@ -143,12 +138,12 @@ func TestAccProvider_Validators(t *testing.T) {
 					}
 				}
 
-				resource "dns_a_record_set" "foo" {}`),
+				resource "dns_a_record_set" "foo" {}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 			{
 				//update block key_ arguments set with gssapi block
-				Config: fmt.Sprintf(`provider "dns" {
+				Config: `provider "dns" {
 					update {
 						server        = "192.168.0.1"
 						key_name      = "example.com."
@@ -163,12 +158,12 @@ func TestAccProvider_Validators(t *testing.T) {
 					}
 				}
 
-				resource "dns_a_record_set" "foo" {}`),
+				resource "dns_a_record_set" "foo" {}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 			{
 				//username not set (required with keytab)
-				Config: fmt.Sprintf(`provider "dns" {
+				Config: `provider "dns" {
 					update {
 						server        = "192.168.0.1"
 						gssapi {
@@ -178,12 +173,12 @@ func TestAccProvider_Validators(t *testing.T) {
 					}
 				}
 
-				resource "dns_a_record_set" "foo" {}`),
+				resource "dns_a_record_set" "foo" {}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 			{
 				//both password and keytab set
-				Config: fmt.Sprintf(`provider "dns" {
+				Config: `provider "dns" {
 					update {
 						server        = "192.168.0.1"
 						gssapi {
@@ -195,7 +190,7 @@ func TestAccProvider_Validators(t *testing.T) {
 					}
 				}
 
-				resource "dns_a_record_set" "foo" {}`),
+				resource "dns_a_record_set" "foo" {}`,
 				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
 			},
 		},

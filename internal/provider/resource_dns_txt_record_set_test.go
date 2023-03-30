@@ -128,11 +128,11 @@ func testAccCheckDnsTXTRecordSetExists(n string, txt []interface{}, name, zone *
 
 		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
 		if diags.HasError() {
-			fmt.Errorf("couldn't create set from answers")
+			return fmt.Errorf("couldn't create set from answers")
 		}
 		expected, diags := types.SetValueFrom(context.Background(), types.StringType, txt)
 		if diags.HasError() {
-			fmt.Errorf("couldn't create set from given txt param")
+			return fmt.Errorf("couldn't create set from given txt param")
 		}
 
 		if !existing.Equal(expected) {

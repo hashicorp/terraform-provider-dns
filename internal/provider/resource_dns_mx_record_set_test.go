@@ -135,11 +135,11 @@ func testAccCheckDnsMXRecordSetExists(n string, mx []interface{}, name, zone *st
 
 		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
 		if diags.HasError() {
-			fmt.Errorf("couldn't create set from answers")
+			return fmt.Errorf("couldn't create set from answers")
 		}
 		expected, diags := types.SetValueFrom(context.Background(), types.StringType, mx)
 		if diags.HasError() {
-			fmt.Errorf("couldn't create set from given mx param")
+			return fmt.Errorf("couldn't create set from given mx param")
 		}
 
 		if !existing.Equal(expected) {

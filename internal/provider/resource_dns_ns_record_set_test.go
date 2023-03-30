@@ -118,11 +118,11 @@ func testAccCheckDnsNSRecordSetExists(n string, nameservers []interface{}, rec_n
 
 		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
 		if diags.HasError() {
-			fmt.Errorf("couldn't create set from answers")
+			return fmt.Errorf("couldn't create set from answers")
 		}
 		expected, diags := types.SetValueFrom(context.Background(), types.StringType, nameservers)
 		if diags.HasError() {
-			fmt.Errorf("couldn't create set from given nameservers param")
+			return fmt.Errorf("couldn't create set from given nameservers param")
 		}
 
 		if !existing.Equal(expected) {
