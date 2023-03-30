@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/miekg/dns"
@@ -78,6 +80,119 @@ func testAccCheckDnsDestroy(s *terraform.State, resourceType string, rrType uint
 	}
 
 	return nil
+}
+
+func TestAccProvider_Validators(t *testing.T) {
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             nil,
+		Steps: []resource.TestStep{
+			{
+				//multiple update blocks
+				Config: fmt.Sprintf(`provider "dns" {
+					update {
+						server        = "192.168.0.1"
+						key_algorithm = "hmac-md5"
+						key_secret    = "3VwZXJzZWNyZXQ="
+					}
+					update {
+						server        = "192.168.0.1"
+						key_algorithm = "hmac-md5"
+						key_secret    = "3VwZXJzZWNyZXQ="
+					}
+				}
+
+				resource "dns_a_record_set" "foo" {}`),
+				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Value`),
+			},
+			{
+				//multiple gssapi blocks
+				Config: fmt.Sprintf(`provider "dns" {
+					update {
+						server        = "192.168.0.1"
+						gssapi {
+							realm    = "EXAMPLE.COM"
+							username = "user"
+							keytab   = "/path/to/keytab"
+						}
+						gssapi {
+							realm    = "EXAMPLE.COM"
+							username = "user"
+							keytab   = "/path/to/keytab"
+						}
+					}
+				}
+
+				resource "dns_a_record_set" "foo" {}`),
+				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Value`),
+			},
+			{
+				//missing key_name (required with key_algorithm and key_secret)
+				Config: fmt.Sprintf(`provider "dns" {
+					update {
+						server        = "192.168.0.1"
+						key_algorithm = "hmac-md5"
+						key_secret    = "3VwZXJzZWNyZXQ="
+					}
+				}
+
+				resource "dns_a_record_set" "foo" {}`),
+				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
+			},
+			{
+				//update block key_ arguments set with gssapi block
+				Config: fmt.Sprintf(`provider "dns" {
+					update {
+						server        = "192.168.0.1"
+						key_name      = "example.com."
+						key_algorithm = "hmac-md5"
+						key_secret    = "3VwZXJzZWNyZXQ="
+						
+						gssapi {
+							realm    = "EXAMPLE.COM"
+							username = "user"
+							keytab   = "/path/to/keytab"
+						}
+					}
+				}
+
+				resource "dns_a_record_set" "foo" {}`),
+				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
+			},
+			{
+				//username not set (required with keytab)
+				Config: fmt.Sprintf(`provider "dns" {
+					update {
+						server        = "192.168.0.1"
+						gssapi {
+							realm    = "EXAMPLE.COM"
+							keytab   = "/path/to/keytab"
+						}
+					}
+				}
+
+				resource "dns_a_record_set" "foo" {}`),
+				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
+			},
+			{
+				//both password and keytab set
+				Config: fmt.Sprintf(`provider "dns" {
+					update {
+						server        = "192.168.0.1"
+						gssapi {
+							realm    = "EXAMPLE.COM"
+							username = "user"
+							password = "password"
+							keytab   = "/path/to/keytab"
+						}
+					}
+				}
+
+				resource "dns_a_record_set" "foo" {}`),
+				ExpectError: regexp.MustCompile(`.*Error: Invalid Attribute Combination`),
+			},
+		},
+	})
 }
 
 func initializeDNSClient(ctx context.Context) (*DNSClient, error) {

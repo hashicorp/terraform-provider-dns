@@ -170,7 +170,6 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	resp.ResourceData, _ = config.Client(ctx)
-	resp.DataSourceData, _ = config.Client(ctx)
 }
 
 func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
@@ -239,8 +238,6 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 									path.MatchRelative().AtParent().AtName("key_secret"),
 								),
 							},
-							//ConflictsWith: []string{"update.0.gssapi.0"},
-							//RequiredWith:  []string{"update.0.key_algorithm", "update.0.key_secret"},
 							Description: "The name of the TSIG key used to sign the DNS update messages.",
 						},
 						"key_algorithm": schema.StringAttribute{
@@ -252,8 +249,6 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 									path.MatchRelative().AtParent().AtName("key_secret"),
 								),
 							},
-							//ConflictsWith: []string{"update.0.gssapi.0"},
-							//RequiredWith:  []string{"update.0.key_name", "update.0.key_secret"},
 							Description: "Required if `key_name` is set. When using TSIG authentication, the " +
 								"algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` " +
 								"or `hmac-sha512`.",
@@ -267,8 +262,6 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 									path.MatchRelative().AtParent().AtName("key_algorithm"),
 								),
 							},
-							//ConflictsWith: []string{"update.0.gssapi.0"},
-							//RequiredWith:  []string{"update.0.key_name", "update.0.key_algorithm"},
 							Description: "Required if `key_name` is set\nA Base64-encoded string containing the " +
 								"shared secret to be used for TSIG.",
 						},
@@ -285,7 +278,6 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 							},
 							Description: "A `gssapi` block. Only one `gssapi` block may be in the configuration. " +
 								"Conflicts with use of `key_name`, `key_algorithm` and `key_secret`.",
-							//ConflictsWith: []string{"update.0.key_name", "update.0.key_algorithm", "update.0.key_secret"},
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"realm": schema.StringAttribute{
@@ -303,8 +295,6 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("keytab")),
 											stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("username")),
 										},
-										//ConflictsWith: []string{"update.0.gssapi.0.keytab"},
-										//RequiredWith:  []string{"update.0.gssapi.0.username"},
 										Sensitive: true,
 										Description: "This or `keytab` is required if `username` is set. The matching " +
 											"password for `username`.",
@@ -312,11 +302,9 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 									"keytab": schema.StringAttribute{
 										Optional: true,
 										Validators: []validator.String{
-											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("username")),
-											stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("password")),
+											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("password")),
+											stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("username")),
 										},
-										//ConflictsWith: []string{"update.0.gssapi.0.password"},
-										//RequiredWith:  []string{"update.0.gssapi.0.username"},
 										Description: "This or `password` is required if `username` is set, not " +
 											"supported on Windows. The path to a keytab file containing a key for " +
 											"`username`.",
