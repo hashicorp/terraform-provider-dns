@@ -11,24 +11,32 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
-var testAccProviders map[string]*schema.Provider
 var testAccProvider *schema.Provider
-
+var dnsClient *DNSClient
 var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
 	"dns": providerserver.NewProtocol5WithError(NewFrameworkProvider()),
 }
 
+var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
+	"dns": func() (*schema.Provider, error) {
+		return testAccProvider, nil
+	},
+}
+
 func init() {
 	testAccProvider = New()
-	testAccProviders = map[string]*schema.Provider{
-		"dns": testAccProvider,
+	var err error
+	dnsClient, err = initializeDNSClient(context.Background())
+	if err != nil {
+		fmt.Errorf("Error creating DNS Client: %s", err.Error())
 	}
+
 }
 
 func TestProvider(t *testing.T) {
@@ -58,7 +66,6 @@ func testResourceFQDN(name, zone string) string {
 }
 
 func testAccCheckDnsDestroy(s *terraform.State, resourceType string, rrType uint16) error {
-	meta := testAccProvider.Meta()
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != resourceType {
 			continue
@@ -68,7 +75,7 @@ func testAccCheckDnsDestroy(s *terraform.State, resourceType string, rrType uint
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}

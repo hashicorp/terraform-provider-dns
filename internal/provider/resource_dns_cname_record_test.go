@@ -1,12 +1,11 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
@@ -16,11 +15,6 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 	resourceName := "dns_cname_record.foo"
 
 	deleteCnameRecord := func() {
-		meta, err := initializeDNSClient(context.Background())
-		if err != nil {
-			t.Fatalf("Error creating DNS Client: %s", err.Error())
-		}
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(rec_zone)
@@ -36,7 +30,7 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}
@@ -97,11 +91,9 @@ func testAccCheckDnsCnameRecordExists(n, expected string, rec_name, rec_zone *st
 
 		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
 
-		meta := testAccProvider.Meta()
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeCNAME)
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}

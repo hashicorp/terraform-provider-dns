@@ -1,17 +1,14 @@
 package provider
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
-
-	"github.com/hashicorp/terraform-provider-dns/internal/hashcode"
 )
 
 func TestAccDnsMXRecordSet_Basic(t *testing.T) {
@@ -21,11 +18,6 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 	resourceRoot := "dns_mx_record_set.root"
 
 	deleteMXRecordSet := func() {
-		meta, err := initializeDNSClient(context.Background())
-		if err != nil {
-			t.Fatalf("Error creating DNS Client: %s", err.Error())
-		}
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(zone)
@@ -41,7 +33,7 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}
@@ -117,11 +109,9 @@ func testAccCheckDnsMXRecordSetExists(n string, mx []interface{}, name, zone *st
 
 		fqdn := testResourceFQDN(*name, *zone)
 
-		meta := testAccProvider.Meta()
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, dns.TypeMX)
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -129,20 +119,29 @@ func testAccCheckDnsMXRecordSetExists(n string, mx []interface{}, name, zone *st
 			return fmt.Errorf("Error querying DNS record")
 		}
 
-		existing := schema.NewSet(resourceDnsMXRecordSetHash, nil)
-		expected := schema.NewSet(resourceDnsMXRecordSetHash, mx)
+		var answers []mxBlockConfig
 		for _, record := range r.Answer {
 			switch r := record.(type) {
 			case *dns.MX:
-				m := map[string]interface{}{
-					"preference": int(r.Preference),
-					"exchange":   r.Mx,
+				m := mxBlockConfig{
+					Preference: types.Int64Value(int64(r.Preference)),
+					Exchange:   types.StringValue(r.Mx),
 				}
-				existing.Add(m)
+				answers = append(answers, m)
 			default:
 				return fmt.Errorf("didn't get an MX record")
 			}
 		}
+
+		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from answers")
+		}
+		expected, diags := types.SetValueFrom(context.Background(), types.StringType, mx)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from given mx param")
+		}
+
 		if !existing.Equal(expected) {
 			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, existing)
 		}
@@ -185,15 +184,3 @@ var testAccDnsMXRecordSet_root = `
     }
     ttl = 300
   }`
-
-func resourceDnsMXRecordSetHash(v interface{}) int {
-	var buf bytes.Buffer
-	//nolint:forcetypeassert
-	m := v.(map[string]interface{})
-	//nolint:forcetypeassert
-	buf.WriteString(fmt.Sprintf("%d-", m["preference"].(int)))
-	//nolint:forcetypeassert
-	buf.WriteString(fmt.Sprintf("%s-", m["exchange"].(string)))
-
-	return hashcode.String(buf.String())
-}

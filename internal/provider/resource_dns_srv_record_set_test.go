@@ -1,17 +1,14 @@
 package provider
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
-
-	"github.com/hashicorp/terraform-provider-dns/internal/hashcode"
 )
 
 func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
@@ -20,11 +17,6 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 	resourceName := "dns_srv_record_set.foo"
 
 	deleteSRVRecordSet := func() {
-		meta, err := initializeDNSClient(context.Background())
-		if err != nil {
-			t.Fatalf("Error creating DNS Client: %s", err.Error())
-		}
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(zone)
@@ -40,7 +32,7 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}
@@ -104,11 +96,9 @@ func testAccCheckDnsSRVRecordSetExists(n string, srv []interface{}, name, zone *
 
 		fqdn := testResourceFQDN(*name, *zone)
 
-		meta := testAccProvider.Meta()
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, dns.TypeSRV)
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -116,22 +106,31 @@ func testAccCheckDnsSRVRecordSetExists(n string, srv []interface{}, name, zone *
 			return fmt.Errorf("Error querying DNS record")
 		}
 
-		existing := schema.NewSet(resourceDnsSRVRecordSetHash, nil)
-		expected := schema.NewSet(resourceDnsSRVRecordSetHash, srv)
+		var answers []srvBlockConfig
 		for _, record := range r.Answer {
 			switch r := record.(type) {
 			case *dns.SRV:
-				s := map[string]interface{}{
-					"priority": int(r.Priority),
-					"weight":   int(r.Weight),
-					"port":     int(r.Port),
-					"target":   r.Target,
+				s := srvBlockConfig{
+					Priority: types.Int64Value(int64(r.Priority)),
+					Weight:   types.Int64Value(int64(r.Weight)),
+					Port:     types.Int64Value(int64(r.Port)),
+					Target:   types.StringValue(r.Target),
 				}
-				existing.Add(s)
+				answers = append(answers, s)
 			default:
 				return fmt.Errorf("didn't get an SRV record")
 			}
 		}
+
+		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from answers")
+		}
+		expected, diags := types.SetValueFrom(context.Background(), types.StringType, srv)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from given srv param")
+		}
+
 		if !existing.Equal(expected) {
 			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, existing)
 		}
@@ -170,19 +169,3 @@ var testAccDnsSRVRecordSet_update = `
     }
     ttl = 300
   }`
-
-func resourceDnsSRVRecordSetHash(v interface{}) int {
-	var buf bytes.Buffer
-	//nolint:forcetypeassert
-	m := v.(map[string]interface{})
-	//nolint:forcetypeassert
-	buf.WriteString(fmt.Sprintf("%d-", m["priority"].(int)))
-	//nolint:forcetypeassert
-	buf.WriteString(fmt.Sprintf("%d-", m["weight"].(int)))
-	//nolint:forcetypeassert
-	buf.WriteString(fmt.Sprintf("%d-", m["port"].(int)))
-	//nolint:forcetypeassert
-	buf.WriteString(fmt.Sprintf("%s-", m["target"].(string)))
-
-	return hashcode.String(buf.String())
-}

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
@@ -44,9 +44,9 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckDnsARecordSetDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testSDKProviderFactories,
+		CheckDestroy:      testAccCheckDnsARecordSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDnsARecordSet_basic,

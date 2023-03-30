@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
@@ -19,11 +19,6 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 	resourceRoot := "dns_txt_record_set.root"
 
 	deleteTXTRecordSet := func() {
-		meta, err := initializeDNSClient(context.Background())
-		if err != nil {
-			t.Fatalf("Error creating DNS Client: %s", err.Error())
-		}
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(zone)
@@ -39,7 +34,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}
@@ -111,11 +106,9 @@ func testAccCheckDnsTXTRecordSetExists(n string, txt []interface{}, name, zone *
 
 		fqdn := testResourceFQDN(*name, *zone)
 
-		meta := testAccProvider.Meta()
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, dns.TypeTXT)
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -123,16 +116,25 @@ func testAccCheckDnsTXTRecordSetExists(n string, txt []interface{}, name, zone *
 			return fmt.Errorf("Error querying DNS record")
 		}
 
-		existing := schema.NewSet(schema.HashString, nil)
-		expected := schema.NewSet(schema.HashString, txt)
+		var answers []string
 		for _, record := range r.Answer {
 			switch r := record.(type) {
 			case *dns.TXT:
-				existing.Add(strings.Join(r.Txt, ""))
+				answers = append(answers, strings.Join(r.Txt, ""))
 			default:
 				return fmt.Errorf("didn't get an TXT record")
 			}
 		}
+
+		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from answers")
+		}
+		expected, diags := types.SetValueFrom(context.Background(), types.StringType, txt)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from given txt param")
+		}
+
 		if !existing.Equal(expected) {
 			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, existing)
 		}

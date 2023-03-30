@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
@@ -17,11 +17,6 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 	resourceName := "dns_ns_record_set.foo"
 
 	deleteNSRecordSet := func() {
-		meta, err := initializeDNSClient(context.Background())
-		if err != nil {
-			t.Fatalf("Error creating DNS Client: %s", err.Error())
-		}
-
 		msg := new(dns.Msg)
 
 		msg.SetUpdate(rec_zone)
@@ -37,7 +32,7 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}
@@ -86,7 +81,7 @@ func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_ns_record_set", dns.TypeNS)
 }
 
-func testAccCheckDnsNSRecordSetExists(n string, nameserver []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
+func testAccCheckDnsNSRecordSetExists(n string, nameservers []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -101,12 +96,10 @@ func testAccCheckDnsNSRecordSetExists(n string, nameserver []interface{}, rec_na
 
 		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
 
-		meta := testAccProvider.Meta()
-
 		msg := new(dns.Msg)
 		msg.SetQuestion(rec_fqdn, dns.TypeNS)
 
-		r, err := exchange(msg, false, meta)
+		r, err := exchange(msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -114,18 +107,26 @@ func testAccCheckDnsNSRecordSetExists(n string, nameserver []interface{}, rec_na
 			return fmt.Errorf("Error querying DNS record")
 		}
 
-		nameservers := schema.NewSet(schema.HashString, nil)
+		var answers []string
 		for _, record := range r.Ns {
 			nameserver, _, err := getNSVal(record)
 			if err != nil {
 				return fmt.Errorf("Error querying DNS record: %s", err)
 			}
-			nameservers.Add(nameserver)
+			answers = append(answers, nameserver)
 		}
-		expected := schema.NewSet(schema.HashString, nameserver)
 
-		if !nameservers.Equal(expected) {
-			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, nameservers)
+		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from answers")
+		}
+		expected, diags := types.SetValueFrom(context.Background(), types.StringType, nameservers)
+		if diags.HasError() {
+			fmt.Errorf("couldn't create set from given nameservers param")
+		}
+
+		if !existing.Equal(expected) {
+			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, existing)
 		}
 		return nil
 	}
