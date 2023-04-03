@@ -29,6 +29,15 @@ var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
 	},
 }
 
+func providerVersion324() map[string]resource.ExternalProvider {
+	return map[string]resource.ExternalProvider{
+		"dns": {
+			VersionConstraint: "3.2.4",
+			Source:            "hashicorp/dns",
+		},
+	}
+}
+
 func init() {
 	testAccProvider = New()
 	dnsClient, _ = initializeDNSClient(context.Background())

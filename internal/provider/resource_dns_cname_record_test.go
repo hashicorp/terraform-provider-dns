@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
@@ -67,6 +68,93 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccDnsCnameRecord_basic_upgrade(t *testing.T) {
+
+	var rec_name, rec_zone string
+	resourceName := "dns_cname_record.foo"
+
+	deleteCnameRecord := func() {
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(rec_zone)
+
+		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
+
+		rrStr := fmt.Sprintf("%s 0 CNAME", rec_fqdn)
+
+		rr_remove, err := dns.NewRR(rrStr)
+		if err != nil {
+			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
+		}
+
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, dnsClient)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: testAccCheckDnsCnameRecordDestroy,
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsCnameRecord_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDnsCnameRecordExists(resourceName, "bar.example.com.", &rec_name, &rec_zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsCnameRecord_basic,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsCnameRecord_update,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsCnameRecord_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				PreConfig:         deleteCnameRecord,
+				Config:            testAccDnsCnameRecord_update,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsCnameRecord_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})

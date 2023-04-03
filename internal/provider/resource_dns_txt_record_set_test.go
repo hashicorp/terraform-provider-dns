@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
@@ -86,6 +87,96 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				ResourceName:      resourceRoot,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
+
+	var name, zone string
+	resourceName := "dns_txt_record_set.foo"
+
+	deleteTXTRecordSet := func() {
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(zone)
+
+		fqdn := testResourceFQDN(name, zone)
+
+		rrStr := fmt.Sprintf("%s 0 TXT", fqdn)
+
+		rr_remove, err := dns.NewRR(rrStr)
+		if err != nil {
+			t.Fatalf("Error reading DNS record: %s", err)
+		}
+
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, dnsClient)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: testAccCheckDnsARecordSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsTXTRecordSet_basic,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "txt.#", "2"),
+					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar"}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsTXTRecordSet_basic,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsTXTRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
+					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsTXTRecordSet_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				PreConfig:         deleteTXTRecordSet,
+				Config:            testAccDnsTXTRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
+					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsTXTRecordSet_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})

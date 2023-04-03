@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
@@ -72,6 +73,96 @@ func TestAccDnsSRVRecordSet_Basic(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccDnsSRVRecordSet_Basic_Upgrade(t *testing.T) {
+
+	var name, zone string
+	resourceName := "dns_srv_record_set.foo"
+
+	deleteSRVRecordSet := func() {
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(zone)
+
+		fqdn := testResourceFQDN(name, zone)
+
+		rrStr := fmt.Sprintf("%s 0 SRV", fqdn)
+
+		rr_remove, err := dns.NewRR(rrStr)
+		if err != nil {
+			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
+		}
+
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, dnsClient)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: testAccCheckDnsSRVRecordSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsSRVRecordSet_basic,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "srv.#", "1"),
+					testAccCheckDnsSRVRecordSetExists(resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsSRVRecordSet_basic,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsSRVRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "srv.#", "2"),
+					testAccCheckDnsSRVRecordSetExists(resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsSRVRecordSet_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				PreConfig:         deleteSRVRecordSet,
+				Config:            testAccDnsSRVRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "srv.#", "2"),
+					testAccCheckDnsSRVRecordSetExists(resourceName, []interface{}{map[string]interface{}{"priority": 10, "weight": 60, "port": 5060, "target": "bigbox.example.com."}, map[string]interface{}{"priority": 20, "weight": 0, "port": 5060, "target": "backupbox.example.com."}}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsSRVRecordSet_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})

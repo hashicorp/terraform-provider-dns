@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
@@ -85,6 +86,96 @@ func TestAccDnsMXRecordSet_Basic(t *testing.T) {
 				ResourceName:      resourceRoot,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccDnsMXRecordSet_Basic_Upgrade(t *testing.T) {
+
+	var name, zone string
+	resourceName := "dns_mx_record_set.foo"
+
+	deleteMXRecordSet := func() {
+		msg := new(dns.Msg)
+
+		msg.SetUpdate(zone)
+
+		fqdn := testResourceFQDN(name, zone)
+
+		rrStr := fmt.Sprintf("%s 0 MX", fqdn)
+
+		rr_remove, err := dns.NewRR(rrStr)
+		if err != nil {
+			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
+		}
+
+		msg.RemoveRRset([]dns.RR{rr_remove})
+
+		r, err := exchange(msg, true, dnsClient)
+		if err != nil {
+			t.Fatalf("Error deleting DNS record: %s", err)
+		}
+		if r.Rcode != dns.RcodeSuccess {
+			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+		}
+	}
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		CheckDestroy: testAccCheckDnsMXRecordSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsMXRecordSet_basic,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "mx.#", "1"),
+					testAccCheckDnsMXRecordSetExists(resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsMXRecordSet_basic,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				Config:            testAccDnsMXRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "mx.#", "2"),
+					testAccCheckDnsMXRecordSetExists(resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsMXRecordSet_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
+			},
+			{
+				ExternalProviders: providerVersion324(),
+				PreConfig:         deleteMXRecordSet,
+				Config:            testAccDnsMXRecordSet_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "mx.#", "2"),
+					testAccCheckDnsMXRecordSetExists(resourceName, []interface{}{map[string]interface{}{"preference": 10, "exchange": "smtp.example.org."}, map[string]interface{}{"preference": 20, "exchange": "backup.example.org."}}, &name, &zone),
+				),
+			},
+			{
+				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+				Config:                   testAccDnsMXRecordSet_update,
+				ConfigPlanChecks: resource.ConfigPlanChecks{
+					PreApply: []plancheck.PlanCheck{
+						plancheck.ExpectEmptyPlan(),
+					},
+				},
 			},
 		},
 	})
