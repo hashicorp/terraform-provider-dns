@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
@@ -12,11 +11,13 @@ import (
 
 func TestAccDnsARecordSet_Basic(t *testing.T) {
 
-	var rec_name, rec_zone string
 	resourceName := "dns_a_record_set.foo"
 	resourceRoot := "dns_a_record_set.root"
 
 	deleteARecordSet := func() {
+		rec_name := "foo"
+		rec_zone := "example.com."
+
 		meta := testAccProvider.Meta()
 
 		msg := new(dns.Msg)
@@ -52,14 +53,17 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config: testAccDnsARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					testAccCheckDnsARecordSetExists(resourceName, []interface{}{"192.168.0.2", "192.168.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "192.168.000.002"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "192.168.000.001"),
 				),
 			},
 			{
 				Config: testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "10.0.0.3"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "10.0.0.2"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "10.0.0.1"),
 				),
 			},
 			{
@@ -67,7 +71,9 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config:    testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),
-					testAccCheckDnsARecordSetExists(resourceName, []interface{}{"10.0.0.3", "10.0.0.2", "10.0.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "10.0.0.3"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "10.0.0.2"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "10.0.0.1"),
 				),
 			},
 			{
@@ -79,7 +85,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				Config: testAccDnsARecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
-					testAccCheckDnsARecordSetExists(resourceRoot, []interface{}{"192.168.0.1"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceRoot, "addresses.*", "192.168.0.1"),
 				),
 			},
 			{
@@ -93,49 +99,6 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 func testAccCheckDnsARecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_a_record_set", dns.TypeA)
-}
-
-func testAccCheckDnsARecordSetExists(n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
-		}
-
-		*rec_name = rs.Primary.Attributes["name"]
-		*rec_zone = rs.Primary.Attributes["zone"]
-
-		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
-
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypeA)
-		r, err := exchange(msg, false, meta)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record")
-		}
-
-		addresses := schema.NewSet(schema.HashString, nil)
-		expected := schema.NewSet(schema.HashString, addr)
-		for _, record := range r.Answer {
-			addr, _, err := getAVal(record)
-			if err != nil {
-				return fmt.Errorf("Error querying DNS record: %s", err)
-			}
-			addresses.Add(addr)
-		}
-		if !addresses.Equal(expected) {
-			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, addresses)
-		}
-		return nil
-	}
 }
 
 var testAccDnsARecordSet_basic = `

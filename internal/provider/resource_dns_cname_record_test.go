@@ -10,35 +10,8 @@ import (
 	"github.com/miekg/dns"
 )
 
-func TestAccDnsCnameRecord_basic(t *testing.T) {
-
-	var rec_name, rec_zone string
+func TestAccDnsCnameRecord_Basic(t *testing.T) {
 	resourceName := "dns_cname_record.foo"
-
-	deleteCnameRecord := func() {
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(rec_zone)
-
-		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-		rrStr := fmt.Sprintf("%s 0 CNAME", rec_fqdn)
-
-		rr_remove, err := dns.NewRR(rrStr)
-		if err != nil {
-			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
-		}
-
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, dnsClient)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -48,20 +21,20 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 			{
 				Config: testAccDnsCnameRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(resourceName, "bar.example.com.", &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "cname", "bar.example.com."),
 				),
 			},
 			{
 				Config: testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "cname", "baz.example.com."),
 				),
 			},
 			{
-				PreConfig: deleteCnameRecord,
+				PreConfig: func() { deleteCnameRecord(t) },
 				Config:    testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "cname", "baz.example.com."),
 				),
 			},
 			{
@@ -73,35 +46,8 @@ func TestAccDnsCnameRecord_basic(t *testing.T) {
 	})
 }
 
-func TestAccDnsCnameRecord_basic_upgrade(t *testing.T) {
-
-	var rec_name, rec_zone string
+func TestAccDnsCnameRecord_Basic_Upgrade(t *testing.T) {
 	resourceName := "dns_cname_record.foo"
-
-	deleteCnameRecord := func() {
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(rec_zone)
-
-		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-		rrStr := fmt.Sprintf("%s 0 CNAME", rec_fqdn)
-
-		rr_remove, err := dns.NewRR(rrStr)
-		if err != nil {
-			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
-		}
-
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, dnsClient)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -111,7 +57,7 @@ func TestAccDnsCnameRecord_basic_upgrade(t *testing.T) {
 				ExternalProviders: providerVersion324(),
 				Config:            testAccDnsCnameRecord_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(resourceName, "bar.example.com.", &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "cname", "bar.example.com."),
 				),
 			},
 			{
@@ -127,7 +73,7 @@ func TestAccDnsCnameRecord_basic_upgrade(t *testing.T) {
 				ExternalProviders: providerVersion324(),
 				Config:            testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "cname", "baz.example.com."),
 				),
 			},
 			{
@@ -141,10 +87,10 @@ func TestAccDnsCnameRecord_basic_upgrade(t *testing.T) {
 			},
 			{
 				ExternalProviders: providerVersion324(),
-				PreConfig:         deleteCnameRecord,
+				PreConfig:         func() { deleteCnameRecord(t) },
 				Config:            testAccDnsCnameRecord_update,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDnsCnameRecordExists(resourceName, "baz.example.com.", &rec_name, &rec_zone),
+					resource.TestCheckResourceAttr(resourceName, "cname", "baz.example.com."),
 				),
 			},
 			{
@@ -160,48 +106,36 @@ func TestAccDnsCnameRecord_basic_upgrade(t *testing.T) {
 	})
 }
 
-func testAccCheckDnsCnameRecordDestroy(s *terraform.State) error {
-	return testAccCheckDnsDestroy(s, "dns_cname_record", dns.TypeCNAME)
+func deleteCnameRecord(t *testing.T) {
+	rec_name := "baz"
+	rec_zone := "example.com."
+
+	msg := new(dns.Msg)
+
+	msg.SetUpdate(rec_zone)
+
+	rec_fqdn := testResourceFQDN(rec_name, rec_zone)
+
+	rrStr := fmt.Sprintf("%s 0 CNAME", rec_fqdn)
+
+	rr_remove, err := dns.NewRR(rrStr)
+	if err != nil {
+		t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
+	}
+
+	msg.RemoveRRset([]dns.RR{rr_remove})
+
+	r, err := exchange(msg, true, dnsClient)
+	if err != nil {
+		t.Fatalf("Error deleting DNS record: %s", err)
+	}
+	if r.Rcode != dns.RcodeSuccess {
+		t.Fatalf("Error deleting DNS record: %v", r.Rcode)
+	}
 }
 
-func testAccCheckDnsCnameRecordExists(n, expected string, rec_name, rec_zone *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
-		}
-
-		*rec_name = rs.Primary.Attributes["name"]
-		*rec_zone = rs.Primary.Attributes["zone"]
-
-		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypeCNAME)
-		r, err := exchange(msg, false, dnsClient)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record")
-		}
-
-		if len(r.Answer) > 1 {
-			return fmt.Errorf("Error querying DNS record: multiple responses received")
-		}
-		record := r.Answer[0]
-		cname, _, err := getCnameVal(record)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if expected != cname {
-			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, cname)
-		}
-		return nil
-	}
+func testAccCheckDnsCnameRecordDestroy(s *terraform.State) error {
+	return testAccCheckDnsDestroy(s, "dns_cname_record", dns.TypeCNAME)
 }
 
 var testAccDnsCnameRecord_basic = `

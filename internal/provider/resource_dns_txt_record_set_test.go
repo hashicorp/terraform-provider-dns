@@ -1,48 +1,17 @@
 package provider
 
 import (
-	"context"
 	"fmt"
-	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
 func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
-
-	var name, zone string
 	resourceName := "dns_txt_record_set.foo"
 	resourceRoot := "dns_txt_record_set.root"
-
-	deleteTXTRecordSet := func() {
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(zone)
-
-		fqdn := testResourceFQDN(name, zone)
-
-		rrStr := fmt.Sprintf("%s 0 TXT", fqdn)
-
-		rr_remove, err := dns.NewRR(rrStr)
-		if err != nil {
-			t.Fatalf("Error reading DNS record: %s", err)
-		}
-
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, dnsClient)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
@@ -53,22 +22,27 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsTXTRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "2"),
-					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "bar"),
 				),
 			},
 			{
 				Config: testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "bar"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "baz"),
 				),
 			},
 			{
-				PreConfig: deleteTXTRecordSet,
+				PreConfig: func() { deleteTXTRecordSet(t) },
 				Config:    testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "bar"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "baz"),
 				),
 			},
 			{
@@ -80,7 +54,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				Config: testAccDnsTXTRecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "txt.#", "1"),
-					testAccCheckDnsTXTRecordSetExists(resourceRoot, []interface{}{"foo"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceRoot, "txt.*", "foo"),
 				),
 			},
 			{
@@ -93,34 +67,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 }
 
 func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
-
-	var name, zone string
 	resourceName := "dns_txt_record_set.foo"
-
-	deleteTXTRecordSet := func() {
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(zone)
-
-		fqdn := testResourceFQDN(name, zone)
-
-		rrStr := fmt.Sprintf("%s 0 TXT", fqdn)
-
-		rr_remove, err := dns.NewRR(rrStr)
-		if err != nil {
-			t.Fatalf("Error reading DNS record: %s", err)
-		}
-
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, dnsClient)
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -131,7 +78,8 @@ func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
 				Config:            testAccDnsTXTRecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "2"),
-					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "bar"),
 				),
 			},
 			{
@@ -148,7 +96,9 @@ func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
 				Config:            testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "bar"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "baz"),
 				),
 			},
 			{
@@ -162,11 +112,13 @@ func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
 			},
 			{
 				ExternalProviders: providerVersion324(),
-				PreConfig:         deleteTXTRecordSet,
+				PreConfig:         func() { deleteTXTRecordSet(t) },
 				Config:            testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
-					testAccCheckDnsTXTRecordSetExists(resourceName, []interface{}{"foo", "bar", "baz"}, &name, &zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "foo"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "bar"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "txt.*", "baz"),
 				),
 			},
 			{
@@ -182,54 +134,31 @@ func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
 	})
 }
 
-func testAccCheckDnsTXTRecordSetExists(n string, txt []interface{}, name, zone *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
-		}
+func deleteTXTRecordSet(t *testing.T) {
+	name := "foo"
+	zone := "example.com."
 
-		*name = rs.Primary.Attributes["name"]
-		*zone = rs.Primary.Attributes["zone"]
+	msg := new(dns.Msg)
 
-		fqdn := testResourceFQDN(*name, *zone)
+	msg.SetUpdate(zone)
 
-		msg := new(dns.Msg)
-		msg.SetQuestion(fqdn, dns.TypeTXT)
-		r, err := exchange(msg, false, dnsClient)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record")
-		}
+	fqdn := testResourceFQDN(name, zone)
 
-		var answers []string
-		for _, record := range r.Answer {
-			switch r := record.(type) {
-			case *dns.TXT:
-				answers = append(answers, strings.Join(r.Txt, ""))
-			default:
-				return fmt.Errorf("didn't get an TXT record")
-			}
-		}
+	rrStr := fmt.Sprintf("%s 0 TXT", fqdn)
 
-		existing, diags := types.SetValueFrom(context.Background(), types.StringType, answers)
-		if diags.HasError() {
-			return fmt.Errorf("couldn't create set from answers")
-		}
-		expected, diags := types.SetValueFrom(context.Background(), types.StringType, txt)
-		if diags.HasError() {
-			return fmt.Errorf("couldn't create set from given txt param")
-		}
+	rr_remove, err := dns.NewRR(rrStr)
+	if err != nil {
+		t.Fatalf("Error reading DNS record: %s", err)
+	}
 
-		if !existing.Equal(expected) {
-			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, existing)
-		}
-		return nil
+	msg.RemoveRRset([]dns.RR{rr_remove})
+
+	r, err := exchange(msg, true, dnsClient)
+	if err != nil {
+		t.Fatalf("Error deleting DNS record: %s", err)
+	}
+	if r.Rcode != dns.RcodeSuccess {
+		t.Fatalf("Error deleting DNS record: %v", r.Rcode)
 	}
 }
 

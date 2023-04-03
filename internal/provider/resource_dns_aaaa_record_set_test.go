@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
@@ -12,11 +11,13 @@ import (
 
 func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
-	var rec_name, rec_zone string
 	resourceName := "dns_aaaa_record_set.bar"
 	resourceRoot := "dns_aaaa_record_set.root"
 
 	deleteAAAARecordSet := func() {
+		rec_name := "bar"
+		rec_zone := "example.com."
+
 		meta := testAccProvider.Meta()
 
 		msg := new(dns.Msg)
@@ -52,14 +53,16 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(resourceName, []interface{}{"fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::cafe:babe:dead:beef"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:dead:beef:cafe:babe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:cafe:babe:dead:beef"),
 				),
 			},
 			{
 				Config: testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(resourceName, []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:beef:dead:babe:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:babe:cafe:beef:dead"),
 				),
 			},
 			{
@@ -67,14 +70,28 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config:    testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					testAccCheckDnsAAAARecordSetExists(resourceName, []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:beef:dead:babe:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:babe:cafe:beef:dead"),
 				),
 			},
 			{
 				Config: testAccDnsAAAARecordSet_retry,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "14"),
-					testAccCheckDnsAAAARecordSetExists(resourceName, []interface{}{"fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::beef:dead:babe:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::babe:cafe:beef:dead"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::beef:babe:dead:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::babe:beef:cafe:dead"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:beef:babe:dead"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:beef:dead:babe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:babe:dead:beef"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:babe:beef:dead"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:babe:cafe:beef"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:babe:beef:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:cafe:babe:beef"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:cafe:beef:babe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:beef:cafe:babe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:beef:babe:cafe"),
 				),
 			},
 			{
@@ -86,7 +103,7 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
-					testAccCheckDnsAAAARecordSetExists(resourceRoot, []interface{}{"fdd5:e282::beef:dead:babe:cafe"}, &rec_name, &rec_zone),
+					resource.TestCheckTypeSetElemAttr(resourceRoot, "addresses.*", "fdd5:e282:0000:0000:beef:dead:babe:cafe"),
 				),
 			},
 			{
@@ -100,49 +117,6 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 
 func testAccCheckDnsAAAARecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_aaaa_record_set", dns.TypeAAAA)
-}
-
-func testAccCheckDnsAAAARecordSetExists(n string, addr []interface{}, rec_name, rec_zone *string) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-		rs, ok := s.RootModule().Resources[n]
-		if !ok {
-			return fmt.Errorf("Not found: %s", n)
-		}
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
-		}
-
-		*rec_name = rs.Primary.Attributes["name"]
-		*rec_zone = rs.Primary.Attributes["zone"]
-
-		rec_fqdn := testResourceFQDN(*rec_name, *rec_zone)
-
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-		msg.SetQuestion(rec_fqdn, dns.TypeAAAA)
-		r, err := exchange(msg, false, meta)
-		if err != nil {
-			return fmt.Errorf("Error querying DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			return fmt.Errorf("Error querying DNS record")
-		}
-
-		addresses := schema.NewSet(schema.HashString, nil)
-		expected := schema.NewSet(schema.HashString, addr)
-		for _, record := range r.Answer {
-			addr, _, err := getAAAAVal(record)
-			if err != nil {
-				return fmt.Errorf("Error querying DNS record: %s", err)
-			}
-			addresses.Add(addr)
-		}
-		if !addresses.Equal(expected) {
-			return fmt.Errorf("DNS record differs: expected %v, found %v", expected, addresses)
-		}
-		return nil
-	}
 }
 
 var testAccDnsAAAARecordSet_basic = `
