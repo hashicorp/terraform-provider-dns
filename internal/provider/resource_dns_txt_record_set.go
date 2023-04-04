@@ -136,7 +136,7 @@ func (d *dnsTXTRecordSetResource) Create(ctx context.Context, req resource.Creat
 
 		rr_insert, err := dns.NewRR(rrStr)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS TXT record create error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 			return
 		}
 
@@ -146,20 +146,18 @@ func (d *dnsTXTRecordSetResource) Create(ctx context.Context, req resource.Creat
 	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS TXT record create error",
-			fmt.Sprintf("Error updating DNS record: %s", err))
+		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
 	}
 	if r.Rcode != dns.RcodeSuccess {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS TXT record create error",
-			fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 		return
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS TXT record create error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -173,8 +171,8 @@ func (d *dnsTXTRecordSetResource) Create(ctx context.Context, req resource.Creat
 				txt = append(txt, strings.Join(r.Txt, ""))
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				resp.Diagnostics.AddError("DNS TXT record create error",
-					"Error querying DNS record: didn't get an TXT record")
+				resp.Diagnostics.AddError("Error querying DNS record:",
+					"didn't get an TXT record")
 				return
 			}
 		}
@@ -208,9 +206,9 @@ func (d *dnsTXTRecordSetResource) Read(ctx context.Context, req resource.ReadReq
 		Zone: state.Zone.ValueString(),
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS TXT record read error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -224,8 +222,8 @@ func (d *dnsTXTRecordSetResource) Read(ctx context.Context, req resource.ReadReq
 				txt = append(txt, strings.Join(r.Txt, ""))
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				resp.Diagnostics.AddError("DNS TXT record read error",
-					"Error querying DNS record: didn't get an TXT record")
+				resp.Diagnostics.AddError("Error querying DNS record:",
+					"didn't get an TXT record")
 				return
 			}
 		}
@@ -308,7 +306,7 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 
 			rr_remove, err := dns.NewRR(rrStr)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS TXT record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
@@ -320,7 +318,7 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 
 			rr_insert, err := dns.NewRR(rrStr)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS TXT record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
@@ -330,21 +328,19 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS TXT record update error",
-				fmt.Sprintf("Error updating DNS record: %s", err))
+			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS TXT record update error",
-				fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 			return
 		}
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS TXT record read error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -358,8 +354,8 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 				txt = append(txt, strings.Join(r.Txt, ""))
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				resp.Diagnostics.AddError("DNS TXT record update error",
-					"Error querying DNS record: didn't get an TXT record")
+				resp.Diagnostics.AddError("Error querying DNS record: ",
+					"didn't get an TXT record")
 				return
 			}
 		}
@@ -392,18 +388,18 @@ func (d *dnsTXTRecordSetResource) Delete(ctx context.Context, req resource.Delet
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	err := resourceDnsDelete_framework(config, d.client, dns.TypeTXT)
-	if err != nil {
-		resp.Diagnostics.AddError("Delete resource error", err.Error())
+	diags := resourceDnsDelete_framework(config, d.client, dns.TypeTXT)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 }
 
 func (d *dnsTXTRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	config, err := resourceDnsImport_framework(req.ID, d.client)
-	if err != nil {
-		resp.Diagnostics.AddError("Import resource error", err.Error())
+	config, diags := resourceDnsImport_framework(req.ID, d.client)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 

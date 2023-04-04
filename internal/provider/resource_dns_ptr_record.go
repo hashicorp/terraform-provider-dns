@@ -128,7 +128,7 @@ func (d *dnsPTRRecordResource) Create(ctx context.Context, req resource.CreateRe
 
 	rr_insert, err := dns.NewRR(rrStrInsert)
 	if err != nil {
-		resp.Diagnostics.AddError("DNS PTR record create error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStrInsert, err))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrInsert), err.Error())
 		return
 	}
 
@@ -137,32 +137,31 @@ func (d *dnsPTRRecordResource) Create(ctx context.Context, req resource.CreateRe
 	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS PTR record create error",
-			fmt.Sprintf("Error updating DNS record: %s", err))
+		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
 	}
 	if r.Rcode != dns.RcodeSuccess {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS PTR record create error",
-			fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode),
+			dns.RcodeToString[r.Rcode])
 		return
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypePTR)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS PTR record create error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypePTR)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	if len(answers) > 0 {
 		if len(answers) > 1 {
-			resp.Diagnostics.AddError("DNS PTR record create error", "Error querying DNS record: multiple responses received")
+			resp.Diagnostics.AddError("Error querying DNS record:", "multiple responses received")
 			return
 		}
 		record := answers[0]
 		ptr, ttl, err := getPtrVal(record)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS PTR record create error", fmt.Sprintf("Error querying DNS record: %s", err))
+			resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 			return
 		}
 
@@ -188,21 +187,21 @@ func (d *dnsPTRRecordResource) Read(ctx context.Context, req resource.ReadReques
 		Zone: state.Zone.ValueString(),
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypePTR)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS PTR record read error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypePTR)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	if len(answers) > 0 {
 		if len(answers) > 1 {
-			resp.Diagnostics.AddError("DNS PTR record read error", "Error querying DNS record: multiple responses received")
+			resp.Diagnostics.AddError("Error querying DNS record:", "multiple responses received")
 			return
 		}
 		record := answers[0]
 		ptr, ttl, err := getPtrVal(record)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS PTR record read error", fmt.Sprintf("Error querying DNS record: %s", err))
+			resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 			return
 		}
 
@@ -244,7 +243,7 @@ func (d *dnsPTRRecordResource) Update(ctx context.Context, req resource.UpdateRe
 
 		rr_remove, err := dns.NewRR(rrStrRemove)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS PTR record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStrRemove, err))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrRemove), err.Error())
 			return
 		}
 
@@ -255,7 +254,7 @@ func (d *dnsPTRRecordResource) Update(ctx context.Context, req resource.UpdateRe
 
 		rr_insert, err := dns.NewRR(rrStrInsert)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS PTR record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStrInsert, err))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrInsert), err.Error())
 			return
 		}
 
@@ -264,33 +263,31 @@ func (d *dnsPTRRecordResource) Update(ctx context.Context, req resource.UpdateRe
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS PTR record update error",
-				fmt.Sprintf("Error updating DNS record: %s", err))
+			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS PTR record update error",
-				fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 			return
 		}
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypePTR)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS PTR record update error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypePTR)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	if len(answers) > 0 {
 		if len(answers) > 1 {
-			resp.Diagnostics.AddError("DNS PTR record update error", "Error querying DNS record: multiple responses received")
+			resp.Diagnostics.AddError("Error querying DNS record:", "multiple responses received")
 			return
 		}
 		record := answers[0]
 		ptr, ttl, err := getPtrVal(record)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS PTR record update error", fmt.Sprintf("Error querying DNS record: %s", err))
+			resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 			return
 		}
 
@@ -315,18 +312,18 @@ func (d *dnsPTRRecordResource) Delete(ctx context.Context, req resource.DeleteRe
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	err := resourceDnsDelete_framework(config, d.client, dns.TypePTR)
-	if err != nil {
-		resp.Diagnostics.AddError("Delete resource error", err.Error())
+	diags := resourceDnsDelete_framework(config, d.client, dns.TypePTR)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 }
 
 func (d *dnsPTRRecordResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	config, err := resourceDnsImport_framework(req.ID, d.client)
-	if err != nil {
-		resp.Diagnostics.AddError("Import resource error", err.Error())
+	config, diags := resourceDnsImport_framework(req.ID, d.client)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 

@@ -34,168 +34,6 @@ func (p *dnsProvider) Metadata(ctx context.Context, req provider.MetadataRequest
 	resp.TypeName = "dns"
 }
 
-func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var providerConfig providerModel
-	var providerUpdateConfig providerUpdateModel
-	var providerGssapiConfig providerGssapiModel
-	var diags diag.Diagnostics
-
-	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
-	var port, retries int
-	var duration time.Duration
-	var gssapi bool
-
-	//TODO: change to resp.diags.adderror
-
-	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfig)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !providerConfig.Update.IsNull() {
-		providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, true)
-	}
-
-	if providerUpdateConfig.Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
-		server = os.Getenv("DNS_UPDATE_SERVER")
-	}
-
-	if providerUpdateConfig.Port.IsNull() {
-		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
-			portStr := os.Getenv("DNS_UPDATE_PORT")
-			envPort, err := strconv.Atoi(portStr)
-			if err != nil {
-				diags.AddError("invalid DNS_UPDATE_PORT environment variable: ", err.Error()) //TODO: check for the formatting %s
-				return
-			}
-			port = envPort
-		} else {
-			port = defaultPort
-		}
-	}
-
-	if providerUpdateConfig.Transport.IsNull() {
-		if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
-			transport = os.Getenv("DNS_UPDATE_TRANSPORT")
-		} else {
-			transport = defaultTransport
-		}
-	}
-
-	if providerUpdateConfig.Timeout.IsNull() {
-		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
-			timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
-		} else {
-			timeout = defaultTimeout
-		}
-
-		// Try parsing as a duration
-		var err error
-		duration, err = time.ParseDuration(timeout)
-		if err != nil {
-			// Failing that, convert to an integer and treat as seconds
-			var seconds int
-			seconds, err = strconv.Atoi(timeout)
-			if err != nil {
-				diags.AddError("invalid timeout: ", err.Error()) //TODO: check for the formatting %s
-				return
-			}
-			duration = time.Duration(seconds) * time.Second
-		}
-		if duration < 0 {
-			diags.AddError("timeout cannot be negative: ", err.Error()) //TODO: check for the formatting %s
-			return
-		}
-
-	}
-
-	if providerUpdateConfig.Retries.IsNull() {
-		if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
-			retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
-
-			var err error
-			retries, err = strconv.Atoi(retriesStr)
-			if err != nil {
-				diags.AddError("invalid DNS_UPDATE_RETRIES environment variable: ", err.Error()) //TODO: check for the formatting %s
-				return
-			}
-		} else {
-			retries = defaultRetries
-		}
-	}
-	if providerUpdateConfig.KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
-		keyname = os.Getenv("DNS_UPDATE_KEYNAME")
-	}
-	if providerUpdateConfig.KeyAlgorithm.IsNull() && len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
-		keyalgo = os.Getenv("DNS_UPDATE_KEYALGORITHM")
-	}
-	if providerUpdateConfig.KeySecret.IsNull() && len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
-		keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
-	}
-
-	if !providerUpdateConfig.Gssapi.IsNull() {
-		providerUpdateConfig.Gssapi.ElementsAs(ctx, &providerGssapiConfig, true)
-		gssapi = true
-	}
-	if providerGssapiConfig.Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
-		realm = os.Getenv("DNS_UPDATE_REALM")
-	}
-	if providerGssapiConfig.Username.IsNull() && len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
-		username = os.Getenv("DNS_UPDATE_USERNAME")
-	}
-	if providerGssapiConfig.Password.IsNull() && len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
-		password = os.Getenv("DNS_UPDATE_PASSWORD")
-	}
-	if providerGssapiConfig.Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
-		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
-	}
-	if realm != "" || username != "" || password != "" || keytab != "" {
-		gssapi = true
-	}
-
-	config := Config{
-		server:    server,
-		port:      port,
-		transport: transport,
-		timeout:   duration,
-		retries:   retries,
-		keyname:   keyname,
-		keyalgo:   keyalgo,
-		keysecret: keysecret,
-		gssapi:    gssapi,
-		realm:     realm,
-		username:  username,
-		password:  password,
-		keytab:    keytab,
-	}
-
-	resp.ResourceData, _ = config.Client(ctx)
-}
-
-func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		NewDnsARecordSetDataSource,
-		NewDnsAAAARecordSetDataSource,
-		NewDnsCNAMERecordSetDataSource,
-		NewDnsMXRecordSetDataSource,
-		NewDnsNSRecordSetDataSource,
-		NewDnsPTRRecordSetDataSource,
-		NewDnsSRVRecordSetDataSource,
-		NewDnsTXTRecordSetDataSource,
-	}
-}
-
-func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewDnsCNAMERecordResource,
-		NewDnsMXRecordSetResource,
-		NewDnsNSRecordSetResource,
-		NewDnsPTRRecordResource,
-		NewDnsSRVRecordSetResource,
-		NewDnsTXTRecordSetResource,
-	}
-}
-
 func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
@@ -319,6 +157,165 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 	}
 }
 
+func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var providerConfig providerModel
+	var providerUpdateConfig providerUpdateModel
+	var providerGssapiConfig providerGssapiModel
+
+	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
+	var port, retries int
+	var duration time.Duration
+	var gssapi bool
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfig)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !providerConfig.Update.IsNull() {
+		providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, true)
+	}
+
+	if providerUpdateConfig.Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
+		server = os.Getenv("DNS_UPDATE_SERVER")
+	}
+
+	if providerUpdateConfig.Port.IsNull() {
+		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
+			portStr := os.Getenv("DNS_UPDATE_PORT")
+			envPort, err := strconv.Atoi(portStr)
+			if err != nil {
+				resp.Diagnostics.AddError("Invalid DNS_UPDATE_PORT environment variable:", err.Error())
+				return
+			}
+			port = envPort
+		} else {
+			port = defaultPort
+		}
+	}
+
+	if providerUpdateConfig.Transport.IsNull() {
+		if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
+			transport = os.Getenv("DNS_UPDATE_TRANSPORT")
+		} else {
+			transport = defaultTransport
+		}
+	}
+
+	if providerUpdateConfig.Timeout.IsNull() {
+		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
+			timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
+		} else {
+			timeout = defaultTimeout
+		}
+
+		// Try parsing as a duration
+		var err error
+		duration, err = time.ParseDuration(timeout)
+		if err != nil {
+			// Failing that, convert to an integer and treat as seconds
+			var seconds int
+			seconds, err = strconv.Atoi(timeout)
+			if err != nil {
+				resp.Diagnostics.AddError("Invalid timeout:", err.Error())
+				return
+			}
+			duration = time.Duration(seconds) * time.Second
+		}
+		if duration < 0 {
+			resp.Diagnostics.AddError("Invalid timeout:", "timeout cannot be negative.")
+			return
+		}
+
+	}
+
+	if providerUpdateConfig.Retries.IsNull() {
+		if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
+			retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
+
+			var err error
+			retries, err = strconv.Atoi(retriesStr)
+			if err != nil {
+				resp.Diagnostics.AddError("Invalid DNS_UPDATE_RETRIES environment variable:", err.Error())
+				return
+			}
+		} else {
+			retries = defaultRetries
+		}
+	}
+	if providerUpdateConfig.KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
+		keyname = os.Getenv("DNS_UPDATE_KEYNAME")
+	}
+	if providerUpdateConfig.KeyAlgorithm.IsNull() && len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
+		keyalgo = os.Getenv("DNS_UPDATE_KEYALGORITHM")
+	}
+	if providerUpdateConfig.KeySecret.IsNull() && len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
+		keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
+	}
+
+	if !providerUpdateConfig.Gssapi.IsNull() {
+		providerUpdateConfig.Gssapi.ElementsAs(ctx, &providerGssapiConfig, true)
+		gssapi = true
+	}
+	if providerGssapiConfig.Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
+		realm = os.Getenv("DNS_UPDATE_REALM")
+	}
+	if providerGssapiConfig.Username.IsNull() && len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
+		username = os.Getenv("DNS_UPDATE_USERNAME")
+	}
+	if providerGssapiConfig.Password.IsNull() && len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
+		password = os.Getenv("DNS_UPDATE_PASSWORD")
+	}
+	if providerGssapiConfig.Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
+		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
+	}
+	if realm != "" || username != "" || password != "" || keytab != "" {
+		gssapi = true
+	}
+
+	config := Config{
+		server:    server,
+		port:      port,
+		transport: transport,
+		timeout:   duration,
+		retries:   retries,
+		keyname:   keyname,
+		keyalgo:   keyalgo,
+		keysecret: keysecret,
+		gssapi:    gssapi,
+		realm:     realm,
+		username:  username,
+		password:  password,
+		keytab:    keytab,
+	}
+
+	resp.ResourceData, _ = config.Client(ctx)
+}
+
+func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewDnsCNAMERecordResource,
+		NewDnsMXRecordSetResource,
+		NewDnsNSRecordSetResource,
+		NewDnsPTRRecordResource,
+		NewDnsSRVRecordSetResource,
+		NewDnsTXTRecordSetResource,
+	}
+}
+
+func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		NewDnsARecordSetDataSource,
+		NewDnsAAAARecordSetDataSource,
+		NewDnsCNAMERecordSetDataSource,
+		NewDnsMXRecordSetDataSource,
+		NewDnsNSRecordSetDataSource,
+		NewDnsPTRRecordSetDataSource,
+		NewDnsSRVRecordSetDataSource,
+		NewDnsTXTRecordSetDataSource,
+	}
+}
+
 type providerModel struct {
 	Update types.List `tfsdk:"update"` // providerUpdateModel
 }
@@ -374,7 +371,7 @@ func exchange_framework(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, e
 			k, _, err = g.NegotiateContext(srv_addr)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Error negotiating GSS context: %s", err)
+			return nil, fmt.Errorf("error negotiating GSS context: %s", err)
 		}
 
 		//nolint:errcheck
@@ -417,7 +414,7 @@ Retry:
 			case "udp6":
 				c.Net = "tcp6"
 			default:
-				return nil, fmt.Errorf("Unknown transport: %s", c.Net)
+				return nil, fmt.Errorf("unknown transport: %s", c.Net)
 			}
 		} else {
 			msg.SetEdns0(dns.DefaultMsgSize, false)
@@ -432,12 +429,15 @@ Retry:
 	return r, err
 }
 
-func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, error) {
+func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, diag.Diagnostics) {
 	var config dnsConfig
+	var diags diag.Diagnostics
 
 	record := id
 	if !dns.IsFqdn(record) {
-		return config, fmt.Errorf("Not a fully-qualified DNS name: %s", record)
+		diags.AddError("Error importing DNS record:",
+			fmt.Sprintf("Not a fully-qualified DNS name: %s", record))
+		return config, diags
 	}
 
 	labels := dns.SplitDomainName(record)
@@ -453,7 +453,8 @@ Loop:
 
 		r, err := exchange_framework(msg, true, client)
 		if err != nil {
-			return config, fmt.Errorf("Error querying DNS record: %s", err)
+			diags.AddError("Error querying DNS record:", err.Error())
+			return config, diags
 		}
 
 		switch r.Rcode {
@@ -476,17 +477,22 @@ Loop:
 		case dns.RcodeNameError:
 			continue
 		default:
-			return config, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+			diags.AddError(fmt.Sprintf("Error querying DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
+			return config, diags
 		}
 	}
 
 	if zone == nil {
-		return config, fmt.Errorf("No SOA record in authority section in response for %s", record)
+		diags.AddError("Error querying DNS record:",
+			fmt.Sprintf("No SOA record in authority section in response for %s", record))
+		return config, diags
 	}
 
 	common := dns.CompareDomainName(record, *zone)
 	if common == 0 {
-		return config, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
+		diags.AddError("Error querying DNS record:",
+			fmt.Sprintf("DNS record %s shares no common labels with zone %s", record, *zone))
+		return config, diags
 	}
 
 	config.Zone = *zone
@@ -507,8 +513,8 @@ func resourceFQDN_framework(config dnsConfig) string {
 	return fqdn
 }
 
-func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, error) {
-
+func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, diag.Diagnostics) {
+	var diags diag.Diagnostics
 	fqdn := resourceFQDN_framework(config)
 
 	msg := new(dns.Msg)
@@ -516,7 +522,8 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 
 	r, err := exchange_framework(msg, true, client)
 	if err != nil {
-		return nil, fmt.Errorf("Error querying DNS record: %s", err)
+		diags.AddError("Error querying DNS record:", err.Error())
+		return nil, diags
 	}
 	switch r.Rcode {
 	case dns.RcodeSuccess:
@@ -528,7 +535,8 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	case dns.RcodeNameError:
 		return nil, nil
 	default:
-		return nil, fmt.Errorf("Error querying DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+		diags.AddError(fmt.Sprintf("Error querying DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
+		return nil, diags
 	}
 
 	if rrType == dns.TypeNS {
@@ -537,7 +545,8 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	return r.Answer, nil
 }
 
-func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uint16) error {
+func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uint16) diag.Diagnostics {
+	var diags diag.Diagnostics
 
 	fqdn := resourceFQDN_framework(config)
 
@@ -551,17 +560,20 @@ func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uin
 
 	rr, err := dns.NewRR(rrStr)
 	if err != nil {
-		return fmt.Errorf("error reading DNS record (%s): %s", rrStr, err)
+		diags.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+		return diags
 	}
 
 	msg.RemoveRRset([]dns.RR{rr})
 
 	r, err := exchange_framework(msg, true, client)
 	if err != nil {
-		return fmt.Errorf("Error deleting DNS record: %s", err)
+		diags.AddError("Error deleting DNS record:", err.Error())
+		return diags
 	}
 	if r.Rcode != dns.RcodeSuccess {
-		return fmt.Errorf("Error deleting DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode])
+		diags.AddError(fmt.Sprintf("Error deleting DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
+		return diags
 	}
 
 	return nil

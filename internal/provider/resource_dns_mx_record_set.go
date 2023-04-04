@@ -151,7 +151,7 @@ func (d *dnsMXRecordSetResource) Create(ctx context.Context, req resource.Create
 
 		rr_insert, err := dns.NewRR(rrStr)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS MX record create error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 			return
 		}
 
@@ -161,20 +161,18 @@ func (d *dnsMXRecordSetResource) Create(ctx context.Context, req resource.Create
 	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS MX record create error",
-			fmt.Sprintf("Error updating DNS record: %s", err))
+		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
 	}
 	if r.Rcode != dns.RcodeSuccess {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS MX record create error",
-			fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 		return
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeMX)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS MX record create error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeMX)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -192,8 +190,7 @@ func (d *dnsMXRecordSetResource) Create(ctx context.Context, req resource.Create
 				mx = append(mx, m)
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				resp.Diagnostics.AddError("DNS MX record create error",
-					"Error querying DNS record: didn't get an MX record")
+				resp.Diagnostics.AddError("Error querying DNS record:", "didn't get an MX record")
 				return
 			}
 		}
@@ -227,9 +224,9 @@ func (d *dnsMXRecordSetResource) Read(ctx context.Context, req resource.ReadRequ
 		Zone: state.Zone.ValueString(),
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeMX)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS MX record read error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeMX)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -247,8 +244,7 @@ func (d *dnsMXRecordSetResource) Read(ctx context.Context, req resource.ReadRequ
 				mx = append(mx, m)
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				resp.Diagnostics.AddError("DNS MX record read error",
-					"Error querying DNS record: didn't get an MX record")
+				resp.Diagnostics.AddError("Error querying DNS record:", "didn't get an MX record")
 				return
 			}
 		}
@@ -331,7 +327,7 @@ func (d *dnsMXRecordSetResource) Update(ctx context.Context, req resource.Update
 
 			rr_remove, err := dns.NewRR(rrStr)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS MX record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
@@ -343,7 +339,7 @@ func (d *dnsMXRecordSetResource) Update(ctx context.Context, req resource.Update
 
 			rr_insert, err := dns.NewRR(rrStr)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS MX record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
@@ -353,21 +349,20 @@ func (d *dnsMXRecordSetResource) Update(ctx context.Context, req resource.Update
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS MX record update error",
-				fmt.Sprintf("Error updating DNS record: %s", err))
+			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS MX record update error",
-				fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode),
+				dns.RcodeToString[r.Rcode])
 			return
 		}
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeMX)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS MX record update error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeMX)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -385,8 +380,8 @@ func (d *dnsMXRecordSetResource) Update(ctx context.Context, req resource.Update
 				mx = append(mx, m)
 				ttl = append(ttl, int(r.Hdr.Ttl))
 			default:
-				resp.Diagnostics.AddError("DNS MX record update error",
-					"Error querying DNS record: didn't get an MX record")
+				resp.Diagnostics.AddError("Error querying DNS record:",
+					"didn't get an MX record")
 				return
 			}
 		}
@@ -419,18 +414,18 @@ func (d *dnsMXRecordSetResource) Delete(ctx context.Context, req resource.Delete
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	err := resourceDnsDelete_framework(config, d.client, dns.TypeMX)
-	if err != nil {
-		resp.Diagnostics.AddError("Delete resource error", err.Error())
+	diags := resourceDnsDelete_framework(config, d.client, dns.TypeMX)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 }
 
 func (d *dnsMXRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	config, err := resourceDnsImport_framework(req.ID, d.client)
-	if err != nil {
-		resp.Diagnostics.AddError("Import resource error", err.Error())
+	config, diags := resourceDnsImport_framework(req.ID, d.client)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 

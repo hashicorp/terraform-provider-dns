@@ -126,8 +126,7 @@ func (d *dnsCNAMERecordResource) Create(ctx context.Context, req resource.Create
 
 	rr_insert, err := dns.NewRR(rrStrInsert)
 	if err != nil {
-		resp.Diagnostics.AddError("DNS CNAME record create error",
-			fmt.Sprintf("error reading DNS record (%s): %s", rrStrInsert, err.Error()))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrInsert), err.Error())
 		return
 	}
 	msg.Insert([]dns.RR{rr_insert})
@@ -135,34 +134,30 @@ func (d *dnsCNAMERecordResource) Create(ctx context.Context, req resource.Create
 	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS CNAME record create error",
-			fmt.Sprintf("Error updating DNS record: %s", err))
+		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
 	}
 	if r.Rcode != dns.RcodeSuccess {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS CNAME record create error",
-			fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 		return
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS CNAME record create error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	if len(answers) > 0 {
 		if len(answers) > 1 {
-			resp.Diagnostics.AddError("DNS CNAME record create error",
-				"Error querying DNS record: multiple responses received")
+			resp.Diagnostics.AddError("Error querying DNS record:", "multiple responses received")
 			return
 		}
 		record := answers[0]
 		cname, ttl, err := getCnameVal(record)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS CNAME record create error",
-				fmt.Sprintf("Error querying DNS record: %s", err))
+			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 
@@ -189,23 +184,21 @@ func (d *dnsCNAMERecordResource) Read(ctx context.Context, req resource.ReadRequ
 		Zone: state.Zone.ValueString(),
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS CNAME record read error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	if len(answers) > 0 {
 		if len(answers) > 1 {
-			resp.Diagnostics.AddError("DNS CNAME record read error",
-				"Error querying DNS record: multiple responses received")
+			resp.Diagnostics.AddError("Error querying DNS record:", "multiple responses received")
 			return
 		}
 		record := answers[0]
 		cname, ttl, err := getCnameVal(record)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS CNAME record read error",
-				fmt.Sprintf("Error querying DNS record: %s", err))
+			resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 			return
 		}
 
@@ -246,8 +239,7 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 
 		rr_remove, err := dns.NewRR(rrStrRemove)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS CNAME record update error",
-				fmt.Sprintf("error reading DNS record (%s): %s", rrStrRemove, err.Error()))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrRemove), err.Error())
 			return
 		}
 
@@ -255,8 +247,7 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 
 		rr_insert, err := dns.NewRR(rrStrInsert)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS CNAME record update error",
-				fmt.Sprintf("error reading DNS record (%s): %s", rrStrInsert, err.Error()))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrInsert), err.Error())
 			return
 		}
 
@@ -266,35 +257,31 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS CNAME record update error",
-				fmt.Sprintf("Error updating DNS record: %s", err))
+			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS CNAME record update error",
-				fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 			return
 		}
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS CNAME record update error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
 	if len(answers) > 0 {
 		if len(answers) > 1 {
-			resp.Diagnostics.AddError("DNS CNAME record update error",
-				"Error querying DNS record: multiple responses received")
+			resp.Diagnostics.AddError("Error querying DNS record:", "multiple responses received")
 			return
 		}
 		record := answers[0]
 		cname, ttl, err := getCnameVal(record)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS CNAME record update error",
-				fmt.Sprintf("Error querying DNS record: %s", err))
+			resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 			return
 		}
 
@@ -319,18 +306,18 @@ func (d *dnsCNAMERecordResource) Delete(ctx context.Context, req resource.Delete
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	err := resourceDnsDelete_framework(config, d.client, dns.TypeCNAME)
-	if err != nil {
-		resp.Diagnostics.AddError("Delete resource error", err.Error())
+	diags := resourceDnsDelete_framework(config, d.client, dns.TypeCNAME)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 }
 
 func (d *dnsCNAMERecordResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	config, err := resourceDnsImport_framework(req.ID, d.client)
-	if err != nil {
-		resp.Diagnostics.AddError("Import resource error", err.Error())
+	config, diags := resourceDnsImport_framework(req.ID, d.client)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 

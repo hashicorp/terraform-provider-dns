@@ -139,7 +139,7 @@ func (d *dnsNSRecordSetResource) Create(ctx context.Context, req resource.Create
 
 		rr_insert, err := dns.NewRR(rrStr)
 		if err != nil {
-			resp.Diagnostics.AddError("DNS NS record create error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 			return
 		}
 
@@ -149,20 +149,18 @@ func (d *dnsNSRecordSetResource) Create(ctx context.Context, req resource.Create
 	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS NS record create error",
-			fmt.Sprintf("Error updating DNS record: %s", err))
+		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
 	}
 	if r.Rcode != dns.RcodeSuccess {
 		resp.State.RemoveResource(ctx)
-		resp.Diagnostics.AddError("DNS NS record create error",
-			fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+		resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 		return
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeNS)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS NS record create error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -173,7 +171,7 @@ func (d *dnsNSRecordSetResource) Create(ctx context.Context, req resource.Create
 		for _, record := range answers {
 			nameserver, t, err := getNSVal(record)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS NS record create error", fmt.Sprintf("Error querying DNS record: %s", err))
+				resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 				return
 			}
 			nameservers = append(nameservers, nameserver)
@@ -209,9 +207,9 @@ func (d *dnsNSRecordSetResource) Read(ctx context.Context, req resource.ReadRequ
 		Zone: state.Zone.ValueString(),
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeNS)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS NS record read error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -222,7 +220,7 @@ func (d *dnsNSRecordSetResource) Read(ctx context.Context, req resource.ReadRequ
 		for _, record := range answers {
 			nameserver, t, err := getNSVal(record)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS NS record read error", fmt.Sprintf("Error querying DNS record: %s", err))
+				resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 				return
 			}
 			nameservers = append(nameservers, nameserver)
@@ -307,7 +305,7 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 
 			rr_remove, err := dns.NewRR(rrStr)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS NS record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
@@ -319,7 +317,7 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 
 			rr_insert, err := dns.NewRR(rrStr)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS NS record update error", fmt.Sprintf("Error reading DNS record (%s): %s", rrStr, err))
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
@@ -329,21 +327,19 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS NS record update error",
-				fmt.Sprintf("Error updating DNS record: %s", err))
+			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("DNS NS record update error",
-				fmt.Sprintf("Error updating DNS record: %v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]))
+			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 			return
 		}
 	}
 
-	answers, err := resourceDnsRead_framework(config, d.client, dns.TypeNS)
-	if err != nil {
-		resp.Diagnostics.AddError("DNS NS record update error", err.Error())
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
@@ -354,7 +350,7 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 		for _, record := range answers {
 			nameserver, t, err := getNSVal(record)
 			if err != nil {
-				resp.Diagnostics.AddError("DNS NS record update error", fmt.Sprintf("Error querying DNS record: %s", err))
+				resp.Diagnostics.AddError("Error querying DNS record:", err.Error())
 				return
 			}
 			nameservers = append(nameservers, nameserver)
@@ -389,18 +385,18 @@ func (d *dnsNSRecordSetResource) Delete(ctx context.Context, req resource.Delete
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	err := resourceDnsDelete_framework(config, d.client, dns.TypeNS)
-	if err != nil {
-		resp.Diagnostics.AddError("Delete resource error", err.Error())
+	diags := resourceDnsDelete_framework(config, d.client, dns.TypeNS)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 }
 
 func (d *dnsNSRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
-	config, err := resourceDnsImport_framework(req.ID, d.client)
-	if err != nil {
-		resp.Diagnostics.AddError("Import resource error", err.Error())
+	config, diags := resourceDnsImport_framework(req.ID, d.client)
+	if diags != nil {
+		resp.Diagnostics.Append(diags...)
 		return
 	}
 
