@@ -30,5 +30,5 @@ output "google_nameservers" {
 
 ### Read-Only
 
-- `id` (String) Always set to the domain
+- `id` (String) Always set to the domain.
 - `nameservers` (List of String) A list of nameservers. Nameservers are always sorted to avoid constant changing plans.

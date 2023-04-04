@@ -31,4 +31,4 @@ output "google_addrs" {
 ### Read-Only
 
 - `addrs` (List of String) A list of IP addresses. IP addresses are always sorted to avoid constant changing plans.
-- `id` (String) Always set to the host
+- `id` (String) Always set to the host.

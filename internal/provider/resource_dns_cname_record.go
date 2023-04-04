@@ -79,7 +79,7 @@ func (d *dnsCNAMERecordResource) Schema(ctx context.Context, req resource.Schema
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Always set to the fully qualified domain name of the record",
+				Description: "Always set to the fully qualified domain name of the record.",
 			},
 		},
 	}

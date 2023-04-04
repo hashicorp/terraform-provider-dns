@@ -30,7 +30,7 @@ output "mailserver" {
 
 ### Read-Only
 
-- `id` (String) Always set to the domain
+- `id` (String) Always set to the domain.
 - `mx` (List of Object) A list of records. They are sorted by ascending preference then alphabetically by exchange to stay consistent across runs. (see [below for nested schema](#nestedatt--mx))
 
 <a id="nestedatt--mx"></a>

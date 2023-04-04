@@ -74,7 +74,7 @@ func (d *dnsSRVRecordSetResource) Schema(ctx context.Context, req resource.Schem
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Always set to the fully qualified domain name of the record set",
+				Description: "Always set to the fully qualified domain name of the record set.",
 			},
 		},
 		Blocks: map[string]schema.Block{

@@ -40,7 +40,7 @@ func (d *dnsAAAARecordSetDataSource) Schema(ctx context.Context, req datasource.
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Always set to the host",
+				Description: "Always set to the host.",
 			},
 		},
 	}

@@ -52,7 +52,7 @@ resource "dns_srv_record_set" "sip" {
 
 ### Read-Only
 
-- `id` (String) Always set to the fully qualified domain name of the record set
+- `id` (String) Always set to the fully qualified domain name of the record set.
 
 <a id="nestedblock--srv"></a>
 ### Nested Schema for `srv`

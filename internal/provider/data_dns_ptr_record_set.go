@@ -38,7 +38,7 @@ func (d *dnsPTRRecordSetDataSource) Schema(ctx context.Context, req datasource.S
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Always set to the IP address",
+				Description: "Always set to the IP address.",
 			},
 		},
 	}

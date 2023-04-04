@@ -48,7 +48,7 @@ func (d *dnsMXRecordSetDataSource) Schema(ctx context.Context, req datasource.Sc
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Always set to the domain",
+				Description: "Always set to the domain.",
 			},
 		},
 	}
