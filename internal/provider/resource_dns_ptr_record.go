@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
@@ -320,6 +319,7 @@ func (d *dnsPTRRecordResource) Delete(ctx context.Context, req resource.DeleteRe
 }
 
 func (d *dnsPTRRecordResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var state ptrRecordSetResourceModel
 
 	config, diags := resourceDnsImport_framework(req.ID, d.client)
 	if diags != nil {
@@ -327,11 +327,13 @@ func (d *dnsPTRRecordResource) ImportState(ctx context.Context, req resource.Imp
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
-	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
+	state.ID = types.StringValue(req.ID)
+	state.Zone = types.StringValue(config.Zone)
 	if config.Name != "" {
-		resp.State.SetAttribute(ctx, path.Root("name"), config.Name)
+		state.Name = types.StringValue(config.Name)
 	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type ptrRecordSetResourceModel struct {

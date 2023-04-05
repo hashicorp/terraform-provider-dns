@@ -422,17 +422,16 @@ func (d *dnsMXRecordSetResource) Delete(ctx context.Context, req resource.Delete
 }
 
 func (d *dnsMXRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-
 	config, diags := resourceDnsImport_framework(req.ID, d.client)
 	if diags != nil {
 		resp.Diagnostics.Append(diags...)
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
-	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)...)
 	if config.Name != "" {
-		resp.State.SetAttribute(ctx, path.Root("name"), config.Name)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), config.Name)...)
 	}
 }
 

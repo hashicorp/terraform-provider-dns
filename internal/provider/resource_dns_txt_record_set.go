@@ -403,10 +403,10 @@ func (d *dnsTXTRecordSetResource) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
-	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)...)
 	if config.Name != "" {
-		resp.State.SetAttribute(ctx, path.Root("name"), config.Name)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), config.Name)...)
 	}
 }
 

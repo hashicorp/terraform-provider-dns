@@ -181,6 +181,8 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	if providerUpdateConfig.Port.IsNull() {
+		port = defaultPort
+
 		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
 			portStr := os.Getenv("DNS_UPDATE_PORT")
 			envPort, err := strconv.Atoi(portStr)
@@ -189,24 +191,22 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 				return
 			}
 			port = envPort
-		} else {
-			port = defaultPort
 		}
 	}
 
 	if providerUpdateConfig.Transport.IsNull() {
+		transport = defaultTransport
+
 		if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
 			transport = os.Getenv("DNS_UPDATE_TRANSPORT")
-		} else {
-			transport = defaultTransport
 		}
 	}
 
 	if providerUpdateConfig.Timeout.IsNull() {
+		timeout = defaultTimeout
+
 		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
 			timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
-		} else {
-			timeout = defaultTimeout
 		}
 
 		// Try parsing as a duration
@@ -217,7 +217,8 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 			var seconds int
 			seconds, err = strconv.Atoi(timeout)
 			if err != nil {
-				resp.Diagnostics.AddError("Invalid timeout:", err.Error())
+				resp.Diagnostics.AddError("Invalid timeout:",
+					fmt.Sprintf("timeout cannot be parsed as an integer: %s", err.Error()))
 				return
 			}
 			duration = time.Duration(seconds) * time.Second
@@ -230,6 +231,8 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	if providerUpdateConfig.Retries.IsNull() {
+		retries = defaultRetries
+
 		if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
 			retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
 
@@ -239,8 +242,6 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 				resp.Diagnostics.AddError("Invalid DNS_UPDATE_RETRIES environment variable:", err.Error())
 				return
 			}
-		} else {
-			retries = defaultRetries
 		}
 	}
 	if providerUpdateConfig.KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
@@ -386,47 +387,50 @@ func exchange_framework(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, e
 		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
 	}
 
-Retry:
-	log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
+	for ok := true; ok; ok = retries > 0 {
+		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
 
-	r, _, err := c.Exchange(msg, srv_addr)
+		r, _, err := c.Exchange(msg, srv_addr)
 
-	log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
+		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
 
-	if err != nil {
-		if isTimeout(err) && retries > 0 {
+		if err != nil {
+			if isTimeout(err) && retries > 0 {
+				retries--
+				continue
+			}
+			return r, err
+		}
+
+		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
 			retries--
-			goto Retry
+			continue
+		} else if r.Truncated {
+			if retry_tcp {
+				switch c.Net {
+				case "udp":
+					c.Net = "tcp"
+				case "udp4":
+					c.Net = "tcp4"
+				case "udp6":
+					c.Net = "tcp6"
+				default:
+					return nil, fmt.Errorf("unknown transport: %s", c.Net)
+				}
+			} else {
+				msg.SetEdns0(dns.DefaultMsgSize, false)
+				retry_tcp = true
+			}
+
+			// Reset retries counter on protocol change
+			retries = client.retries
+			continue
 		}
 		return r, err
 	}
 
-	if r.Rcode == dns.RcodeServerFailure && retries > 0 {
-		retries--
-		goto Retry
-	} else if r.Truncated {
-		if retry_tcp {
-			switch c.Net {
-			case "udp":
-				c.Net = "tcp"
-			case "udp4":
-				c.Net = "tcp4"
-			case "udp6":
-				c.Net = "tcp6"
-			default:
-				return nil, fmt.Errorf("unknown transport: %s", c.Net)
-			}
-		} else {
-			msg.SetEdns0(dns.DefaultMsgSize, false)
-			retry_tcp = true
-		}
-
-		// Reset retries counter on protocol change
-		retries = client.retries
-		goto Retry
-	}
-
-	return r, err
+	//we should never be hitting this line
+	return nil, fmt.Errorf("unable to complete DNS exchange")
 }
 
 func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, diag.Diagnostics) {
@@ -550,10 +554,8 @@ func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uin
 
 	fqdn := resourceFQDN_framework(config)
 
-	//nolint:forcetypeassert
 	msg := new(dns.Msg)
 
-	//nolint:forcetypeassert
 	msg.SetUpdate(config.Zone)
 
 	rrStr := fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType])

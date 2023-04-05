@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
@@ -314,6 +313,7 @@ func (d *dnsCNAMERecordResource) Delete(ctx context.Context, req resource.Delete
 }
 
 func (d *dnsCNAMERecordResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var state cnameRecordResourceModel
 
 	config, diags := resourceDnsImport_framework(req.ID, d.client)
 	if diags != nil {
@@ -321,9 +321,11 @@ func (d *dnsCNAMERecordResource) ImportState(ctx context.Context, req resource.I
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
-	resp.State.SetAttribute(ctx, path.Root("name"), config.Name)
-	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
+	state.ID = types.StringValue(req.ID)
+	state.Name = types.StringValue(config.Name)
+	state.Zone = types.StringValue(config.Zone)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type cnameRecordResourceModel struct {

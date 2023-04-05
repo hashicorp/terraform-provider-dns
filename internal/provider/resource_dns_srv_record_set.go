@@ -446,9 +446,9 @@ func (d *dnsSRVRecordSetResource) ImportState(ctx context.Context, req resource.
 		return
 	}
 
-	resp.State.SetAttribute(ctx, path.Root("id"), req.ID)
-	resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)
-	resp.State.SetAttribute(ctx, path.Root("name"), config.Name)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), config.Name)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("zone"), config.Zone)...)
 }
 
 type srvRecordSetResourceModel struct {
