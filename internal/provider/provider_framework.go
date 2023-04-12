@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -348,99 +347,6 @@ type providerGssapiModel struct {
 	Keytab   types.String `tfsdk:"keytab"`
 }
 
-//nolint:unparam
-func exchange_framework(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
-
-	c := client.c
-	srv_addr := client.srv_addr
-	keyname := client.keyname
-	keyalgo := client.keyalgo
-	c.Net = client.transport
-	retries := client.retries
-	g := client.gssClient
-	retry_tcp := false
-
-	// GSS-TSIG
-	if tsig && g != nil {
-		realm := client.realm
-		username := client.username
-		password := client.password
-		keytab := client.keytab
-
-		var k string
-		var err error
-
-		if realm != "" && username != "" && (password != "" || keytab != "") {
-			if password != "" {
-				k, _, err = g.NegotiateContextWithCredentials(srv_addr, realm, username, password)
-			} else {
-				k, _, err = g.NegotiateContextWithKeytab(srv_addr, realm, username, keytab)
-			}
-		} else {
-			k, _, err = g.NegotiateContext(srv_addr)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("error negotiating GSS context: %s", err)
-		}
-
-		//nolint:errcheck
-		defer g.DeleteContext(k)
-
-		keyname = k
-	}
-
-	msg.RecursionDesired = false
-
-	if tsig && keyname != "" {
-		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-	}
-
-	for ok := true; ok; ok = retries > 0 {
-		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
-
-		r, _, err := c.Exchange(msg, srv_addr)
-
-		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
-
-		if err != nil {
-			if isTimeout(err) && retries > 0 {
-				retries--
-				continue
-			}
-			return r, err
-		}
-
-		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
-			retries--
-			continue
-		} else if r.Truncated {
-			if retry_tcp {
-				switch c.Net {
-				case "udp":
-					c.Net = "tcp"
-				case "udp4":
-					c.Net = "tcp4"
-				case "udp6":
-					c.Net = "tcp6"
-				default:
-					return nil, fmt.Errorf("unknown transport: %s", c.Net)
-				}
-			} else {
-				msg.SetEdns0(dns.DefaultMsgSize, false)
-				retry_tcp = true
-			}
-
-			// Reset retries counter on protocol change
-			retries = client.retries
-			continue
-		}
-		return r, err
-	}
-
-	//we should never be hitting this line
-	return nil, fmt.Errorf("unable to complete DNS exchange")
-}
-
 func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, diag.Diagnostics) {
 	var config dnsConfig
 	var diags diag.Diagnostics
@@ -463,7 +369,7 @@ Loop:
 
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
-		r, err := exchange_framework(msg, true, client)
+		r, err := exchange(msg, true, client)
 		if err != nil {
 			diags.AddError("Error querying DNS record:", err.Error())
 			return config, diags
@@ -532,7 +438,7 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	msg := new(dns.Msg)
 	msg.SetQuestion(fqdn, rrType)
 
-	r, err := exchange_framework(msg, true, client)
+	r, err := exchange(msg, true, client)
 	if err != nil {
 		diags.AddError("Error querying DNS record:", err.Error())
 		return nil, diags
@@ -576,7 +482,7 @@ func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uin
 
 	msg.RemoveRRset([]dns.RR{rr})
 
-	r, err := exchange_framework(msg, true, client)
+	r, err := exchange(msg, true, client)
 	if err != nil {
 		diags.AddError("Error deleting DNS record:", err.Error())
 		return diags

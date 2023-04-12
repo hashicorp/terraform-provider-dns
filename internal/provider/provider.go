@@ -442,34 +442,23 @@ func isTimeout(err error) bool {
 	return ok && timeout.Timeout()
 }
 
-func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
+func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 
-	//nolint:forcetypeassert
-	c := meta.(*DNSClient).c
-	//nolint:forcetypeassert
-	srv_addr := meta.(*DNSClient).srv_addr
-	//nolint:forcetypeassert
-	keyname := meta.(*DNSClient).keyname
-	//nolint:forcetypeassert
-	keyalgo := meta.(*DNSClient).keyalgo
-	//nolint:forcetypeassert
-	c.Net = meta.(*DNSClient).transport
-	//nolint:forcetypeassert
-	retries := meta.(*DNSClient).retries
-	//nolint:forcetypeassert
-	g := meta.(*DNSClient).gssClient
+	c := client.c
+	srv_addr := client.srv_addr
+	keyname := client.keyname
+	keyalgo := client.keyalgo
+	c.Net = client.transport
+	retries := client.retries
+	g := client.gssClient
 	retry_tcp := false
 
 	// GSS-TSIG
 	if tsig && g != nil {
-		//nolint:forcetypeassert
-		realm := meta.(*DNSClient).realm
-		//nolint:forcetypeassert
-		username := meta.(*DNSClient).username
-		//nolint:forcetypeassert
-		password := meta.(*DNSClient).password
-		//nolint:forcetypeassert
-		keytab := meta.(*DNSClient).keytab
+		realm := client.realm
+		username := client.username
+		password := client.password
+		keytab := client.keytab
 
 		var k string
 		var err error
@@ -484,7 +473,7 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 			k, _, err = g.NegotiateContext(srv_addr)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Error negotiating GSS context: %s", err)
+			return nil, fmt.Errorf("error negotiating GSS context: %s", err)
 		}
 
 		//nolint:errcheck
@@ -499,48 +488,50 @@ func exchange(msg *dns.Msg, tsig bool, meta interface{}) (*dns.Msg, error) {
 		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
 	}
 
-Retry:
-	log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
+	for ok := true; ok; ok = retries > 0 {
+		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
 
-	r, _, err := c.Exchange(msg, srv_addr)
+		r, _, err := c.Exchange(msg, srv_addr)
 
-	log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
+		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
 
-	if err != nil {
-		if isTimeout(err) && retries > 0 {
+		if err != nil {
+			if isTimeout(err) && retries > 0 {
+				retries--
+				continue
+			}
+			return r, err
+		}
+
+		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
 			retries--
-			goto Retry
+			continue
+		} else if r.Truncated {
+			if retry_tcp {
+				switch c.Net {
+				case "udp":
+					c.Net = "tcp"
+				case "udp4":
+					c.Net = "tcp4"
+				case "udp6":
+					c.Net = "tcp6"
+				default:
+					return nil, fmt.Errorf("unknown transport: %s", c.Net)
+				}
+			} else {
+				msg.SetEdns0(dns.DefaultMsgSize, false)
+				retry_tcp = true
+			}
+
+			// Reset retries counter on protocol change
+			retries = client.retries
+			continue
 		}
 		return r, err
 	}
 
-	if r.Rcode == dns.RcodeServerFailure && retries > 0 {
-		retries--
-		goto Retry
-	} else if r.Truncated {
-		if retry_tcp {
-			switch c.Net {
-			case "udp":
-				c.Net = "tcp"
-			case "udp4":
-				c.Net = "tcp4"
-			case "udp6":
-				c.Net = "tcp6"
-			default:
-				return nil, fmt.Errorf("Unknown transport: %s", c.Net)
-			}
-		} else {
-			msg.SetEdns0(dns.DefaultMsgSize, false)
-			retry_tcp = true
-		}
-
-		// Reset retries counter on protocol change
-		//nolint:forcetypeassert
-		retries = meta.(*DNSClient).retries
-		goto Retry
-	}
-
-	return r, err
+	//we should never be hitting this line
+	return nil, fmt.Errorf("unable to complete DNS exchange")
 }
 
 func resourceDnsImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
@@ -561,7 +552,7 @@ Loop:
 
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, meta.(*DNSClient))
 		if err != nil {
 			return nil, fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -631,7 +622,7 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, meta.(*DNSClient))
 		if err != nil {
 			return nil, diag.Errorf("Error querying DNS record: %s", err)
 		}
@@ -678,7 +669,7 @@ func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) 
 
 		msg.RemoveRRset([]dns.RR{rr})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, meta.(*DNSClient))
 		if err != nil {
 			return diag.Errorf("Error deleting DNS record: %s", err)
 		}

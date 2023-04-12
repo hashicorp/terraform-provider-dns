@@ -130,7 +130,7 @@ func (d *dnsCNAMERecordResource) Create(ctx context.Context, req resource.Create
 	}
 	msg.Insert([]dns.RR{rr_insert})
 
-	r, err := exchange_framework(msg, true, d.client)
+	r, err := exchange(msg, true, d.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
@@ -249,7 +249,7 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 		msg.Remove([]dns.RR{rr_remove})
 		msg.Insert([]dns.RR{rr_insert})
 
-		r, err := exchange_framework(msg, true, d.client)
+		r, err := exchange(msg, true, d.client)
 		if err != nil {
 			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return

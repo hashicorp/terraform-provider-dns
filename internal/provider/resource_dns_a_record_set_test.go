@@ -35,7 +35,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 		msg.RemoveRRset([]dns.RR{rr_remove})
 
-		r, err := exchange(msg, true, meta)
+		r, err := exchange(msg, true, meta.(*DNSClient))
 		if err != nil {
 			t.Fatalf("Error deleting DNS record: %s", err)
 		}

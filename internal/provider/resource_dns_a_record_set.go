@@ -143,7 +143,7 @@ func resourceDnsARecordSetUpdate(ctx context.Context, d *schema.ResourceData, me
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
-			r, err := exchange(msg, true, meta)
+			r, err := exchange(msg, true, meta.(*DNSClient))
 			if err != nil {
 				d.SetId("")
 				return diag.Errorf("Error updating DNS record: %s", err)
