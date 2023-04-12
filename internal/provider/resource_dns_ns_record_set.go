@@ -157,8 +157,8 @@ func (d *dnsNSRecordSetResource) Create(ctx context.Context, req resource.Create
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -204,8 +204,8 @@ func (d *dnsNSRecordSetResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -332,8 +332,8 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -377,18 +377,15 @@ func (d *dnsNSRecordSetResource) Delete(ctx context.Context, req resource.Delete
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	diags := resourceDnsDelete_framework(config, d.client, dns.TypeNS)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
+
+	resp.Diagnostics.Append(resourceDnsDelete_framework(config, d.client, dns.TypeNS)...)
 }
 
 func (d *dnsNSRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
 	config, diags := resourceDnsImport_framework(req.ID, d.client)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 

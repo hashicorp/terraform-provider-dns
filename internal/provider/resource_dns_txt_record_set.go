@@ -154,8 +154,8 @@ func (d *dnsTXTRecordSetResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -203,8 +203,8 @@ func (d *dnsTXTRecordSetResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -333,8 +333,8 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeTXT)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -380,18 +380,15 @@ func (d *dnsTXTRecordSetResource) Delete(ctx context.Context, req resource.Delet
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	diags := resourceDnsDelete_framework(config, d.client, dns.TypeTXT)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
+
+	resp.Diagnostics.Append(resourceDnsDelete_framework(config, d.client, dns.TypeTXT)...)
 }
 
 func (d *dnsTXTRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
 	config, diags := resourceDnsImport_framework(req.ID, d.client)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 

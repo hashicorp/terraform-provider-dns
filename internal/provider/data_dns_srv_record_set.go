@@ -94,9 +94,9 @@ func (d *dnsSRVRecordSetDataSource) Read(ctx context.Context, req datasource.Rea
 		return records[i].Port < records[j].Port
 	})
 
-	mx := make([]srvBlockConfig, len(records))
+	srv := make([]srvBlockConfig, len(records))
 	for i, record := range records {
-		mx[i] = srvBlockConfig{
+		srv[i] = srvBlockConfig{
 			Priority: types.Int64Value(int64(record.Priority)),
 			Weight:   types.Int64Value(int64(record.Weight)),
 			Port:     types.Int64Value(int64(record.Port)),
@@ -105,7 +105,7 @@ func (d *dnsSRVRecordSetDataSource) Read(ctx context.Context, req datasource.Rea
 	}
 
 	var convertDiags diag.Diagnostics
-	config.SRV, convertDiags = types.ListValueFrom(ctx, config.SRV.ElementType(ctx), mx)
+	config.SRV, convertDiags = types.ListValueFrom(ctx, config.SRV.ElementType(ctx), srv)
 	if convertDiags.HasError() {
 		resp.Diagnostics.Append(convertDiags...)
 		return

@@ -177,8 +177,8 @@ func (d *dnsSRVRecordSetResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeSRV)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -232,8 +232,8 @@ func (d *dnsSRVRecordSetResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeSRV)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -360,20 +360,18 @@ func (d *dnsSRVRecordSetResource) Update(ctx context.Context, req resource.Updat
 
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
-			resp.State.RemoveResource(ctx)
 			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
-			resp.State.RemoveResource(ctx)
 			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 			return
 		}
 	}
 
 	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeSRV)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
@@ -425,18 +423,14 @@ func (d *dnsSRVRecordSetResource) Delete(ctx context.Context, req resource.Delet
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	diags := resourceDnsDelete_framework(config, d.client, dns.TypeSRV)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
-		return
-	}
+	resp.Diagnostics.Append(resourceDnsDelete_framework(config, d.client, dns.TypeSRV)...)
 }
 
 func (d *dnsSRVRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 
 	config, diags := resourceDnsImport_framework(req.ID, d.client)
-	if diags != nil {
-		resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
 		return
 	}
 
