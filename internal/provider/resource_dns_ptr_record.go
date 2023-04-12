@@ -135,12 +135,10 @@ func (d *dnsPTRRecordResource) Create(ctx context.Context, req resource.CreateRe
 
 	r, err := exchange_framework(msg, true, d.client)
 	if err != nil {
-		resp.State.RemoveResource(ctx)
 		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
 	}
 	if r.Rcode != dns.RcodeSuccess {
-		resp.State.RemoveResource(ctx)
 		resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode),
 			dns.RcodeToString[r.Rcode])
 		return
@@ -168,8 +166,6 @@ func (d *dnsPTRRecordResource) Create(ctx context.Context, req resource.CreateRe
 		plan.TTL = types.Int64Value(int64(ttl))
 
 		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-	} else {
-		resp.State.RemoveResource(ctx)
 	}
 }
 
@@ -261,12 +257,10 @@ func (d *dnsPTRRecordResource) Update(ctx context.Context, req resource.UpdateRe
 
 		r, err := exchange_framework(msg, true, d.client)
 		if err != nil {
-			resp.State.RemoveResource(ctx)
 			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
 		}
 		if r.Rcode != dns.RcodeSuccess {
-			resp.State.RemoveResource(ctx)
 			resp.Diagnostics.AddError(fmt.Sprintf("Error updating DNS record: %v", r.Rcode), dns.RcodeToString[r.Rcode])
 			return
 		}
@@ -294,8 +288,6 @@ func (d *dnsPTRRecordResource) Update(ctx context.Context, req resource.UpdateRe
 		state.TTL = types.Int64Value(int64(ttl))
 
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	} else {
-		resp.State.RemoveResource(ctx)
 	}
 }
 

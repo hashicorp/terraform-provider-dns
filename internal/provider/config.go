@@ -48,7 +48,7 @@ type DNSClient struct {
 
 // Client configures and returns a fully initialized DNSClient.
 func (c *Config) Client(ctx context.Context) (interface{}, diag.Diagnostics) {
-	tflog.Info(ctx, "[INFO] Building DNSClient config structure")
+	tflog.Info(ctx, "Building DNSClient config structure")
 
 	var client DNSClient
 	client.srv_addr = net.JoinHostPort(c.server, strconv.Itoa(c.port))
