@@ -173,7 +173,11 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	if !providerConfig.Update.IsNull() {
-		providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, true)
+		resp.Diagnostics.Append(providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, false)...)
+
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	if providerUpdateConfig.Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
@@ -255,7 +259,11 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	if !providerUpdateConfig.Gssapi.IsNull() {
-		providerUpdateConfig.Gssapi.ElementsAs(ctx, &providerGssapiConfig, true)
+		resp.Diagnostics.Append(providerUpdateConfig.Gssapi.ElementsAs(ctx, &providerGssapiConfig, false)...)
+
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		gssapi = true
 	}
 	if providerGssapiConfig.Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
