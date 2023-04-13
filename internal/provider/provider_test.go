@@ -93,6 +93,60 @@ func testAccCheckDnsDestroy(s *terraform.State, resourceType string, rrType uint
 	return nil
 }
 
+func TestAccProvider_Update_Gssapi_Realm(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				provider "dns" {
+					update {
+						gssapi {
+							realm = "EXAMPLE.COM"
+						}
+
+						server = "127.0.0.1"
+					}
+				}
+
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_Update_Server(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				provider "dns" {
+					update {
+						server = "127.0.0.1"
+					}
+				}
+
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccProvider_Validators(t *testing.T) {
 	resource.UnitTest(t, resource.TestCase{
 		ProtoV5ProviderFactories: testProtoV5ProviderFactories,

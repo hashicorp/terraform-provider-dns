@@ -158,13 +158,14 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 
 func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var providerConfig providerModel
-	var providerUpdateConfig providerUpdateModel
-	var providerGssapiConfig providerGssapiModel
 
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
 	var gssapi bool
+
+	providerUpdateConfig := make([]providerUpdateModel, 1)
+	providerGssapiConfig := make([]providerGssapiModel, 1)
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfig)...)
 	if resp.Diagnostics.HasError() {
@@ -179,11 +180,11 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 	}
 
-	if providerUpdateConfig.Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
+	if providerUpdateConfig[0].Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 		server = os.Getenv("DNS_UPDATE_SERVER")
 	}
 
-	if providerUpdateConfig.Port.IsNull() {
+	if providerUpdateConfig[0].Port.IsNull() {
 		port = defaultPort
 
 		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
@@ -197,7 +198,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 	}
 
-	if providerUpdateConfig.Transport.IsNull() {
+	if providerUpdateConfig[0].Transport.IsNull() {
 		transport = defaultTransport
 
 		if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
@@ -205,7 +206,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 	}
 
-	if providerUpdateConfig.Timeout.IsNull() {
+	if providerUpdateConfig[0].Timeout.IsNull() {
 		timeout = defaultTimeout
 
 		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
@@ -233,7 +234,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	}
 
-	if providerUpdateConfig.Retries.IsNull() {
+	if providerUpdateConfig[0].Retries.IsNull() {
 		retries = defaultRetries
 
 		if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
@@ -247,34 +248,34 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 			}
 		}
 	}
-	if providerUpdateConfig.KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
+	if providerUpdateConfig[0].KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
 		keyname = os.Getenv("DNS_UPDATE_KEYNAME")
 	}
-	if providerUpdateConfig.KeyAlgorithm.IsNull() && len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
+	if providerUpdateConfig[0].KeyAlgorithm.IsNull() && len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
 		keyalgo = os.Getenv("DNS_UPDATE_KEYALGORITHM")
 	}
-	if providerUpdateConfig.KeySecret.IsNull() && len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
+	if providerUpdateConfig[0].KeySecret.IsNull() && len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
 		keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
 	}
 
-	if !providerUpdateConfig.Gssapi.IsNull() {
-		resp.Diagnostics.Append(providerUpdateConfig.Gssapi.ElementsAs(ctx, &providerGssapiConfig, false)...)
+	if !providerUpdateConfig[0].Gssapi.IsNull() {
+		resp.Diagnostics.Append(providerUpdateConfig[0].Gssapi.ElementsAs(ctx, &providerGssapiConfig, false)...)
 
 		if resp.Diagnostics.HasError() {
 			return
 		}
 		gssapi = true
 	}
-	if providerGssapiConfig.Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
+	if providerGssapiConfig[0].Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
 		realm = os.Getenv("DNS_UPDATE_REALM")
 	}
-	if providerGssapiConfig.Username.IsNull() && len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
+	if providerGssapiConfig[0].Username.IsNull() && len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
 		username = os.Getenv("DNS_UPDATE_USERNAME")
 	}
-	if providerGssapiConfig.Password.IsNull() && len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
+	if providerGssapiConfig[0].Password.IsNull() && len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
 		password = os.Getenv("DNS_UPDATE_PASSWORD")
 	}
-	if providerGssapiConfig.Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
+	if providerGssapiConfig[0].Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
 		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
 	}
 	if realm != "" || username != "" || password != "" || keytab != "" {
