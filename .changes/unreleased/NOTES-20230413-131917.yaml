@@ -1,0 +1,6 @@
+kind: NOTES
+body: Rewritten to use the terraform-plugin-framework, except dns_a_record_set and
+  dns_aaaa_record_set resources
+time: 2023-04-13T13:19:17.145476-04:00
+custom:
+  Issue: "260"

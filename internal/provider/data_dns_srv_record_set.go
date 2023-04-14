@@ -1,55 +1,73 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sort"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func dataSourceDnsSRVRecordSet() *schema.Resource {
-	return &schema.Resource{
-		Read: dataSourceDnsSRVRecordSetRead,
-		Schema: map[string]*schema.Schema{
-			"service": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+var (
+	_ datasource.DataSource = (*dnsSRVRecordSetDataSource)(nil)
+)
+
+func NewDnsSRVRecordSetDataSource() datasource.DataSource {
+	return &dnsSRVRecordSetDataSource{}
+}
+
+type dnsSRVRecordSetDataSource struct{}
+
+func (d *dnsSRVRecordSetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_srv_record_set"
+}
+
+func (d *dnsSRVRecordSetDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Use this data source to get DNS SRV records for a service.",
+		Attributes: map[string]schema.Attribute{
+			"service": schema.StringAttribute{
+				Required:    true,
+				Description: "Service to look up.",
 			},
-			"srv": &schema.Schema{
-				Type: schema.TypeList,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"priority": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"weight": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"port": {
-							Type:     schema.TypeInt,
-							Computed: true,
-						},
-						"target": {
-							Type:     schema.TypeString,
-							Computed: true,
-						},
+			"srv": schema.ListAttribute{
+				Computed: true,
+				ElementType: types.ObjectType{
+					AttrTypes: map[string]attr.Type{
+						"priority": types.Int64Type,
+						"weight":   types.Int64Type,
+						"port":     types.Int64Type,
+						"target":   types.StringType,
 					},
 				},
-				Computed: true,
+				Description: "A list of records. They are sorted to stay consistent across runs.",
+			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Always set to the service.",
 			},
 		},
 	}
 }
 
-func dataSourceDnsSRVRecordSetRead(d *schema.ResourceData, meta interface{}) error {
-	service := d.Get("service").(string)
+func (d *dnsSRVRecordSetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config srvRecordSetConfig
 
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	service := config.Service.ValueString()
 	_, records, err := net.LookupSRV("", "", service)
 	if err != nil {
-		return fmt.Errorf("error looking up SRV records for %q: %s", service, err)
+		resp.Diagnostics.AddError(fmt.Sprintf("error looking up SRV records for %q: ", service), err.Error())
+		return
 	}
 
 	// Sort by priority ascending, weight descending, target
@@ -76,21 +94,36 @@ func dataSourceDnsSRVRecordSetRead(d *schema.ResourceData, meta interface{}) err
 		return records[i].Port < records[j].Port
 	})
 
-	srv := make([]map[string]interface{}, len(records))
+	srv := make([]srvBlockConfig, len(records))
 	for i, record := range records {
-		srv[i] = map[string]interface{}{
-			"priority": int(record.Priority),
-			"weight":   int(record.Weight),
-			"port":     int(record.Port),
-			"target":   record.Target,
+		srv[i] = srvBlockConfig{
+			Priority: types.Int64Value(int64(record.Priority)),
+			Weight:   types.Int64Value(int64(record.Weight)),
+			Port:     types.Int64Value(int64(record.Port)),
+			Target:   types.StringValue(record.Target),
 		}
 	}
 
-	err = d.Set("srv", srv)
-	if err != nil {
-		return err
+	var convertDiags diag.Diagnostics
+	config.SRV, convertDiags = types.ListValueFrom(ctx, config.SRV.ElementType(ctx), srv)
+	if convertDiags.HasError() {
+		resp.Diagnostics.Append(convertDiags...)
+		return
 	}
-	d.SetId(service)
 
-	return nil
+	config.ID = config.Service
+	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
+}
+
+type srvRecordSetConfig struct {
+	ID      types.String `tfsdk:"id"`
+	Service types.String `tfsdk:"service"`
+	SRV     types.List   `tfsdk:"srv"` //srvBlockConfig
+}
+
+type srvBlockConfig struct {
+	Priority types.Int64  `tfsdk:"priority"`
+	Weight   types.Int64  `tfsdk:"weight"`
+	Port     types.Int64  `tfsdk:"port"`
+	Target   types.String `tfsdk:"target"`
 }

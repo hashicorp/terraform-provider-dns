@@ -4,14 +4,14 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 	recordName := "data.dns_txt_record_set.test"
 
 	resource.UnitTest(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
@@ -34,7 +34,7 @@ func TestAccDataDnsTxtRecordSet_512Byte(t *testing.T) {
 	recordName := "data.dns_txt_record_set.test"
 
 	resource.UnitTest(t, resource.TestCase{
-		Providers: testAccProviders,
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 		Steps: []resource.TestStep{
 			{
 				Config: `
