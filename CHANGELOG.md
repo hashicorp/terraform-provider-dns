@@ -1,3 +1,10 @@
+## 3.3.0 (April 18, 2023)
+
+NOTES:
+
+* This Go module has been updated to Go 1.19 per the [Go support policy](https://golang.org/doc/devel/release.html#policy). Any consumers building on earlier Go versions may experience errors. ([#272](https://github.com/hashicorp/terraform-provider-dns/issues/272))
+* Rewritten to use the terraform-plugin-framework, except dns_a_record_set and dns_aaaa_record_set resources ([#260](https://github.com/hashicorp/terraform-provider-dns/issues/260))
+
 ## 3.2.4 (February 06, 2023)
 
 BUG FIXES:
