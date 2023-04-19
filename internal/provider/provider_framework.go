@@ -163,6 +163,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	var port, retries int
 	var duration time.Duration
 	var gssapi bool
+	var configErr error
 
 	providerUpdateConfig := make([]providerUpdateModel, 1)
 	providerGssapiConfig := make([]providerGssapiModel, 1)
@@ -315,7 +316,10 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		keytab:    keytab,
 	}
 
-	resp.ResourceData, _ = config.Client(ctx)
+	resp.ResourceData, configErr = config.Client(ctx)
+	if configErr != nil {
+		resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
+	}
 }
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {

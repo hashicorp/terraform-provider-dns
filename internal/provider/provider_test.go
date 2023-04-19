@@ -38,9 +38,15 @@ func providerVersion324() map[string]resource.ExternalProvider {
 	}
 }
 
-func init() {
+func TestMain(m *testing.M) {
 	testAccProvider = New()
-	dnsClient, _ = initializeDNSClient(context.Background())
+	var clientErr error
+	dnsClient, clientErr = initializeDNSClient(context.Background())
+	if clientErr != nil {
+		os.Exit(1)
+	}
+
+	m.Run()
 }
 
 func TestProvider(t *testing.T) {
@@ -54,10 +60,10 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	v := os.Getenv("DNS_UPDATE_SERVER")
-	if v == "" {
-		t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
-	}
+	//v := os.Getenv("DNS_UPDATE_SERVER")
+	//if v == "" {
+	//	t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
+	//}
 }
 
 func testResourceFQDN(name, zone string) string {
@@ -142,6 +148,35 @@ func TestAccProvider_Update_Server(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
 				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_InvalidClientConfig(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				provider "dns" {
+					update {
+						gssapi {
+							realm = ""
+						}
+
+						server = "127.0.0.1"
+					}
+				}
+
+				 resource "dns_ptr_record" "foo" {
+					zone = "example.com."
+					name = "r._dns-sd._udp"
+					ptr = "bar.example.com."
+					ttl = 300
+  				}
+				`,
+				ExpectError: regexp.MustCompile(`.*Error configuring provider:`),
 			},
 		},
 	})
@@ -362,8 +397,8 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 		keytab:    keytab,
 	}
 
-	var client, diags = config.Client(ctx)
-	if diags.HasError() {
+	client, configErr := config.Client(ctx)
+	if configErr != nil {
 		return &DNSClient{}, fmt.Errorf("error creating DNS Client")
 	}
 

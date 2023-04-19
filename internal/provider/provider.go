@@ -332,7 +332,12 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		keytab:    keytab,
 	}
 
-	return config.Client(ctx)
+	dnsClient, err := config.Client(ctx)
+	if err != nil {
+		return dnsClient, diag.Errorf(err.Error())
+	}
+
+	return dnsClient, nil
 }
 
 func getAVal(record interface{}) (string, int, error) {
