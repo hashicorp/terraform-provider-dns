@@ -184,7 +184,6 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	server = providerUpdateConfig[0].Server.ValueString()
 	port = int(providerUpdateConfig[0].Port.ValueInt64())
 	transport = providerUpdateConfig[0].Transport.ValueString()
-	timeout = providerUpdateConfig[0].Timeout.ValueString()
 	retries = int(providerUpdateConfig[0].Retries.ValueInt64())
 	keyname = providerUpdateConfig[0].KeyName.ValueString()
 	keyalgo = providerUpdateConfig[0].KeyAlgorithm.ValueString()
