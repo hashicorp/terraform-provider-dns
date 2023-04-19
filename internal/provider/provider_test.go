@@ -60,10 +60,10 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	//v := os.Getenv("DNS_UPDATE_SERVER")
-	//if v == "" {
-	//	t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
-	//}
+	v := os.Getenv("DNS_UPDATE_SERVER")
+	if v == "" {
+		t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
+	}
 }
 
 func testResourceFQDN(name, zone string) string {
