@@ -180,6 +180,15 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 	}
 
+	server = providerUpdateConfig[0].Server.ValueString()
+	port = int(providerUpdateConfig[0].Port.ValueInt64())
+	transport = providerUpdateConfig[0].Transport.ValueString()
+	timeout = providerUpdateConfig[0].Timeout.ValueString()
+	retries = int(providerUpdateConfig[0].Retries.ValueInt64())
+	keyname = providerUpdateConfig[0].KeyName.ValueString()
+	keyalgo = providerUpdateConfig[0].KeyAlgorithm.ValueString()
+	keysecret = providerUpdateConfig[0].KeySecret.ValueString()
+
 	if providerUpdateConfig[0].Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 		server = os.Getenv("DNS_UPDATE_SERVER")
 	}
@@ -213,25 +222,27 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 			timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
 		}
 
-		// Try parsing as a duration
-		var err error
-		duration, err = time.ParseDuration(timeout)
+	} else {
+		timeout = providerUpdateConfig[0].Timeout.String()
+	}
+
+	// Try parsing timeout as a duration
+	var err error
+	duration, err = time.ParseDuration(timeout)
+	if err != nil {
+		// Failing that, convert to an integer and treat as seconds
+		var seconds int
+		seconds, err = strconv.Atoi(timeout)
 		if err != nil {
-			// Failing that, convert to an integer and treat as seconds
-			var seconds int
-			seconds, err = strconv.Atoi(timeout)
-			if err != nil {
-				resp.Diagnostics.AddError("Invalid timeout:",
-					fmt.Sprintf("timeout cannot be parsed as an integer: %s", err.Error()))
-				return
-			}
-			duration = time.Duration(seconds) * time.Second
-		}
-		if duration < 0 {
-			resp.Diagnostics.AddError("Invalid timeout:", "timeout cannot be negative.")
+			resp.Diagnostics.AddError("Invalid timeout:",
+				fmt.Sprintf("timeout cannot be parsed as an integer: %s", err.Error()))
 			return
 		}
-
+		duration = time.Duration(seconds) * time.Second
+	}
+	if duration < 0 {
+		resp.Diagnostics.AddError("Invalid timeout:", "timeout cannot be negative.")
+		return
 	}
 
 	if providerUpdateConfig[0].Retries.IsNull() {
@@ -266,6 +277,12 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 		gssapi = true
 	}
+
+	realm = providerGssapiConfig[0].Realm.ValueString()
+	username = providerGssapiConfig[0].Username.ValueString()
+	password = providerGssapiConfig[0].Password.ValueString()
+	keytab = providerGssapiConfig[0].Keytab.ValueString()
+
 	if providerGssapiConfig[0].Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
 		realm = os.Getenv("DNS_UPDATE_REALM")
 	}
