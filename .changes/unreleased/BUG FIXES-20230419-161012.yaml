@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: 'provider: Correctly configures DNS client from provider configurations'
+time: 2023-04-19T16:10:12.411987-04:00
+custom:
+  Issue: "290"
