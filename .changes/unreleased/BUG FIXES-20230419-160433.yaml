@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: 'provider: Prevents panics resulting from provider configuration errors'
+time: 2023-04-19T16:04:33.127975-04:00
+custom:
+  Issue: "289"
