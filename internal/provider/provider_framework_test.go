@@ -54,6 +54,20 @@ func TestDnsProviderConfigure(t *testing.T) {
 
 	schema := schemaResp.Schema
 
+	// Prevent external environment variable values from affecting this test
+	t.Setenv("DNS_UPDATE_KEYALGORITHM", "")
+	t.Setenv("DNS_UPDATE_KEYNAME", "")
+	t.Setenv("DNS_UPDATE_KEYSECRET", "")
+	t.Setenv("DNS_UPDATE_KEYTAB", "")
+	t.Setenv("DNS_UPDATE_PASSWORD", "")
+	t.Setenv("DNS_UPDATE_PORT", "")
+	t.Setenv("DNS_UPDATE_REALM", "")
+	t.Setenv("DNS_UPDATE_RETRIES", "")
+	t.Setenv("DNS_UPDATE_SERVER", "")
+	t.Setenv("DNS_UPDATE_TRANSPORT", "")
+	t.Setenv("DNS_UPDATE_TIMEOUT", "")
+	t.Setenv("DNS_UPDATE_USERNAME", "")
+
 	testCases := map[string]struct {
 		env      map[string]string
 		request  provider.ConfigureRequest
