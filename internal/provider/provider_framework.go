@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -361,11 +362,46 @@ type providerUpdateModel struct {
 	Gssapi       types.List   `tfsdk:"gssapi"` //providerGssapiModel
 }
 
+func (m providerUpdateModel) attributeType() attr.Type {
+	return types.ObjectType{AttrTypes: m.attributeTypes()}
+}
+
+func (m providerUpdateModel) attributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"gssapi": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: providerGssapiModel{}.attributeTypes(),
+			},
+		},
+		"key_name":      types.StringType,
+		"key_algorithm": types.StringType,
+		"key_secret":    types.StringType,
+		"port":          types.Int64Type,
+		"server":        types.StringType,
+		"retries":       types.Int64Type,
+		"timeout":       types.StringType,
+		"transport":     types.StringType,
+	}
+}
+
 type providerGssapiModel struct {
 	Realm    types.String `tfsdk:"realm"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	Keytab   types.String `tfsdk:"keytab"`
+}
+
+func (m providerGssapiModel) attributeType() attr.Type {
+	return types.ObjectType{AttrTypes: m.attributeTypes()}
+}
+
+func (m providerGssapiModel) attributeTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"keytab":   types.StringType,
+		"password": types.StringType,
+		"realm":    types.StringType,
+		"username": types.StringType,
+	}
 }
 
 func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, diag.Diagnostics) {

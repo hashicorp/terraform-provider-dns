@@ -1,0 +1,397 @@
+package provider
+
+import (
+	"context"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/miekg/dns"
+)
+
+// testProviderSchemaConfig returns a tfsdk.Config for the given schema.
+func testProviderSchemaConfig(t *testing.T, ctx context.Context, schema schema.Schema, values map[string]attr.Value) tfsdk.Config {
+	t.Helper()
+
+	schemaType := schema.Type()
+	objectType, ok := schemaType.(types.ObjectType)
+
+	if !ok {
+		t.Fatalf("expected schema type of types.Object, got: %T", schemaType)
+	}
+
+	objectValue := types.ObjectValueMust(objectType.AttributeTypes(), values)
+	tfTypesValue, err := objectValue.ToTerraformValue(ctx)
+
+	if err != nil {
+		t.Fatalf("unexpected error converting to tftypes: %s", err)
+	}
+
+	return tfsdk.Config{
+		Schema: schema,
+		Raw:    tfTypesValue,
+	}
+}
+
+// nolint:paralleltest // includes environment variable testing
+func TestDnsProviderConfigure(t *testing.T) {
+	ctx := context.Background()
+	schemaReq := provider.SchemaRequest{}
+	schemaResp := &provider.SchemaResponse{}
+	testProvider := NewFrameworkProvider()
+
+	testProvider.Schema(ctx, schemaReq, schemaResp)
+
+	if schemaResp.Diagnostics.HasError() {
+		t.Fatalf("unexpected schema diagnostics: %v", schemaResp.Diagnostics)
+	}
+
+	schema := schemaResp.Schema
+
+	testCases := map[string]struct {
+		env      map[string]string
+		request  provider.ConfigureRequest
+		expected *provider.ConfigureResponse
+	}{
+		"no-config-or-env": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-port-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.attributeType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.attributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Value(1053),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":1053",
+					transport: "udp",
+				},
+			},
+		},
+		"update-port-config-and-env": {
+			env: map[string]string{
+				"DNS_UPDATE_PORT": "2053",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.attributeType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.attributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Value(1053),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":1053",
+					transport: "udp",
+				},
+			},
+		},
+		"update-port-env": {
+			env: map[string]string{
+				"DNS_UPDATE_PORT": "1053",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":1053",
+					transport: "udp",
+				},
+			},
+		},
+		"update-port-env-invalid": {
+			env: map[string]string{
+				"DNS_UPDATE_PORT": "not-an-int",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				Diagnostics: diag.Diagnostics{
+					diag.NewErrorDiagnostic(
+						"Invalid DNS_UPDATE_PORT environment variable:",
+						"strconv.Atoi: parsing \"not-an-int\": invalid syntax",
+					),
+				},
+				ResourceData: nil,
+			},
+		},
+		"update-server-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.attributeType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.attributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringValue("example.com"),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  "example.com:53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-server-config-and-env": {
+			env: map[string]string{
+				"DNS_UPDATE_SERVER": "example.org",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.attributeType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.attributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringValue("example.com"),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  "example.com:53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-server-env": {
+			env: map[string]string{
+				"DNS_UPDATE_SERVER": "example.com",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  "example.com:53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-transport-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.attributeType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.attributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringValue("tcp"),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "tcp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "tcp",
+				},
+			},
+		},
+		"update-transport-config-and-env": {
+			env: map[string]string{
+				"DNS_UPDATE_TRANSPORT": "tcp6",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.attributeType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.attributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringValue("tcp"),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "tcp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "tcp",
+				},
+			},
+		},
+		"update-transport-env": {
+			env: map[string]string{
+				"DNS_UPDATE_TRANSPORT": "tcp",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "tcp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "tcp",
+				},
+			},
+		},
+	}
+
+	for name, testCase := range testCases {
+		name, testCase := name, testCase
+
+		// nolint:paralleltest // includes environment variable testing
+		t.Run(name, func(t *testing.T) {
+			for envKey, envValue := range testCase.env {
+				t.Setenv(envKey, envValue)
+			}
+
+			got := &provider.ConfigureResponse{}
+
+			testProvider.Configure(ctx, testCase.request, got)
+
+			if diff := cmp.Diff(got, testCase.expected, cmp.AllowUnexported(DNSClient{}), cmpopts.IgnoreUnexported(dns.Client{})); diff != "" {
+				t.Errorf("unexpected difference: %s", diff)
+			}
+		})
+	}
+}
