@@ -362,16 +362,14 @@ type providerUpdateModel struct {
 	Gssapi       types.List   `tfsdk:"gssapi"` //providerGssapiModel
 }
 
-func (m providerUpdateModel) attributeType() attr.Type {
-	return types.ObjectType{AttrTypes: m.attributeTypes()}
+func (m providerUpdateModel) objectType() types.ObjectType {
+	return types.ObjectType{AttrTypes: m.objectAttributeTypes()}
 }
 
-func (m providerUpdateModel) attributeTypes() map[string]attr.Type {
+func (m providerUpdateModel) objectAttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"gssapi": types.ListType{
-			ElemType: types.ObjectType{
-				AttrTypes: providerGssapiModel{}.attributeTypes(),
-			},
+			ElemType: providerGssapiModel{}.objectType(),
 		},
 		"key_name":      types.StringType,
 		"key_algorithm": types.StringType,
@@ -391,11 +389,11 @@ type providerGssapiModel struct {
 	Keytab   types.String `tfsdk:"keytab"`
 }
 
-func (m providerGssapiModel) attributeType() attr.Type {
-	return types.ObjectType{AttrTypes: m.attributeTypes()}
+func (m providerGssapiModel) objectType() types.ObjectType {
+	return types.ObjectType{AttrTypes: m.objectAttributeTypes()}
 }
 
-func (m providerGssapiModel) attributeTypes() map[string]attr.Type {
+func (m providerGssapiModel) objectAttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"keytab":   types.StringType,
 		"password": types.StringType,

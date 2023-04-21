@@ -76,7 +76,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 		"no-config-or-env": {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
-					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -94,12 +94,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListValueMust(
-						providerUpdateModel{}.attributeType(),
+						providerUpdateModel{}.objectType(),
 						[]attr.Value{
 							types.ObjectValueMust(
-								providerUpdateModel{}.attributeTypes(),
+								providerUpdateModel{}.objectAttributeTypes(),
 								map[string]attr.Value{
-									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
 									"key_name":      types.StringNull(),
 									"key_algorithm": types.StringNull(),
 									"key_secret":    types.StringNull(),
@@ -132,12 +132,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListValueMust(
-						providerUpdateModel{}.attributeType(),
+						providerUpdateModel{}.objectType(),
 						[]attr.Value{
 							types.ObjectValueMust(
-								providerUpdateModel{}.attributeTypes(),
+								providerUpdateModel{}.objectAttributeTypes(),
 								map[string]attr.Value{
-									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
 									"key_name":      types.StringNull(),
 									"key_algorithm": types.StringNull(),
 									"key_secret":    types.StringNull(),
@@ -169,7 +169,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
-					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -189,7 +189,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
-					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -206,12 +206,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListValueMust(
-						providerUpdateModel{}.attributeType(),
+						providerUpdateModel{}.objectType(),
 						[]attr.Value{
 							types.ObjectValueMust(
-								providerUpdateModel{}.attributeTypes(),
+								providerUpdateModel{}.objectAttributeTypes(),
 								map[string]attr.Value{
-									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
 									"key_name":      types.StringNull(),
 									"key_algorithm": types.StringNull(),
 									"key_secret":    types.StringNull(),
@@ -244,12 +244,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListValueMust(
-						providerUpdateModel{}.attributeType(),
+						providerUpdateModel{}.objectType(),
 						[]attr.Value{
 							types.ObjectValueMust(
-								providerUpdateModel{}.attributeTypes(),
+								providerUpdateModel{}.objectAttributeTypes(),
 								map[string]attr.Value{
-									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
 									"key_name":      types.StringNull(),
 									"key_algorithm": types.StringNull(),
 									"key_secret":    types.StringNull(),
@@ -281,7 +281,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
-					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -299,12 +299,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListValueMust(
-						providerUpdateModel{}.attributeType(),
+						providerUpdateModel{}.objectType(),
 						[]attr.Value{
 							types.ObjectValueMust(
-								providerUpdateModel{}.attributeTypes(),
+								providerUpdateModel{}.objectAttributeTypes(),
 								map[string]attr.Value{
-									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
 									"key_name":      types.StringNull(),
 									"key_algorithm": types.StringNull(),
 									"key_secret":    types.StringNull(),
@@ -337,12 +337,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListValueMust(
-						providerUpdateModel{}.attributeType(),
+						providerUpdateModel{}.objectType(),
 						[]attr.Value{
 							types.ObjectValueMust(
-								providerUpdateModel{}.attributeTypes(),
+								providerUpdateModel{}.objectAttributeTypes(),
 								map[string]attr.Value{
-									"gssapi":        types.ListNull(providerGssapiModel{}.attributeType()),
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
 									"key_name":      types.StringNull(),
 									"key_algorithm": types.StringNull(),
 									"key_secret":    types.StringNull(),
@@ -374,7 +374,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
-					"update": types.ListNull(providerUpdateModel{}.attributeType()),
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
