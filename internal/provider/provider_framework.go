@@ -38,34 +38,37 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
 			"update": schema.ListNestedBlock{
-				Description: "When the provider is used for DNS updates, this block is required.",
+				Description: "When the provider is used for DNS updates, this block is required. Only one `update` block may be in the configuration.",
 				Validators: []validator.List{
 					listvalidator.SizeAtMost(1),
 				},
 				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"server": schema.StringAttribute{
-							Required:    true,
-							Description: "The hostname or IP address of the DNS server to send updates to.",
+							Optional:    true,
+							Description: "The hostname or IP address of the DNS server to send updates to. Value can also be sourced from the DNS_UPDATE_SERVER environment variable.",
 						},
 						"port": schema.Int64Attribute{
 							Optional:    true,
-							Description: "The target UDP port on the server where updates are sent to. Defaults to `53`.",
+							Description: "The target UDP port on the server where updates are sent to. Defaults to `53`. Value can also be sourced from the DNS_UPDATE_PORT environment variable.",
 						},
 						"transport": schema.StringAttribute{
 							Optional: true,
 							Description: "Transport to use for DNS queries. Valid values are `udp`, `udp4`, `udp6`, " +
 								"`tcp`, `tcp4`, or `tcp6`. Any UDP transport will retry automatically with the " +
-								"equivalent TCP transport in the event of a truncated response. Defaults to `udp`.",
+								"equivalent TCP transport in the event of a truncated response. Defaults to `udp`. " +
+								"Value can also be sourced from the DNS_UPDATE_TRANSPORT environment variable.",
 						},
 						"timeout": schema.StringAttribute{
 							Optional: true,
 							Description: "Timeout for DNS queries. Valid values are durations expressed as `500ms`, " +
-								"etc. or a plain number which is treated as whole seconds.",
+								"etc. or a plain number which is treated as whole seconds. " +
+								"Value can also be sourced from the DNS_UPDATE_TIMEOUT environment variable.",
 						},
 						"retries": schema.Int64Attribute{
-							Optional:    true,
-							Description: "How many times to retry on connection timeout. Defaults to `3`.",
+							Optional: true,
+							Description: "How many times to retry on connection timeout. Defaults to `3`. " +
+								"Value can also be sourced from the DNS_UPDATE_RETRIES environment variable.",
 						},
 						"key_name": schema.StringAttribute{
 							Optional: true,
@@ -76,7 +79,8 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 									path.MatchRelative().AtParent().AtName("key_secret"),
 								),
 							},
-							Description: "The name of the TSIG key used to sign the DNS update messages.",
+							Description: "The name of the TSIG key used to sign the DNS update messages. " +
+								"Value can also be sourced from the DNS_UPDATE_KEYNAME environment variable.",
 						},
 						"key_algorithm": schema.StringAttribute{
 							Optional: true,
@@ -89,7 +93,7 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 							},
 							Description: "Required if `key_name` is set. When using TSIG authentication, the " +
 								"algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` " +
-								"or `hmac-sha512`.",
+								"or `hmac-sha512`. Value can also be sourced from the DNS_UPDATE_KEYALGORITHM environment variable.",
 						},
 						"key_secret": schema.StringAttribute{
 							Optional: true,
@@ -101,7 +105,7 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 								),
 							},
 							Description: "Required if `key_name` is set\nA Base64-encoded string containing the " +
-								"shared secret to be used for TSIG.",
+								"shared secret to be used for TSIG. Value can also be sourced from the DNS_UPDATE_KEYSECRET environment variable.",
 						},
 					},
 					Blocks: map[string]schema.Block{
@@ -119,13 +123,13 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 							NestedObject: schema.NestedBlockObject{
 								Attributes: map[string]schema.Attribute{
 									"realm": schema.StringAttribute{
-										Required:    true,
-										Description: "The Kerberos realm or Active Directory domain.",
+										Optional:    true,
+										Description: "The Kerberos realm or Active Directory domain. Value can also be sourced from the DNS_UPDATE_REALM environment variable.",
 									},
 									"username": schema.StringAttribute{
 										Optional: true,
 										Description: "The name of the user to authenticate as. If not set the current " +
-											"user session will be used.",
+											"user session will be used. Value can also be sourced from the DNS_UPDATE_USERNAME environment variable.",
 									},
 									"password": schema.StringAttribute{
 										Optional: true,
@@ -135,7 +139,7 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 										},
 										Sensitive: true,
 										Description: "This or `keytab` is required if `username` is set. The matching " +
-											"password for `username`.",
+											"password for `username`. Value can also be sourced from the DNS_UPDATE_PASSWORD environment variable.",
 									},
 									"keytab": schema.StringAttribute{
 										Optional: true,
@@ -145,7 +149,7 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 										},
 										Description: "This or `password` is required if `username` is set, not " +
 											"supported on Windows. The path to a keytab file containing a key for " +
-											"`username`.",
+											"`username`. Value can also be sourced from the DNS_UPDATE_KEYTAB environment variable.",
 									},
 								},
 							},
