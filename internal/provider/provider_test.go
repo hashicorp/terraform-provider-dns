@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -20,7 +21,13 @@ import (
 var testAccProvider *schema.Provider
 var dnsClient *DNSClient
 var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
-	"dns": providerserver.NewProtocol5WithError(NewFrameworkProvider()),
+	"dns": func() (tfprotov5.ProviderServer, error) {
+		providers := []func() tfprotov5.ProviderServer{
+			providerserver.NewProtocol5(NewFrameworkProvider()),
+			New().GRPCProvider,
+		}
+		return tf5muxserver.NewMuxServer(context.Background(), providers...)
+	},
 }
 
 var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
@@ -128,7 +135,7 @@ func TestAccProvider_Update_Gssapi_Realm(t *testing.T) {
 	})
 }
 
-func TestAccProvider_Update_Server(t *testing.T) {
+func TestAccProvider_Update_Server_Config(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 		Steps: []resource.TestStep{
@@ -140,6 +147,27 @@ func TestAccProvider_Update_Server(t *testing.T) {
 					}
 				}
 
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_Update_Server_Env(t *testing.T) {
+	t.Setenv("DNS_UPDATE_SERVER", "example.com")
+
+	resource.Test(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
 					host = "terraform-provider-dns-a.hashicorptest.com"
