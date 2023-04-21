@@ -438,3 +438,30 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 
 	return dnsClient, nil
 }
+
+func testRemoveRecord(t *testing.T, recordType string, recordName string) {
+	msg := new(dns.Msg)
+	recordZone := "example.com."
+
+	msg.SetUpdate(recordZone)
+
+	rrStr := fmt.Sprintf("%s.%s 0 %s", recordName, recordZone, recordType)
+
+	rr, err := dns.NewRR(rrStr)
+
+	if err != nil {
+		t.Fatalf("Error generating DNS record (%s): %s", rrStr, err)
+	}
+
+	msg.RemoveRRset([]dns.RR{rr})
+
+	resp, err := exchange(msg, true, dnsClient)
+
+	if err != nil {
+		t.Fatalf("Error deleting DNS record (%s): %s", rrStr, err)
+	}
+
+	if resp.Rcode != dns.RcodeSuccess {
+		t.Fatalf("Error deleting DNS record (%s): %v", rrStr, resp.Rcode)
+	}
+}
