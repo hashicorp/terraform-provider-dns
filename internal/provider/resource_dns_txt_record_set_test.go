@@ -1,12 +1,10 @@
 package provider
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
-	"github.com/miekg/dns"
 )
 
 func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
@@ -36,7 +34,7 @@ func TestAccDnsTXTRecordSet_Basic(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() { deleteTXTRecordSet(t) },
+				PreConfig: func() { testRemoveRecord(t, "TXT", "foo") },
 				Config:    testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
@@ -112,7 +110,7 @@ func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
 			},
 			{
 				ExternalProviders: providerVersion324(),
-				PreConfig:         func() { deleteTXTRecordSet(t) },
+				PreConfig:         func() { testRemoveRecord(t, "TXT", "foo") },
 				Config:            testAccDnsTXTRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "txt.#", "3"),
@@ -132,34 +130,6 @@ func TestAccDnsTXTRecordSet_Basic_Upgrade(t *testing.T) {
 			},
 		},
 	})
-}
-
-func deleteTXTRecordSet(t *testing.T) {
-	name := "foo"
-	zone := "example.com."
-
-	msg := new(dns.Msg)
-
-	msg.SetUpdate(zone)
-
-	fqdn := testResourceFQDN(name, zone)
-
-	rrStr := fmt.Sprintf("%s 0 TXT", fqdn)
-
-	rr_remove, err := dns.NewRR(rrStr)
-	if err != nil {
-		t.Fatalf("Error reading DNS record: %s", err)
-	}
-
-	msg.RemoveRRset([]dns.RR{rr_remove})
-
-	r, err := exchange(msg, true, dnsClient)
-	if err != nil {
-		t.Fatalf("Error deleting DNS record: %s", err)
-	}
-	if r.Rcode != dns.RcodeSuccess {
-		t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-	}
 }
 
 var testAccDnsTXTRecordSet_basic = `

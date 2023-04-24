@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -13,36 +12,6 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 
 	resourceName := "dns_a_record_set.foo"
 	resourceRoot := "dns_a_record_set.root"
-
-	deleteARecordSet := func() {
-		rec_name := "foo"
-		rec_zone := "example.com."
-
-		meta := testAccProvider.Meta()
-
-		msg := new(dns.Msg)
-
-		msg.SetUpdate(rec_zone)
-
-		rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-		rrStr := fmt.Sprintf("%s 0 A", rec_fqdn)
-
-		rr_remove, err := dns.NewRR(rrStr)
-		if err != nil {
-			t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
-		}
-
-		msg.RemoveRRset([]dns.RR{rr_remove})
-
-		r, err := exchange(msg, true, meta.(*DNSClient))
-		if err != nil {
-			t.Fatalf("Error deleting DNS record: %s", err)
-		}
-		if r.Rcode != dns.RcodeSuccess {
-			t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-		}
-	}
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccPreCheck(t) },
@@ -67,7 +36,7 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: deleteARecordSet,
+				PreConfig: func() { testRemoveRecord(t, "A", "foo") },
 				Config:    testAccDnsARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "3"),

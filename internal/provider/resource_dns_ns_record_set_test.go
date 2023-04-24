@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -36,7 +35,7 @@ func TestAccDnsNSRecordSet_Basic(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() { deleteNSRecordSet(t) },
+				PreConfig: func() { testRemoveRecord(t, "NS", "foo") },
 				Config:    testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
@@ -100,7 +99,7 @@ func TestAccDnsNSRecordSet_Basic_Upgrade(t *testing.T) {
 			},
 			{
 				ProtoV5ProviderFactories: testProtoV5ProviderFactories,
-				PreConfig:                func() { deleteNSRecordSet(t) },
+				PreConfig:                func() { testRemoveRecord(t, "NS", "foo") },
 				Config:                   testAccDnsNSRecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
@@ -120,34 +119,6 @@ func TestAccDnsNSRecordSet_Basic_Upgrade(t *testing.T) {
 			},
 		},
 	})
-}
-
-func deleteNSRecordSet(t *testing.T) {
-	rec_name := "foo"
-	rec_zone := "example.com."
-
-	msg := new(dns.Msg)
-
-	msg.SetUpdate(rec_zone)
-
-	rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-	rrStr := fmt.Sprintf("%s 0 NS", rec_fqdn)
-
-	rr_remove, err := dns.NewRR(rrStr)
-	if err != nil {
-		t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
-	}
-
-	msg.RemoveRRset([]dns.RR{rr_remove})
-
-	r, err := exchange(msg, true, dnsClient)
-	if err != nil {
-		t.Fatalf("Error deleting DNS record: %s", err)
-	}
-	if r.Rcode != dns.RcodeSuccess {
-		t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-	}
 }
 
 func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
