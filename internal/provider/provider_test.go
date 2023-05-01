@@ -30,12 +30,6 @@ var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, 
 	},
 }
 
-var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
-	"dns": func() (*schema.Provider, error) {
-		return testAccProvider, nil
-	},
-}
-
 func providerVersion324() map[string]resource.ExternalProvider {
 	return map[string]resource.ExternalProvider{
 		"dns": {
