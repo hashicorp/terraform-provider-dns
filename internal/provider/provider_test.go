@@ -173,6 +173,52 @@ func TestAccProvider_Update_Server_Env(t *testing.T) {
 	})
 }
 
+func TestAccProvider_Update_Timeout_Config(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				provider "dns" {
+					update {
+						timeout = 5
+					}
+				}
+
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_Update_Timeout_Env(t *testing.T) {
+	t.Setenv("DNS_UPDATE_TIMEOUT", "5")
+
+	resource.Test(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccProvider_InvalidClientConfig(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV5ProviderFactories: testProtoV5ProviderFactories,

@@ -228,7 +228,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		}
 
 	} else {
-		timeout = providerUpdateConfig[0].Timeout.String()
+		timeout = providerUpdateConfig[0].Timeout.ValueString()
 	}
 
 	// Try parsing timeout as a duration
@@ -239,14 +239,16 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		var seconds int
 		seconds, err = strconv.Atoi(timeout)
 		if err != nil {
-			resp.Diagnostics.AddError("Invalid timeout:",
-				fmt.Sprintf("timeout cannot be parsed as an integer: %s", err.Error()))
+			resp.Diagnostics.AddError(
+				"Invalid DNS Provider Timeout Value",
+				fmt.Sprintf("Timeout cannot be parsed as an integer: %s", err.Error()),
+			)
 			return
 		}
 		duration = time.Duration(seconds) * time.Second
 	}
 	if duration < 0 {
-		resp.Diagnostics.AddError("Invalid timeout:", "timeout cannot be negative.")
+		resp.Diagnostics.AddError("Invalid timeout", "timeout cannot be negative.")
 		return
 	}
 

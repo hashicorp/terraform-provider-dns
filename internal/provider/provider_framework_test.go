@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -293,6 +294,178 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  "example.com:53",
 					transport: "udp",
 				},
+			},
+		},
+		"update-timeout-config-duration": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringValue("5s"),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-timeout-config-number": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringValue("5"),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-timeout-config-and-env": {
+			env: map[string]string{
+				"DNS_UPDATE_TIMEOUT": "10",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringValue("5"),
+									"transport":     types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-timeout-env-duration": {
+			env: map[string]string{
+				"DNS_UPDATE_TIMEOUT": "5s",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-timeout-env-number": {
+			env: map[string]string{
+				"DNS_UPDATE_TIMEOUT": "5",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+			},
+		},
+		"update-timeout-env-invalid": {
+			env: map[string]string{
+				"DNS_UPDATE_TIMEOUT": "not-an-int",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				Diagnostics: diag.Diagnostics{
+					diag.NewErrorDiagnostic(
+						"Invalid DNS Provider Timeout Value",
+						"Timeout cannot be parsed as an integer: strconv.Atoi: parsing \"not-an-int\": invalid syntax",
+					),
+				},
+				ResourceData: nil,
 			},
 		},
 		"update-transport-config": {
