@@ -14,9 +14,9 @@ func TestAccDnsARecordSet_Basic(t *testing.T) {
 	resourceRoot := "dns_a_record_set.root"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
-		ProviderFactories: testSDKProviderFactories,
-		CheckDestroy:      testAccCheckDnsARecordSetDestroy,
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDnsARecordSetDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: testAccDnsARecordSet_basic,

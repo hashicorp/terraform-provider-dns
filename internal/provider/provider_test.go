@@ -18,7 +18,6 @@ import (
 	"github.com/miekg/dns"
 )
 
-var testAccProvider *schema.Provider
 var dnsClient *DNSClient
 var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
 	"dns": func() (tfprotov5.ProviderServer, error) {
@@ -27,12 +26,6 @@ var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, 
 			New().GRPCProvider,
 		}
 		return tf5muxserver.NewMuxServer(context.Background(), providers...)
-	},
-}
-
-var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
-	"dns": func() (*schema.Provider, error) {
-		return testAccProvider, nil
 	},
 }
 
@@ -46,7 +39,6 @@ func providerVersion324() map[string]resource.ExternalProvider {
 }
 
 func TestMain(m *testing.M) {
-	testAccProvider = New()
 	var clientErr error
 	dnsClient, clientErr = initializeDNSClient(context.Background())
 	if clientErr != nil {
