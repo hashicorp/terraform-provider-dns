@@ -11,21 +11,21 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
+	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/miekg/dns"
 )
 
-var testAccProvider *schema.Provider
 var dnsClient *DNSClient
 var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
-	"dns": providerserver.NewProtocol5WithError(NewFrameworkProvider()),
-}
-
-var testSDKProviderFactories = map[string]func() (*schema.Provider, error){
-	"dns": func() (*schema.Provider, error) {
-		return testAccProvider, nil
+	"dns": func() (tfprotov5.ProviderServer, error) {
+		providers := []func() tfprotov5.ProviderServer{
+			providerserver.NewProtocol5(NewFrameworkProvider()),
+			New().GRPCProvider,
+		}
+		return tf5muxserver.NewMuxServer(context.Background(), providers...)
 	},
 }
 
@@ -39,7 +39,6 @@ func providerVersion324() map[string]resource.ExternalProvider {
 }
 
 func TestMain(m *testing.M) {
-	testAccProvider = New()
 	var clientErr error
 	dnsClient, clientErr = initializeDNSClient(context.Background())
 	if clientErr != nil {
@@ -60,10 +59,10 @@ func TestProvider_impl(t *testing.T) {
 }
 
 func testAccPreCheck(t *testing.T) {
-	//v := os.Getenv("DNS_UPDATE_SERVER")
-	//if v == "" {
-	//	t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
-	//}
+	v := os.Getenv("DNS_UPDATE_SERVER")
+	if v == "" {
+		t.Fatal("DNS_UPDATE_SERVER must be set for acceptance tests")
+	}
 }
 
 func testResourceFQDN(name, zone string) string {
@@ -128,7 +127,7 @@ func TestAccProvider_Update_Gssapi_Realm(t *testing.T) {
 	})
 }
 
-func TestAccProvider_Update_Server(t *testing.T) {
+func TestAccProvider_Update_Server_Config(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
 		Steps: []resource.TestStep{
@@ -140,6 +139,73 @@ func TestAccProvider_Update_Server(t *testing.T) {
 					}
 				}
 
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_Update_Server_Env(t *testing.T) {
+	t.Setenv("DNS_UPDATE_SERVER", "example.com")
+
+	resource.Test(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_Update_Timeout_Config(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				provider "dns" {
+					update {
+						timeout = 5
+					}
+				}
+
+				data "dns_a_record_set" "test" {
+					# Same host as data source testing
+					host = "terraform-provider-dns-a.hashicorptest.com"
+				}
+				`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_a_record_set.test", "addrs.#", "1"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccProvider_Update_Timeout_Env(t *testing.T) {
+	t.Setenv("DNS_UPDATE_TIMEOUT", "5")
+
+	resource.Test(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
 					host = "terraform-provider-dns-a.hashicorptest.com"
@@ -409,4 +475,31 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	}
 
 	return dnsClient, nil
+}
+
+func testRemoveRecord(t *testing.T, recordType string, recordName string) {
+	msg := new(dns.Msg)
+	recordZone := "example.com."
+
+	msg.SetUpdate(recordZone)
+
+	rrStr := fmt.Sprintf("%s.%s 0 %s", recordName, recordZone, recordType)
+
+	rr, err := dns.NewRR(rrStr)
+
+	if err != nil {
+		t.Fatalf("Error generating DNS record (%s): %s", rrStr, err)
+	}
+
+	msg.RemoveRRset([]dns.RR{rr})
+
+	resp, err := exchange(msg, true, dnsClient)
+
+	if err != nil {
+		t.Fatalf("Error deleting DNS record (%s): %s", rrStr, err)
+	}
+
+	if resp.Rcode != dns.RcodeSuccess {
+		t.Fatalf("Error deleting DNS record (%s): %v", rrStr, resp.Rcode)
+	}
 }

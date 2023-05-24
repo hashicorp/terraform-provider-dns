@@ -113,8 +113,8 @@ github.com/hashicorp/terraform-plugin-go v0.15.0 h1:1BJNSUFs09DS8h/XNyJNJaeusQuW
 github.com/hashicorp/terraform-plugin-go v0.15.0/go.mod h1:tk9E3/Zx4RlF/9FdGAhwxHExqIHHldqiQGt20G6g+nQ=
 github.com/hashicorp/terraform-plugin-log v0.8.0 h1:pX2VQ/TGKu+UU1rCay0OlzosNKe4Nz1pepLXj95oyy0=
 github.com/hashicorp/terraform-plugin-log v0.8.0/go.mod h1:1myFrhVsBLeylQzYYEV17VVjtG8oYPRFdaZs7xdW2xs=
-github.com/hashicorp/terraform-plugin-mux v0.9.0 h1:a2Xh63cunDB/1GZECrV02cGA74AhQGUjY9X8W3P/L7k=
-github.com/hashicorp/terraform-plugin-mux v0.9.0/go.mod h1:8NUFbgeMigms7Tma/r2Vgi5Jv5mPv4xcJ05pJtIOhwc=
+github.com/hashicorp/terraform-plugin-mux v0.10.0 h1:VejY1BffxGy2iYOaa8DDHavY4k9jbvAE8F3lhruspKY=
+github.com/hashicorp/terraform-plugin-mux v0.10.0/go.mod h1:9sdnpmY20xIsl4ItsfODZYE+MgpSy/osXpSf+RwaZCY=
 github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1 h1:G9WAfb8LHeCxu7Ae8nc1agZlQOSCUWsb610iAogBhCs=
 github.com/hashicorp/terraform-plugin-sdk/v2 v2.26.1/go.mod h1:xcOSYlRVdPLmDUoqPhO9fiO/YCN/l6MGYeTzGt5jgkQ=
 github.com/hashicorp/terraform-plugin-testing v1.2.0 h1:pASRAe6BOZFO4xSGQr9WzitXit0nrQAYDk8ziuRfn9E=
@@ -173,8 +173,8 @@ github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27k
 github.com/mattn/go-isatty v0.0.16 h1:bq3VjFmv/sOjHtdEhmkEV4x1AJtvUvOJ2PFAZ5+peKQ=
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/miekg/dns v1.1.50/go.mod h1:e3IlAVfNqAllflbibAZEWOXOQ+Ynzk/dDozDxY7XnME=
-github.com/miekg/dns v1.1.53 h1:ZBkuHr5dxHtB1caEOlZTLPo7D3L3TWckgUUs/RHfDxw=
-github.com/miekg/dns v1.1.53/go.mod h1:uInx36IzPl7FYnDcMeVWxj9byh7DutNykX4G9Sj60FY=
+github.com/miekg/dns v1.1.54 h1:5jon9mWcb0sFJGpnI99tOMhCPyJ+RPVz5b63MQG0VWI=
+github.com/miekg/dns v1.1.54/go.mod h1:uInx36IzPl7FYnDcMeVWxj9byh7DutNykX4G9Sj60FY=
 github.com/mitchellh/cli v1.1.5 h1:OxRIeJXpAMztws/XHlN2vu6imG5Dpq+j61AzAX5fLng=
 github.com/mitchellh/cli v1.1.5/go.mod h1:v8+iFts2sPIKUV1ltktPXMCC8fumSKFItNcD2cLtRR4=
 github.com/mitchellh/copystructure v1.0.0/go.mod h1:SNtv71yrdKgLRyLFxmLdkAbkKEFWgYaq1OVrnRcwhnw=

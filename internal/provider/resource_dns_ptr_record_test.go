@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -32,7 +31,7 @@ func TestAccDnsPtrRecord_Basic(t *testing.T) {
 				),
 			},
 			{
-				PreConfig: func() { deletePtrRecord(t) },
+				PreConfig: func() { testRemoveRecord(t, "PTR", "r._dns-sd._udp") },
 				Config:    testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "ptr", "baz.example.com."),
@@ -99,7 +98,7 @@ func TestAccDnsPtrRecord_Basic_Upgrade(t *testing.T) {
 			},
 			{
 				ExternalProviders: providerVersion324(),
-				PreConfig:         func() { deletePtrRecord(t) },
+				PreConfig:         func() { testRemoveRecord(t, "PTR", "r._dns-sd._udp") },
 				Config:            testAccDnsPtrRecord_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "ptr", "baz.example.com."),
@@ -116,35 +115,6 @@ func TestAccDnsPtrRecord_Basic_Upgrade(t *testing.T) {
 			},
 		},
 	})
-}
-
-func deletePtrRecord(t *testing.T) {
-	rec_name := "r._dns-sd._udp"
-	rec_zone := "example.com."
-
-	msg := new(dns.Msg)
-
-	msg.SetUpdate(rec_zone)
-
-	rec_fqdn := testResourceFQDN(rec_name, rec_zone)
-
-	rrStr := fmt.Sprintf("%s 0 PTR", rec_fqdn)
-
-	rr_remove, err := dns.NewRR(rrStr)
-	if err != nil {
-		t.Fatalf("Error reading DNS record (%s): %s", rrStr, err)
-	}
-
-	msg.RemoveRRset([]dns.RR{rr_remove})
-
-	r, err := exchange(msg, true, dnsClient)
-	if err != nil {
-		t.Fatalf("Error deleting DNS record: %s", err)
-	}
-	if r.Rcode != dns.RcodeSuccess {
-		t.Fatalf("Error deleting DNS record: %v", r.Rcode)
-	}
-
 }
 
 func testAccCheckDnsPtrRecordDestroy(s *terraform.State) error {

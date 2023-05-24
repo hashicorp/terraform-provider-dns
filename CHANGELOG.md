@@ -1,3 +1,16 @@
+## 3.3.2 (April 24, 2023)
+
+BUG FIXES:
+
+* provider: Prevented `Invalid Provider Server Combination` errors when configured via environment variables ([#293](https://github.com/hashicorp/terraform-provider-dns/issues/293))
+
+## 3.3.1 (April 20, 2023)
+
+BUG FIXES:
+
+* provider: Prevents panics resulting from provider configuration errors ([#289](https://github.com/hashicorp/terraform-provider-dns/issues/289))
+* provider: Correctly configures DNS client from provider configuration via Terraform configuration ([#290](https://github.com/hashicorp/terraform-provider-dns/issues/290))
+
 ## 3.3.0 (April 18, 2023)
 
 NOTES:
