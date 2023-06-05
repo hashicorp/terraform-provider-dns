@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 resource "dns_srv_record_set" "sip" {
   zone = "example.com."
   name = "_sip._tcp"

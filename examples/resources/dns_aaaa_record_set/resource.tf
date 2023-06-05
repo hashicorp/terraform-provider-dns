@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 resource "dns_aaaa_record_set" "www" {
   zone = "example.com."
   name = "www"
