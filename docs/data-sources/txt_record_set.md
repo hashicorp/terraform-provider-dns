@@ -38,5 +38,3 @@ output "hashi_txts" {
 - `id` (String) Always set to the host.
 - `record` (String) The first TXT record.
 - `records` (List of String) A list of TXT records.
-
-

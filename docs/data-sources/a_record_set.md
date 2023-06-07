@@ -33,5 +33,3 @@ output "google_addrs" {
 
 - `addrs` (List of String) A list of IP addresses. IP addresses are always sorted to avoid constant changing plans.
 - `id` (String) Always set to the host.
-
-

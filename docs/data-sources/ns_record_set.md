@@ -33,5 +33,3 @@ output "google_nameservers" {
 
 - `id` (String) Always set to the domain.
 - `nameservers` (List of String) A list of nameservers. Nameservers are always sorted to avoid constant changing plans.
-
-

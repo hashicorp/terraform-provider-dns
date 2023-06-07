@@ -41,5 +41,3 @@ Read-Only:
 
 - `exchange` (String)
 - `preference` (Number)
-
-
