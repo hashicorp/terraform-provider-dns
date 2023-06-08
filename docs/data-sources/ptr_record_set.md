@@ -33,5 +33,3 @@ output "hashi_ptr" {
 
 - `id` (String) Always set to the IP address.
 - `ptr` (String) A PTR record associated with `ip_address`.
-
-

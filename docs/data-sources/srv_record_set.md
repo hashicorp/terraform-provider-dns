@@ -43,5 +43,3 @@ Read-Only:
 - `priority` (Number)
 - `target` (String)
 - `weight` (Number)
-
-

@@ -33,5 +33,3 @@ output "hashi_cname" {
 
 - `cname` (String) A CNAME record associated with host.
 - `id` (String) Always set to the host.
-
-
