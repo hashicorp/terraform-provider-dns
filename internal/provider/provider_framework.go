@@ -330,6 +330,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewDnsARecordSetResource,
 		NewDnsCNAMERecordResource,
 		NewDnsMXRecordSetResource,
 		NewDnsNSRecordSetResource,
