@@ -28,7 +28,10 @@ var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, 
 			providerserver.NewProtocol5(NewFrameworkProvider()),
 			New().GRPCProvider,
 		}
-		return tf5muxserver.NewMuxServer(context.Background(), providers...)
+
+		s, err := tf5muxserver.NewMuxServer(context.Background(), providers...)
+
+		return &s, err
 	},
 }
 
