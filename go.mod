@@ -6,7 +6,7 @@ require (
 	github.com/bodgit/tsig v1.2.2
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/terraform-plugin-framework v1.3.5
-	github.com/hashicorp/terraform-plugin-framework-validators v0.11.0
+	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.18.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-mux v0.11.2
