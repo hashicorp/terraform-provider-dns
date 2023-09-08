@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: 'datasource/dns_cname_record_set: Removed lookup error if target of CNAME record
+  did not resolve, instead it will now always return the CNAME record'
+time: 2023-09-08T13:58:58.204814+01:00
+custom:
+  Issue: "357"
