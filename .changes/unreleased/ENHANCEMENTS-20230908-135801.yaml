@@ -1,0 +1,6 @@
+kind: ENHANCEMENTS
+body: 'all: All data sources now respect the trust-ad resolver option to send the
+  AD bit in queries'
+time: 2023-09-08T13:58:01.252631+01:00
+custom:
+  Issue: "357"

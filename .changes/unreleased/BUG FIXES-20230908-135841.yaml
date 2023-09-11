@@ -1,0 +1,6 @@
+kind: BUG FIXES
+body: 'all: All data sources now use native DNS resolution on macOS, which may fix
+  resolution when using VPNs or other tooling which adjusts the OS DNS resolver configuration'
+time: 2023-09-08T13:58:41.544836+01:00
+custom:
+  Issue: "357"
