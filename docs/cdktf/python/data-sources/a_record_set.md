@@ -46,4 +46,4 @@ class MyConvertedCode(TerraformStack):
 - `addrs` (List of String) A list of IP addresses. IP addresses are always sorted to avoid constant changing plans.
 - `id` (String) Always set to the host.
 
-<!-- cache-key: cdktf-0.18.0 input-09a4ea93af57ab82ae2783bbb8cb9ae3c6be62f7d0a07c7813ff9ad94e5abd5d -->
+<!-- cache-key: cdktf-0.19.0 input-09a4ea93af57ab82ae2783bbb8cb9ae3c6be62f7d0a07c7813ff9ad94e5abd5d -->
