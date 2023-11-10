@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+  "strconv"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -98,7 +99,7 @@ func (d *dnsCAARecordSetResource) Schema(ctx context.Context, req resource.Schem
 						},
             "value": schema.StringAttribute{
               Required: true,
-              Description: "The value for the record.  Must be enclosed in quotes, with escaped inner quotes.",
+              Description: "The value for the record.  Do not include outer quotes, escape inner quotes.",
             },
 					},
 				},
@@ -154,7 +155,7 @@ func (d *dnsCAARecordSetResource) Create(ctx context.Context, req resource.Creat
 
 	// Loop through all the new addresses and insert them
 	for _, caa := range planCAA {
-		rrStr := fmt.Sprintf("%s %d CAA %d %s %s", fqdn, plan.TTL.ValueInt64(), caa.Flags.ValueInt64(), caa.Tag.ValueString(), caa.Value.ValueString())
+		rrStr := fmt.Sprintf("%s %d CAA %d %s %s", fqdn, plan.TTL.ValueInt64(), caa.Flags.ValueInt64(), caa.Tag.ValueString(), strconv.Quote(caa.Value.ValueString()))
 
 		rr_insert, err := dns.NewRR(rrStr)
 		if err != nil {
@@ -328,7 +329,7 @@ func (d *dnsCAARecordSetResource) Update(ctx context.Context, req resource.Updat
 
 		// Loop through all the old addresses and remove them
 		for _, caa := range remove {
-		  rrStr := fmt.Sprintf("%s %d CAA %d %s %s", fqdn, plan.TTL.ValueInt64(), caa.Flags.ValueInt64(), caa.Tag.ValueString(), caa.Value.ValueString())
+		  rrStr := fmt.Sprintf("%s %d CAA %d %s %s", fqdn, plan.TTL.ValueInt64(), caa.Flags.ValueInt64(), caa.Tag.ValueString(), strconv.Quote(caa.Value.ValueString()))
 
 			rr_remove, err := dns.NewRR(rrStr)
 			if err != nil {
@@ -340,7 +341,7 @@ func (d *dnsCAARecordSetResource) Update(ctx context.Context, req resource.Updat
 		}
 		// Loop through all the new addresses and insert them
 		for _, caa := range add {
-		  rrStr := fmt.Sprintf("%s %d CAA %d %s %s", fqdn, plan.TTL.ValueInt64(), caa.Flags.ValueInt64(), caa.Tag.ValueString(), caa.Value.ValueString())
+		  rrStr := fmt.Sprintf("%s %d CAA %d %s %s", fqdn, plan.TTL.ValueInt64(), caa.Flags.ValueInt64(), caa.Tag.ValueString(), strconv.Quote(caa.Value.ValueString()))
 
 			rr_insert, err := dns.NewRR(rrStr)
 			if err != nil {
