@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/terraform-plugin-mux v0.12.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.30.0
 	github.com/hashicorp/terraform-plugin-testing v1.5.1
-	github.com/miekg/dns v1.1.56
+	github.com/miekg/dns v1.1.57
 )
 
 require (
