@@ -75,13 +75,37 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
-					resource.TestCheckTypeSetElemAttr(resourceRoot, "addresses.*", "fdd5:e282:0000:0000:beef:dead:babe:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceRoot, "addresses.*", "fdd5:e282::beef:dead:babe:cafe"),
 				),
 			},
 			{
 				ResourceName:      resourceRoot,
 				ImportState:       true,
 				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccDnsAAAARecordSet_basic_root_expanded(t *testing.T) {
+	resourceRoot := "dns_aaaa_record_set.root"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		CheckDestroy:             testAccCheckDnsAAAARecordSetDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDnsAAAARecordSet_root_expanded,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
+				),
+			},
+			{
+				ResourceName:            resourceRoot,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"addresses.0"},
 			},
 		},
 	})
@@ -116,6 +140,13 @@ var testAccDnsAAAARecordSet_retry = `
   }`
 
 var testAccDnsAAAARecordSet_root = `
+  resource "dns_aaaa_record_set" "root" {
+    zone = "example.com."
+    addresses = ["fdd5:e282::beef:dead:babe:cafe"]
+    ttl = 300
+  }`
+
+var testAccDnsAAAARecordSet_root_expanded = `
   resource "dns_aaaa_record_set" "root" {
     zone = "example.com."
     addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe"]
