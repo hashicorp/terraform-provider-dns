@@ -1,5 +1,0 @@
-kind: BUG FIXES
-body: 'provider: Ensure timeout configuration value is parsed correctly'
-time: 2023-05-01T13:12:18.173441-04:00
-custom:
-  Issue: "298"

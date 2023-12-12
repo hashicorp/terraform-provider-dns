@@ -1,3 +1,15 @@
+## 3.4.0 (December 12, 2023)
+
+ENHANCEMENTS:
+
+* all: All data sources now respect the trust-ad resolver option to send the AD bit in queries ([#357](https://github.com/hashicorp/terraform-provider-dns/issues/357))
+
+BUG FIXES:
+
+* provider: Ensure timeout configuration value is parsed correctly ([#298](https://github.com/hashicorp/terraform-provider-dns/issues/298))
+* all: All data sources now use native DNS resolution on macOS, which may fix resolution when using VPNs or other tooling which adjusts the OS DNS resolver configuration ([#357](https://github.com/hashicorp/terraform-provider-dns/issues/357))
+* datasource/dns_cname_record_set: Removed lookup error if target of CNAME record did not resolve, instead it will now always return the CNAME record ([#357](https://github.com/hashicorp/terraform-provider-dns/issues/357))
+
 ## 3.3.2 (April 24, 2023)
 
 BUG FIXES:
