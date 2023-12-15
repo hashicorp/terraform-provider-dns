@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -39,6 +40,11 @@ func (d *dnsCNAMERecordSetDataSource) Schema(ctx context.Context, req datasource
 				Computed:    true,
 				Description: "A CNAME record associated with host.",
 			},
+			"cname_tree": schema.ListAttribute{
+				ElementType: types.StringType,
+				Computed:    true,
+				Description: "Recursively found CNAME records",
+			},
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "Always set to the host.",
@@ -62,8 +68,23 @@ func (d *dnsCNAMERecordSetDataSource) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	config.CNAME = types.StringValue(cname)
+	firstLevelCname := strings.Clone(cname)
+
+	cnameTree := []string{}
+
+	for host != cname {
+		cnameTree = append(cnameTree, host)
+		host = strings.Clone(cname)
+		cname, err = net.LookupCNAME(host)
+		if err != nil {
+			resp.Diagnostics.AddError(fmt.Sprintf("error looking up CNAME records for %q: ", host), err.Error())
+			return
+		}
+	}
+
+	config.CNAME = types.StringValue(firstLevelCname)
 	config.ID = config.Host
+	config.Tree, _ = types.ListValueFrom(ctx, types.StringType, cnameTree)
 	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
 }
 
@@ -71,4 +92,5 @@ type cnameRecordSetConfig struct {
 	ID    types.String `tfsdk:"id"`
 	Host  types.String `tfsdk:"host"`
 	CNAME types.String `tfsdk:"cname"`
+	Tree  types.List   `tfsdk:"cname_tree"`
 }

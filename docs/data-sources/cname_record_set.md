@@ -33,3 +33,4 @@ output "hashi_cname" {
 
 - `cname` (String) A CNAME record associated with host.
 - `id` (String) Always set to the host.
+- `cname_tree` (List of String) All pieces of a CNAME tree recursively resolved.
