@@ -53,4 +53,4 @@ class MyConvertedCode extends TerraformStack {
 - `record` (String) The first TXT record.
 - `records` (List of String) A list of TXT records.
 
-<!-- cache-key: cdktf-0.19.0 input-8ebca9ff92670e4d1ca03b0569ba41f2cb5c998974060d2b56fd02d99791546f -->
+<!-- cache-key: cdktf-0.20.0 input-8ebca9ff92670e4d1ca03b0569ba41f2cb5c998974060d2b56fd02d99791546f -->
