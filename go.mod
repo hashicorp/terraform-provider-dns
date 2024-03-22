@@ -7,7 +7,7 @@ toolchain go1.21.6
 require (
 	github.com/bodgit/tsig v1.2.2
 	github.com/google/go-cmp v0.6.0
-	github.com/hashicorp/terraform-plugin-framework v1.6.1
+	github.com/hashicorp/terraform-plugin-framework v1.7.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.22.1
 	github.com/hashicorp/terraform-plugin-log v0.9.0
