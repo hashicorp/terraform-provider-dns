@@ -1,3 +1,9 @@
+## 3.4.1 (April 22, 2024)
+
+NOTES:
+
+* all: This release contains no functionality changes, only the inclusion of the LICENSE file in the release archives ([#434](https://github.com/hashicorp/terraform-provider-dns/issues/434))
+
 ## 3.4.0 (December 12, 2023)
 
 ENHANCEMENTS:
