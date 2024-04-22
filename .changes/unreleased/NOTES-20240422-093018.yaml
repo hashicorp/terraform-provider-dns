@@ -1,0 +1,6 @@
+kind: NOTES
+body: 'all: This release contains no functionality changes, only the inclusion of
+  the LICENSE file in the release archives'
+time: 2024-04-22T09:30:18.475923-04:00
+custom:
+  Issue: "434"
