@@ -9,6 +9,13 @@ EXPOSE 464
 
 STOPSIGNAL SIGRTMIN+3
 
+# Temp workaround, Cento7 reached EOL, this points the repos to the archived vault (https://vault.centos.org/)
+# https://blog.centos.org/2023/04/end-dates-are-coming-for-centos-stream-8-and-centos-linux-7/
+# https://serverfault.com/a/1161847
+RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo
+RUN sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo
+RUN sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo
+
 # Systemd backport
 RUN yum -y install  wget
 RUN wget --no-check-certificate https://copr.fedorainfracloud.org/coprs/jsynacek/systemd-backports-for-centos-7/repo/epel-7/jsynacek-systemd-backports-for-centos-7-epel-7.repo -O /etc/yum.repos.d/jsynacek-systemd-centos-7.repo
@@ -46,6 +53,13 @@ FROM centos/systemd:latest as ns
 EXPOSE 53
 
 STOPSIGNAL SIGRTMIN+3
+
+# Temp workaround, Cento7 reached EOL, this points the repos to the archived vault (https://vault.centos.org/)
+# https://blog.centos.org/2023/04/end-dates-are-coming-for-centos-stream-8-and-centos-linux-7/
+# https://serverfault.com/a/1161847
+RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo
+RUN sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo
+RUN sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo
 
 # Systemd backport
 RUN yum -y install  wget
