@@ -270,7 +270,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 			env := os.Getenv("DNS_UPDATE_RETRIES")
 			retries, err = strconv.Atoi(env)
 			if err != nil {
-				return nil, diag.Errorf(fmt.Sprintf("invalid DNS_UPDATE_RETRIES environment variable: %s", err))
+				return nil, diag.Errorf("invalid DNS_UPDATE_RETRIES environment variable: %s", err.Error())
 			}
 		} else {
 			retries = defaultRetries
@@ -336,7 +336,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	dnsClient, err := config.Client(ctx)
 	if err != nil {
-		return dnsClient, diag.Errorf(err.Error())
+		return dnsClient, diag.Errorf("%s", err.Error())
 	}
 
 	return dnsClient, nil
