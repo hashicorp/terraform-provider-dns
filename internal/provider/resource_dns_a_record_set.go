@@ -70,7 +70,8 @@ func resourceDnsARecordSetCreate(ctx context.Context, d *schema.ResourceData, me
 func resourceDnsARecordSetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	answers, err := resourceDnsRead(d, meta, dns.TypeA)
-	if err != nil {
+
+	if !d.IsNewResource() && err != nil {
 		return err
 	}
 
