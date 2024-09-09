@@ -325,10 +325,13 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		keytab:    keytab,
 	}
 
-	resp.ResourceData, configErr = config.Client(ctx)
+	client, configErr := config.Client(ctx)
 	if configErr != nil {
 		resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
 	}
+
+	resp.ResourceData = client
+	resp.DataSourceData = client
 }
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -496,11 +499,16 @@ func resourceFQDN_framework(config dnsConfig) string {
 }
 
 func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, diag.Diagnostics) {
+	return resourceDnsRead_framework_flags(config, client, rrType, dns.MsgHdr{RecursionDesired: false})
+}
+
+func resourceDnsRead_framework_flags(config dnsConfig, client *DNSClient, rrType uint16, flags dns.MsgHdr) ([]dns.RR, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	fqdn := resourceFQDN_framework(config)
 
 	msg := new(dns.Msg)
 	msg.SetQuestion(fqdn, rrType)
+	msg.RecursionDesired = flags.RecursionDesired
 
 	r, err := exchange(msg, true, client)
 	if err != nil {

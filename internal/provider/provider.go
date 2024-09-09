@@ -489,8 +489,6 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 		keyname = k
 	}
 
-	msg.RecursionDesired = false
-
 	if tsig && keyname != "" {
 		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
 	}
