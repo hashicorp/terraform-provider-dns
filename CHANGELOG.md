@@ -1,3 +1,9 @@
+## 3.4.2 (September 10, 2024)
+
+NOTES:
+
+* all: This release introduces no functional changes. It does however include dependency updates which address upstream CVEs. ([#476](https://github.com/hashicorp/terraform-provider-dns/issues/476))
+
 ## 3.4.1 (April 22, 2024)
 
 NOTES:
