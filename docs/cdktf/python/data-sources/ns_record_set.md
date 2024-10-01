@@ -46,4 +46,4 @@ class MyConvertedCode(TerraformStack):
 - `id` (String) Always set to the domain.
 - `nameservers` (List of String) A list of nameservers. Nameservers are always sorted to avoid constant changing plans.
 
-<!-- cache-key: cdktf-0.20.1 input-b7509d9bbecbb92b162ae5c4fe6b7c114b0bf8a6065f82ca109856718298889c -->
+<!-- cache-key: cdktf-0.20.8 input-b7509d9bbecbb92b162ae5c4fe6b7c114b0bf8a6065f82ca109856718298889c -->
