@@ -448,6 +448,18 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	if len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
 		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
 	}
+	if len(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE")) > 0 {
+		msgSize, err := strconv.Atoi(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE"))
+		if err != nil {
+			return &DNSClient{}, fmt.Errorf("invalid DNS_UPDATE_EDNS_MSG_SIZE environment variable: %s", err.Error())
+		}
+		// if trying to set larger than the max message size, just set it to MaxMsgSize
+		if msgSize > dns.MaxMsgSize {
+			msgSize = dns.MaxMsgSize
+		}
+		ednsMsgSize = msgSize
+	}
+
 	if realm != "" || username != "" || password != "" || keytab != "" {
 		gssapi = true
 	}
