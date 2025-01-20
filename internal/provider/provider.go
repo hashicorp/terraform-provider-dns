@@ -182,7 +182,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	var gssapi bool
 
 	// set ednsMsgSize to default msg size, existing functionality
-	var ednsMsgSize = dns.DefaultMsgSize
+	ednsMsgSize := dns.DefaultMsgSize
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {

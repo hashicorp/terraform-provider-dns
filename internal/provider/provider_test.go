@@ -370,6 +370,8 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	var duration time.Duration
 	var gssapi bool
 
+	ednsMsgSize := dns.DefaultMsgSize
+
 	if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 		server = os.Getenv("DNS_UPDATE_SERVER")
 	}
@@ -451,19 +453,20 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	}
 
 	config := Config{
-		server:    server,
-		port:      port,
-		transport: transport,
-		timeout:   duration,
-		retries:   retries,
-		keyname:   keyname,
-		keyalgo:   keyalgo,
-		keysecret: keysecret,
-		gssapi:    gssapi,
-		realm:     realm,
-		username:  username,
-		password:  password,
-		keytab:    keytab,
+		server:      server,
+		port:        port,
+		transport:   transport,
+		timeout:     duration,
+		retries:     retries,
+		keyname:     keyname,
+		keyalgo:     keyalgo,
+		keysecret:   keysecret,
+		gssapi:      gssapi,
+		realm:       realm,
+		username:    username,
+		password:    password,
+		keytab:      keytab,
+		ednsMsgSize: ednsMsgSize,
 	}
 
 	client, configErr := config.Client(ctx)
