@@ -604,7 +604,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 		},
 		"update-edns-msg-size-env-too-large": {
 			env: map[string]string{
-				"DNS_UPDATE_EDNS_MSG_SIZE": "66535",
+				"DNS_UPDATE_EDNS_MSG_SIZE": "70000",
 			},
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
