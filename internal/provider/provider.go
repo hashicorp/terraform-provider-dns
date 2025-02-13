@@ -522,6 +522,8 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 					c.Net = "tcp4"
 				case "udp6":
 					c.Net = "tcp6"
+				case "tcp", "tcp4", "tcp6":
+					return nil, fmt.Errorf("%s retry truncated", c.Net)
 				default:
 					return nil, fmt.Errorf("unknown transport: %s", c.Net)
 				}
