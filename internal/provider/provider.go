@@ -498,22 +498,22 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 	for ok := true; ok; ok = retries > 0 {
 		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
 
-		r, _, err := c.Exchange(msg, srv_addr)
+		resp, _, err := c.Exchange(msg, srv_addr)
 
-		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
+		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, resp)
 
 		if err != nil {
 			if isTimeout(err) && retries > 0 {
 				retries--
 				continue
 			}
-			return r, err
+			return resp, err
 		}
 
-		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
+		if resp.Rcode == dns.RcodeServerFailure && retries > 0 {
 			retries--
 			continue
-		} else if r.Truncated {
+		} else if resp.Truncated {
 			if retry_tcp {
 				switch c.Net {
 				case "udp":
@@ -534,7 +534,7 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 			retries = client.retries
 			continue
 		}
-		return r, err
+		return resp, err
 	}
 
 	//we should never be hitting this line
