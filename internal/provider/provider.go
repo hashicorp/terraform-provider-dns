@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/miekg/dns"
@@ -523,6 +524,7 @@ func exchange(msg *dns.Msg, tsig bool, dnsClient *DNSClient) (*dns.Msg, error) {
 				case "udp6":
 					client.Net = "tcp6"
 				case "tcp", "tcp4", "tcp6":
+					tflog.Debug(ctx, "Truncated response", "msg", resp.String())
 					return nil, fmt.Errorf("%s retry truncated to length %d", client.Net, resp.Len())
 				default:
 					return nil, fmt.Errorf("unknown transport: %s", client.Net)
