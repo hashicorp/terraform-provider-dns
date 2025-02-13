@@ -449,23 +449,23 @@ func isTimeout(err error) bool {
 	return ok && timeout.Timeout()
 }
 
-func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
+func exchange(msg *dns.Msg, tsig bool, dnsClient *DNSClient) (*dns.Msg, error) {
 
-	c := client.c
-	srv_addr := client.srv_addr
-	keyname := client.keyname
-	keyalgo := client.keyalgo
-	c.Net = client.transport
-	retries := client.retries
-	g := client.gssClient
+	client := dnsClient.c
+	srv_addr := dnsClient.srv_addr
+	keyname := dnsClient.keyname
+	keyalgo := dnsClient.keyalgo
+	client.Net = dnsClient.transport
+	retries := dnsClient.retries
+	g := dnsClient.gssClient
 	retry_tcp := false
 
 	// GSS-TSIG
 	if tsig && g != nil {
-		realm := client.realm
-		username := client.username
-		password := client.password
-		keytab := client.keytab
+		realm := dnsClient.realm
+		username := dnsClient.username
+		password := dnsClient.password
+		keytab := dnsClient.keytab
 
 		var k string
 		var err error
@@ -498,7 +498,7 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 	for ok := true; ok; ok = retries > 0 {
 		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
 
-		resp, _, err := c.Exchange(msg, srv_addr)
+		resp, _, err := client.Exchange(msg, srv_addr)
 
 		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, resp)
 
@@ -515,17 +515,17 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 			continue
 		} else if resp.Truncated {
 			if retry_tcp {
-				switch c.Net {
+				switch client.Net {
 				case "udp":
-					c.Net = "tcp"
+					client.Net = "tcp"
 				case "udp4":
-					c.Net = "tcp4"
+					client.Net = "tcp4"
 				case "udp6":
-					c.Net = "tcp6"
+					client.Net = "tcp6"
 				case "tcp", "tcp4", "tcp6":
-					return nil, fmt.Errorf("%s retry truncated", c.Net)
+					return nil, fmt.Errorf("%s retry truncated", client.Net)
 				default:
-					return nil, fmt.Errorf("unknown transport: %s", c.Net)
+					return nil, fmt.Errorf("unknown transport: %s", client.Net)
 				}
 			} else {
 				msg.SetEdns0(dns.DefaultMsgSize, false)
@@ -533,7 +533,7 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 			}
 
 			// Reset retries counter on protocol change
-			retries = client.retries
+			retries = dnsClient.retries
 			continue
 		}
 		return resp, err
