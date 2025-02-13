@@ -20,15 +20,15 @@ options {
 	secroots-file   "/var/named/data/named.secroots";
 	// allow-query     { localhost; };
 
-	/* 
+	/*
 	 - If you are building an AUTHORITATIVE DNS server, do NOT enable recursion.
-	 - If you are building a RECURSIVE (caching) DNS server, you need to enable 
-	   recursion. 
-	 - If your recursive DNS server has a public IP address, you MUST enable access 
+	 - If you are building a RECURSIVE (caching) DNS server, you need to enable
+	   recursion.
+	 - If your recursive DNS server has a public IP address, you MUST enable access
 	   control to limit queries to your legitimate users. Failing to do so will
-	   cause your server to become part of large scale DNS amplification 
+	   cause your server to become part of large scale DNS amplification
 	   attacks. Implementing BCP38 within your network would greatly
-	   reduce such attack surface 
+	   reduce such attack surface
 	*/
 	recursion yes;
 
@@ -66,6 +66,13 @@ zone "example.com." IN {
 zone "1.168.192.in-addr.arpa." IN {
 	type master;
 	file "dynamic/db.1.168.192.in-addr.arpa";
+	notify no;
+	allow-update { any; };
+};
+
+zone "larger-than-64k.example.com." IN {
+	type master;
+	file "dynamic/db.larger-than-64k.example.com";
 	notify no;
 	allow-update { any; };
 };

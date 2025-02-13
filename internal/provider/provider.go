@@ -450,7 +450,7 @@ func isTimeout(err error) bool {
 	return ok && timeout.Timeout()
 }
 
-func exchange(msg *dns.Msg, tsig bool, dnsClient *DNSClient) (*dns.Msg, error) {
+func exchange(ctx context.Context, msg *dns.Msg, tsig bool, dnsClient *DNSClient) (*dns.Msg, error) {
 
 	client := dnsClient.c
 	srv_addr := dnsClient.srv_addr
@@ -524,7 +524,10 @@ func exchange(msg *dns.Msg, tsig bool, dnsClient *DNSClient) (*dns.Msg, error) {
 				case "udp6":
 					client.Net = "tcp6"
 				case "tcp", "tcp4", "tcp6":
-					tflog.Debug(ctx, "Truncated response", "msg", resp.String())
+					additionalFields := map[string]interface{}{
+						"msg": resp.String(),
+					}
+					tflog.Debug(ctx, "Truncated response", additionalFields)
 					return nil, fmt.Errorf("%s retry truncated to length %d", client.Net, resp.Len())
 				default:
 					return nil, fmt.Errorf("unknown transport: %s", client.Net)
@@ -563,7 +566,7 @@ Loop:
 
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
-		r, err := exchange(msg, true, meta.(*DNSClient))
+		r, err := exchange(ctx, msg, true, meta.(*DNSClient))
 		if err != nil {
 			return nil, fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -624,16 +627,14 @@ func resourceFQDN(d *schema.ResourceData) string {
 	return fqdn
 }
 
-func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([]dns.RR, diag.Diagnostics) {
-
+func resourceDnsRead(ctx context.Context, d *schema.ResourceData, meta interface{}, rrType uint16) ([]dns.RR, diag.Diagnostics) {
 	if meta != nil {
-
 		fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
 
-		r, err := exchange(msg, true, meta.(*DNSClient))
+		r, err := exchange(ctx, msg, true, meta.(*DNSClient))
 		if err != nil {
 			return nil, diag.Errorf("Error querying DNS record: %s", err)
 		}
@@ -659,7 +660,7 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 	}
 }
 
-func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) diag.Diagnostics {
+func resourceDnsDelete(ctx context.Context, d *schema.ResourceData, meta interface{}, rrType uint16) diag.Diagnostics {
 
 	if meta != nil {
 
@@ -680,7 +681,7 @@ func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) 
 
 		msg.RemoveRRset([]dns.RR{rr})
 
-		r, err := exchange(msg, true, meta.(*DNSClient))
+		r, err := exchange(ctx, msg, true, meta.(*DNSClient))
 		if err != nil {
 			return diag.Errorf("Error deleting DNS record: %s", err)
 		}

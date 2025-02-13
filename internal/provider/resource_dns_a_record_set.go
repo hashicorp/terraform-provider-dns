@@ -69,7 +69,7 @@ func resourceDnsARecordSetCreate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceDnsARecordSetRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
-	answers, err := resourceDnsRead(d, meta, dns.TypeA)
+	answers, err := resourceDnsRead(ctx, d, meta, dns.TypeA)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func resourceDnsARecordSetUpdate(ctx context.Context, d *schema.ResourceData, me
 				msg.Insert([]dns.RR{rr_insert})
 			}
 
-			r, err := exchange(msg, true, meta.(*DNSClient))
+			r, err := exchange(ctx, msg, true, meta.(*DNSClient))
 			if err != nil {
 				d.SetId("")
 				return diag.Errorf("Error updating DNS record: %s", err)
@@ -165,5 +165,5 @@ func resourceDnsARecordSetUpdate(ctx context.Context, d *schema.ResourceData, me
 
 func resourceDnsARecordSetDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
-	return resourceDnsDelete(d, meta, dns.TypeA)
+	return resourceDnsDelete(ctx, d, meta, dns.TypeA)
 }

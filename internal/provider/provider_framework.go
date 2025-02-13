@@ -411,7 +411,7 @@ func (m providerGssapiModel) objectAttributeTypes() map[string]attr.Type {
 	}
 }
 
-func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, diag.Diagnostics) {
+func resourceDnsImport_framework(ctx context.Context, id string, client *DNSClient) (dnsConfig, diag.Diagnostics) {
 	var config dnsConfig
 	var diags diag.Diagnostics
 
@@ -433,7 +433,7 @@ Loop:
 
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
-		r, err := exchange(msg, true, client)
+		r, err := exchange(ctx, msg, true, client)
 		if err != nil {
 			diags.AddError("Error querying DNS record:", err.Error())
 			return config, diags
@@ -495,14 +495,14 @@ func resourceFQDN_framework(config dnsConfig) string {
 	return fqdn
 }
 
-func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, diag.Diagnostics) {
+func resourceDnsRead_framework(ctx context.Context, config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	fqdn := resourceFQDN_framework(config)
 
 	msg := new(dns.Msg)
 	msg.SetQuestion(fqdn, rrType)
 
-	r, err := exchange(msg, true, client)
+	r, err := exchange(ctx, msg, true, client)
 	if err != nil {
 		diags.AddError("Error querying DNS record:", err.Error())
 		return nil, diags
@@ -527,7 +527,7 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	return r.Answer, nil
 }
 
-func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uint16) diag.Diagnostics {
+func resourceDnsDelete_framework(ctx context.Context, config dnsConfig, client *DNSClient, rrType uint16) diag.Diagnostics {
 	var diags diag.Diagnostics
 
 	fqdn := resourceFQDN_framework(config)
@@ -546,7 +546,7 @@ func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uin
 
 	msg.RemoveRRset([]dns.RR{rr})
 
-	r, err := exchange(msg, true, client)
+	r, err := exchange(ctx, msg, true, client)
 	if err != nil {
 		diags.AddError("Error deleting DNS record:", err.Error())
 		return diags

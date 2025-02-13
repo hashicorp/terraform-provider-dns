@@ -87,7 +87,7 @@ func testAccCheckDnsDestroy(s *terraform.State, resourceType string, rrType uint
 
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
-		r, err := exchange(msg, false, dnsClient)
+		r, err := exchange(context.Background(), msg, false, dnsClient)
 		if err != nil {
 			return fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -316,7 +316,7 @@ func TestAccProvider_Validators(t *testing.T) {
 						key_name      = "example.com."
 						key_algorithm = "hmac-md5"
 						key_secret    = "3VwZXJzZWNyZXQ="
-						
+
 						gssapi {
 							realm    = "EXAMPLE.COM"
 							username = "user"
@@ -496,7 +496,7 @@ func testRemoveRecord(t *testing.T, recordType string, recordName string) {
 
 	msg.RemoveRRset([]dns.RR{rr})
 
-	resp, err := exchange(msg, true, dnsClient)
+	resp, err := exchange(context.Background(), msg, true, dnsClient)
 
 	if err != nil {
 		t.Fatalf("Error deleting DNS record (%s): %s", rrStr, err)

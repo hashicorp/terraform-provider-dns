@@ -169,7 +169,7 @@ func (d *dnsSRVRecordSetResource) Create(ctx context.Context, req resource.Creat
 		msg.Insert([]dns.RR{rr_insert})
 	}
 
-	r, err := exchange(msg, true, d.client)
+	r, err := exchange(ctx, msg, true, d.client)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 		return
@@ -179,7 +179,7 @@ func (d *dnsSRVRecordSetResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeSRV)
+	answers, diags := resourceDnsRead_framework(ctx, config, d.client, dns.TypeSRV)
 	resp.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
@@ -234,7 +234,7 @@ func (d *dnsSRVRecordSetResource) Read(ctx context.Context, req resource.ReadReq
 		Zone: state.Zone.ValueString(),
 	}
 
-	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeSRV)
+	answers, diags := resourceDnsRead_framework(ctx, config, d.client, dns.TypeSRV)
 	resp.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
@@ -361,7 +361,7 @@ func (d *dnsSRVRecordSetResource) Update(ctx context.Context, req resource.Updat
 			msg.Insert([]dns.RR{rr_insert})
 		}
 
-		r, err := exchange(msg, true, d.client)
+		r, err := exchange(ctx, msg, true, d.client)
 		if err != nil {
 			resp.Diagnostics.AddError("Error updating DNS record:", err.Error())
 			return
@@ -372,7 +372,7 @@ func (d *dnsSRVRecordSetResource) Update(ctx context.Context, req resource.Updat
 		}
 	}
 
-	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeSRV)
+	answers, diags := resourceDnsRead_framework(ctx, config, d.client, dns.TypeSRV)
 	resp.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
@@ -426,12 +426,11 @@ func (d *dnsSRVRecordSetResource) Delete(ctx context.Context, req resource.Delet
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
 	}
-	resp.Diagnostics.Append(resourceDnsDelete_framework(config, d.client, dns.TypeSRV)...)
+	resp.Diagnostics.Append(resourceDnsDelete_framework(ctx, config, d.client, dns.TypeSRV)...)
 }
 
 func (d *dnsSRVRecordSetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-
-	config, diags := resourceDnsImport_framework(req.ID, d.client)
+	config, diags := resourceDnsImport_framework(ctx, req.ID, d.client)
 	resp.Diagnostics.Append(diags...)
 	if diags.HasError() {
 		return
