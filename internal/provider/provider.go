@@ -181,6 +181,9 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	var duration time.Duration
 	var gssapi bool
 
+	// set ednsMsgSize to default msg size, existing functionality
+	ednsMsgSize := dns.DefaultMsgSize
+
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
 		//nolint:forcetypeassert
@@ -296,6 +299,17 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		if len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
 			keytab = os.Getenv("DNS_UPDATE_KEYTAB")
 		}
+		if len(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE")) > 0 {
+			msgSize, err := strconv.Atoi(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE"))
+			if err != nil {
+				return nil, diag.Errorf("invalid DNS_UPDATE_EDNS_MSG_SIZE environment variable: %s", err.Error())
+			}
+			// if trying to set larger than the max message size, just set it to MaxMsgSize
+			if msgSize > dns.MaxMsgSize {
+				msgSize = dns.MaxMsgSize
+			}
+			ednsMsgSize = msgSize
+		}
 		if realm != "" || username != "" || password != "" || keytab != "" {
 			gssapi = true
 		}
@@ -319,19 +333,20 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	config := Config{
-		server:    server,
-		port:      port,
-		transport: transport,
-		timeout:   duration,
-		retries:   retries,
-		keyname:   keyname,
-		keyalgo:   keyalgo,
-		keysecret: keysecret,
-		gssapi:    gssapi,
-		realm:     realm,
-		username:  username,
-		password:  password,
-		keytab:    keytab,
+		server:      server,
+		port:        port,
+		transport:   transport,
+		timeout:     duration,
+		retries:     retries,
+		keyname:     keyname,
+		keyalgo:     keyalgo,
+		keysecret:   keysecret,
+		gssapi:      gssapi,
+		realm:       realm,
+		username:    username,
+		password:    password,
+		keytab:      keytab,
+		ednsMsgSize: ednsMsgSize,
 	}
 
 	dnsClient, err := config.Client(ctx)
@@ -526,7 +541,7 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 					return nil, fmt.Errorf("unknown transport: %s", c.Net)
 				}
 			} else {
-				msg.SetEdns0(dns.DefaultMsgSize, false)
+				msg.SetEdns0(uint16(client.ednsMsgSize), false)
 				retry_tcp = true
 			}
 
