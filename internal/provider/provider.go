@@ -559,7 +559,12 @@ Loop:
 
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
-		r, err := exchange(msg, true, meta.(*DNSClient))
+		dnsClient, ok := meta.(*DNSClient)
+		if !ok {
+			return nil, fmt.Errorf("failed to assert meta to *DNSClient")
+		}
+		r, err := exchange(msg, true, dnsClient)
+		// r, err := exchange(msg, true, meta.(*DNSClient))
 		if err != nil {
 			return nil, fmt.Errorf("Error querying DNS record: %s", err)
 		}
