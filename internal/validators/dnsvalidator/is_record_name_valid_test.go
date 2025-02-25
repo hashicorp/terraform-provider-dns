@@ -52,7 +52,6 @@ func TestIsRecordNameValid(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		name, test := name, test
 		t.Run(name, func(t *testing.T) {
 			request := validator.StringRequest{
 				Path:           path.Root("test"),
