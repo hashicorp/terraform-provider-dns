@@ -561,10 +561,10 @@ Loop:
 
 		dnsClient, ok := meta.(*DNSClient)
 		if !ok {
-			return nil, fmt.Errorf("failed to assert meta to *DNSClient")
+			return nil, fmt.Errorf("Error asserting meta to *DNSClient")
 		}
+
 		r, err := exchange(msg, true, dnsClient)
-		// r, err := exchange(msg, true, meta.(*DNSClient))
 		if err != nil {
 			return nil, fmt.Errorf("Error querying DNS record: %s", err)
 		}
@@ -634,7 +634,12 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		msg := new(dns.Msg)
 		msg.SetQuestion(fqdn, rrType)
 
-		r, err := exchange(msg, true, meta.(*DNSClient))
+		dnsClient, ok := meta.(*DNSClient)
+		if !ok {
+			return nil, diag.Errorf("Error asserting meta to *DNSClient")
+		}
+
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			return nil, diag.Errorf("Error querying DNS record: %s", err)
 		}
@@ -681,7 +686,12 @@ func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) 
 
 		msg.RemoveRRset([]dns.RR{rr})
 
-		r, err := exchange(msg, true, meta.(*DNSClient))
+		dnsClient, ok := meta.(*DNSClient)
+		if !ok {
+			diag.Errorf("Error asserting meta to *DNSClient")
+		}
+
+		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
 			return diag.Errorf("Error deleting DNS record: %s", err)
 		}
