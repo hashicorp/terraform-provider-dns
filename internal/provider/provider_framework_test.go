@@ -567,7 +567,6 @@ func TestDnsProviderConfigure(t *testing.T) {
 	}
 
 	for name, testCase := range testCases {
-		name, testCase := name, testCase
 
 		// nolint:paralleltest // includes environment variable testing
 		t.Run(name, func(t *testing.T) {
