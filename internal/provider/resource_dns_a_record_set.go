@@ -19,9 +19,9 @@ func resourceDnsARecordSet() *schema.Resource {
 		ReadContext:   resourceDnsARecordSetRead,
 		UpdateContext: resourceDnsARecordSetUpdate,
 		DeleteContext: resourceDnsARecordSetDelete,
-		Importer: &schema.ResourceImporter{
-			StateContext: resourceDnsImport,
-		},
+		//Importer: &schema.ResourceImporter{
+		//	StateContext: resourceDnsImport,
+		//},
 
 		Schema: map[string]*schema.Schema{
 			"zone": {

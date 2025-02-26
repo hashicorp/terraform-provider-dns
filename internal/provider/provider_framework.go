@@ -6,10 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -27,11 +24,15 @@ import (
 
 var _ provider.Provider = (*dnsProvider)(nil)
 
-func NewFrameworkProvider() provider.Provider {
-	return &dnsProvider{}
+func NewFrameworkProvider(primary interface{ Meta() interface{} }) provider.Provider {
+	return &dnsProvider{
+		primary,
+	}
 }
 
-type dnsProvider struct{}
+type dnsProvider struct {
+	Primary interface{ Meta() interface{} }
+}
 
 func (p *dnsProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "dns"
@@ -165,174 +166,179 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 }
 
 func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var providerConfig providerModel
-
-	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
-	var port, retries int
-	var duration time.Duration
-	var gssapi bool
-	var configErr error
-
-	providerUpdateConfig := make([]providerUpdateModel, 1)
-	providerGssapiConfig := make([]providerGssapiModel, 1)
-
-	resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfig)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !providerConfig.Update.IsNull() {
-		resp.Diagnostics.Append(providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, false)...)
-
-		if resp.Diagnostics.HasError() {
-			return
-		}
-	}
-
-	server = providerUpdateConfig[0].Server.ValueString()
-	port = int(providerUpdateConfig[0].Port.ValueInt64())
-	transport = providerUpdateConfig[0].Transport.ValueString()
-	retries = int(providerUpdateConfig[0].Retries.ValueInt64())
-	keyname = providerUpdateConfig[0].KeyName.ValueString()
-	keyalgo = providerUpdateConfig[0].KeyAlgorithm.ValueString()
-	keysecret = providerUpdateConfig[0].KeySecret.ValueString()
-
-	if providerUpdateConfig[0].Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
-		server = os.Getenv("DNS_UPDATE_SERVER")
-	}
-
-	if providerUpdateConfig[0].Port.IsNull() {
-		port = defaultPort
-
-		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
-			portStr := os.Getenv("DNS_UPDATE_PORT")
-			envPort, err := strconv.Atoi(portStr)
-			if err != nil {
-				resp.Diagnostics.AddError("Invalid DNS_UPDATE_PORT environment variable:", err.Error())
-				return
-			}
-			port = envPort
-		}
-	}
-
-	if providerUpdateConfig[0].Transport.IsNull() {
-		transport = defaultTransport
-
-		if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
-			transport = os.Getenv("DNS_UPDATE_TRANSPORT")
-		}
-	}
-
-	if providerUpdateConfig[0].Timeout.IsNull() {
-		timeout = defaultTimeout
-
-		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
-			timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
-		}
-
-	} else {
-		timeout = providerUpdateConfig[0].Timeout.ValueString()
-	}
-
-	// Try parsing timeout as a duration
-	var err error
-	duration, err = time.ParseDuration(timeout)
-	if err != nil {
-		// Failing that, convert to an integer and treat as seconds
-		var seconds int
-		seconds, err = strconv.Atoi(timeout)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"Invalid DNS Provider Timeout Value",
-				fmt.Sprintf("Timeout cannot be parsed as an integer: %s", err.Error()),
-			)
-			return
-		}
-		duration = time.Duration(seconds) * time.Second
-	}
-	if duration < 0 {
-		resp.Diagnostics.AddError("Invalid timeout", "timeout cannot be negative.")
-		return
-	}
-
-	if providerUpdateConfig[0].Retries.IsNull() {
-		retries = defaultRetries
-
-		if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
-			retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
-
-			var err error
-			retries, err = strconv.Atoi(retriesStr)
-			if err != nil {
-				resp.Diagnostics.AddError("Invalid DNS_UPDATE_RETRIES environment variable:", err.Error())
-				return
-			}
-		}
-	}
-	if providerUpdateConfig[0].KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
-		keyname = os.Getenv("DNS_UPDATE_KEYNAME")
-	}
-	if providerUpdateConfig[0].KeyAlgorithm.IsNull() && len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
-		keyalgo = os.Getenv("DNS_UPDATE_KEYALGORITHM")
-	}
-	if providerUpdateConfig[0].KeySecret.IsNull() && len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
-		keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
-	}
-
-	if !providerUpdateConfig[0].Gssapi.IsNull() {
-		resp.Diagnostics.Append(providerUpdateConfig[0].Gssapi.ElementsAs(ctx, &providerGssapiConfig, false)...)
-
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		gssapi = true
-	}
-
-	realm = providerGssapiConfig[0].Realm.ValueString()
-	username = providerGssapiConfig[0].Username.ValueString()
-	password = providerGssapiConfig[0].Password.ValueString()
-	keytab = providerGssapiConfig[0].Keytab.ValueString()
-
-	if providerGssapiConfig[0].Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
-		realm = os.Getenv("DNS_UPDATE_REALM")
-	}
-	if providerGssapiConfig[0].Username.IsNull() && len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
-		username = os.Getenv("DNS_UPDATE_USERNAME")
-	}
-	if providerGssapiConfig[0].Password.IsNull() && len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
-		password = os.Getenv("DNS_UPDATE_PASSWORD")
-	}
-	if providerGssapiConfig[0].Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
-		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
-	}
-	if realm != "" || username != "" || password != "" || keytab != "" {
-		gssapi = true
-	}
-
-	config := Config{
-		server:    server,
-		port:      port,
-		transport: transport,
-		timeout:   duration,
-		retries:   retries,
-		keyname:   keyname,
-		keyalgo:   keyalgo,
-		keysecret: keysecret,
-		gssapi:    gssapi,
-		realm:     realm,
-		username:  username,
-		password:  password,
-		keytab:    keytab,
-	}
-
-	resp.ResourceData, configErr = config.Client(ctx)
-	if configErr != nil {
-		resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
-	}
+	v := p.Primary.Meta()
+	resp.DataSourceData = v
+	resp.ResourceData = v
+	resp.EphemeralResourceData = v
+	//var providerConfig providerModel
+	//
+	//var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
+	//var port, retries int
+	//var duration time.Duration
+	//var gssapi bool
+	//var configErr error
+	//
+	//providerUpdateConfig := make([]providerUpdateModel, 1)
+	//providerGssapiConfig := make([]providerGssapiModel, 1)
+	//
+	//resp.Diagnostics.Append(req.Config.Get(ctx, &providerConfig)...)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+	//
+	//if !providerConfig.Update.IsNull() {
+	//	resp.Diagnostics.Append(providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, false)...)
+	//
+	//	if resp.Diagnostics.HasError() {
+	//		return
+	//	}
+	//}
+	//
+	//server = providerUpdateConfig[0].Server.ValueString()
+	//port = int(providerUpdateConfig[0].Port.ValueInt64())
+	//transport = providerUpdateConfig[0].Transport.ValueString()
+	//retries = int(providerUpdateConfig[0].Retries.ValueInt64())
+	//keyname = providerUpdateConfig[0].KeyName.ValueString()
+	//keyalgo = providerUpdateConfig[0].KeyAlgorithm.ValueString()
+	//keysecret = providerUpdateConfig[0].KeySecret.ValueString()
+	//
+	//if providerUpdateConfig[0].Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
+	//	server = os.Getenv("DNS_UPDATE_SERVER")
+	//}
+	//
+	//if providerUpdateConfig[0].Port.IsNull() {
+	//	port = defaultPort
+	//
+	//	if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
+	//		portStr := os.Getenv("DNS_UPDATE_PORT")
+	//		envPort, err := strconv.Atoi(portStr)
+	//		if err != nil {
+	//			resp.Diagnostics.AddError("Invalid DNS_UPDATE_PORT environment variable:", err.Error())
+	//			return
+	//		}
+	//		port = envPort
+	//	}
+	//}
+	//
+	//if providerUpdateConfig[0].Transport.IsNull() {
+	//	transport = defaultTransport
+	//
+	//	if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
+	//		transport = os.Getenv("DNS_UPDATE_TRANSPORT")
+	//	}
+	//}
+	//
+	//if providerUpdateConfig[0].Timeout.IsNull() {
+	//	timeout = defaultTimeout
+	//
+	//	if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
+	//		timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
+	//	}
+	//
+	//} else {
+	//	timeout = providerUpdateConfig[0].Timeout.ValueString()
+	//}
+	//
+	//// Try parsing timeout as a duration
+	//var err error
+	//duration, err = time.ParseDuration(timeout)
+	//if err != nil {
+	//	// Failing that, convert to an integer and treat as seconds
+	//	var seconds int
+	//	seconds, err = strconv.Atoi(timeout)
+	//	if err != nil {
+	//		resp.Diagnostics.AddError(
+	//			"Invalid DNS Provider Timeout Value",
+	//			fmt.Sprintf("Timeout cannot be parsed as an integer: %s", err.Error()),
+	//		)
+	//		return
+	//	}
+	//	duration = time.Duration(seconds) * time.Second
+	//}
+	//if duration < 0 {
+	//	resp.Diagnostics.AddError("Invalid timeout", "timeout cannot be negative.")
+	//	return
+	//}
+	//
+	//if providerUpdateConfig[0].Retries.IsNull() {
+	//	retries = defaultRetries
+	//
+	//	if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
+	//		retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
+	//
+	//		var err error
+	//		retries, err = strconv.Atoi(retriesStr)
+	//		if err != nil {
+	//			resp.Diagnostics.AddError("Invalid DNS_UPDATE_RETRIES environment variable:", err.Error())
+	//			return
+	//		}
+	//	}
+	//}
+	//if providerUpdateConfig[0].KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
+	//	keyname = os.Getenv("DNS_UPDATE_KEYNAME")
+	//}
+	//if providerUpdateConfig[0].KeyAlgorithm.IsNull() && len(os.Getenv("DNS_UPDATE_KEYALGORITHM")) > 0 {
+	//	keyalgo = os.Getenv("DNS_UPDATE_KEYALGORITHM")
+	//}
+	//if providerUpdateConfig[0].KeySecret.IsNull() && len(os.Getenv("DNS_UPDATE_KEYSECRET")) > 0 {
+	//	keysecret = os.Getenv("DNS_UPDATE_KEYSECRET")
+	//}
+	//
+	//if !providerUpdateConfig[0].Gssapi.IsNull() {
+	//	resp.Diagnostics.Append(providerUpdateConfig[0].Gssapi.ElementsAs(ctx, &providerGssapiConfig, false)...)
+	//
+	//	if resp.Diagnostics.HasError() {
+	//		return
+	//	}
+	//	gssapi = true
+	//}
+	//
+	//realm = providerGssapiConfig[0].Realm.ValueString()
+	//username = providerGssapiConfig[0].Username.ValueString()
+	//password = providerGssapiConfig[0].Password.ValueString()
+	//keytab = providerGssapiConfig[0].Keytab.ValueString()
+	//
+	//if providerGssapiConfig[0].Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
+	//	realm = os.Getenv("DNS_UPDATE_REALM")
+	//}
+	//if providerGssapiConfig[0].Username.IsNull() && len(os.Getenv("DNS_UPDATE_USERNAME")) > 0 {
+	//	username = os.Getenv("DNS_UPDATE_USERNAME")
+	//}
+	//if providerGssapiConfig[0].Password.IsNull() && len(os.Getenv("DNS_UPDATE_PASSWORD")) > 0 {
+	//	password = os.Getenv("DNS_UPDATE_PASSWORD")
+	//}
+	//if providerGssapiConfig[0].Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
+	//	keytab = os.Getenv("DNS_UPDATE_KEYTAB")
+	//}
+	//if realm != "" || username != "" || password != "" || keytab != "" {
+	//	gssapi = true
+	//}
+	//
+	//config := Config{
+	//	server:    server,
+	//	port:      port,
+	//	transport: transport,
+	//	timeout:   duration,
+	//	retries:   retries,
+	//	keyname:   keyname,
+	//	keyalgo:   keyalgo,
+	//	keysecret: keysecret,
+	//	gssapi:    gssapi,
+	//	realm:     realm,
+	//	username:  username,
+	//	password:  password,
+	//	keytab:    keytab,
+	//}
+	//
+	//resp.ResourceData, configErr = config.Client(ctx)
+	//if configErr != nil {
+	//	resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
+	//}
 }
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		NewDnsARecordSetResource,
 		NewDnsCNAMERecordResource,
 		NewDnsMXRecordSetResource,
 		NewDnsNSRecordSetResource,

@@ -24,11 +24,20 @@ import (
 var dnsClient *DNSClient
 var testProtoV5ProviderFactories = map[string]func() (tfprotov5.ProviderServer, error){
 	"dns": func() (tfprotov5.ProviderServer, error) {
-		providers := []func() tfprotov5.ProviderServer{
-			providerserver.NewProtocol5(NewFrameworkProvider()),
-			New().GRPCProvider,
+		resourceRPCRoutes := make(map[string]*tf5muxserver.ResourceRouteConfig)
+		resourceRPCRoutes["dns_a_record_set"] = &tf5muxserver.ResourceRouteConfig{
+			ImportResourceState: 1,
 		}
-		return tf5muxserver.NewMuxServer(context.Background(), providers...)
+
+		primary := New()
+
+		providers := []func() tfprotov5.ProviderServer{
+			func() tfprotov5.ProviderServer {
+				return schema.NewGRPCProviderServer(primary)
+			},
+			providerserver.NewProtocol5(NewFrameworkProvider(primary)),
+		}
+		return tf5muxserver.NewMuxServerWithResourceRouting(context.Background(), resourceRPCRoutes, providers...)
 	},
 }
 

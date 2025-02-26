@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov5/tf5server"
 	"github.com/hashicorp/terraform-plugin-mux/tf5muxserver"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
@@ -25,12 +26,21 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
+	primary := provider.New()
+
 	providers := []func() tfprotov5.ProviderServer{
-		providerserver.NewProtocol5(provider.NewFrameworkProvider()),
-		provider.New().GRPCProvider,
+		func() tfprotov5.ProviderServer {
+			return schema.NewGRPCProviderServer(primary)
+		},
+		providerserver.NewProtocol5(provider.NewFrameworkProvider(primary)),
 	}
 
-	muxServer, err := tf5muxserver.NewMuxServer(ctx, providers...)
+	resourceRPCRoutes := make(map[string]*tf5muxserver.ResourceRouteConfig)
+	resourceRPCRoutes["dns_a_record_set"] = &tf5muxserver.ResourceRouteConfig{
+		ImportResourceState: 1,
+	}
+
+	muxServer, err := tf5muxserver.NewMuxServerWithResourceRouting(ctx, resourceRPCRoutes, providers...)
 	if err != nil {
 		log.Fatal(err)
 	}
