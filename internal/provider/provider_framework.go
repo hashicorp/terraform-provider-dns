@@ -347,6 +347,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewDnsARecordSetDataSource,
 		NewDnsAAAARecordSetDataSource,
 		NewDnsCNAMERecordSetDataSource,
+		NewDnsCNAMERecursiveRecordSetDataSource,
 		NewDnsMXRecordSetDataSource,
 		NewDnsNSRecordSetDataSource,
 		NewDnsPTRRecordSetDataSource,
