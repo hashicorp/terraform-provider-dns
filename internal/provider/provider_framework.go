@@ -173,6 +173,9 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	var gssapi bool
 	var configErr error
 
+	// set ednsMsgSize to default msg size, existing functionality
+	ednsMsgSize := dns.DefaultMsgSize
+
 	providerUpdateConfig := make([]providerUpdateModel, 1)
 	providerGssapiConfig := make([]providerGssapiModel, 1)
 
@@ -305,24 +308,38 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	if providerGssapiConfig[0].Keytab.IsNull() && len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
 		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
 	}
+	if len(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE")) > 0 {
+		msgSize, err := strconv.Atoi(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE"))
+		if err != nil {
+			resp.Diagnostics.AddError("Invalid DNS_UPDATE_EDNS_MSG_SIZE environment variable:", err.Error())
+			return
+		}
+		// if trying to set larger than the max message size, just set it to MaxMsgSize
+		if msgSize > dns.MaxMsgSize {
+			msgSize = dns.MaxMsgSize
+		}
+		ednsMsgSize = msgSize
+	}
+
 	if realm != "" || username != "" || password != "" || keytab != "" {
 		gssapi = true
 	}
 
 	config := Config{
-		server:    server,
-		port:      port,
-		transport: transport,
-		timeout:   duration,
-		retries:   retries,
-		keyname:   keyname,
-		keyalgo:   keyalgo,
-		keysecret: keysecret,
-		gssapi:    gssapi,
-		realm:     realm,
-		username:  username,
-		password:  password,
-		keytab:    keytab,
+		server:      server,
+		port:        port,
+		transport:   transport,
+		timeout:     duration,
+		retries:     retries,
+		keyname:     keyname,
+		keyalgo:     keyalgo,
+		keysecret:   keysecret,
+		gssapi:      gssapi,
+		realm:       realm,
+		username:    username,
+		password:    password,
+		keytab:      keytab,
+		ednsMsgSize: ednsMsgSize,
 	}
 
 	resp.ResourceData, configErr = config.Client(ctx)
