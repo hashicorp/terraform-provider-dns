@@ -1,17 +1,12 @@
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - copyloopvar
     - durationcheck
     - errcheck
     - forcetypeassert
     - godot
-    - gofmt
-    - gosimple
     - govet
     - ineffassign
     - makezero
@@ -23,3 +18,34 @@ linters:
     - unparam
     - unused
     - usetesting
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - '-QF1001' # "could apply De Morgan's law" -- https://staticcheck.dev/docs/checks/#QF1001
+        - '-QF1011' # " could omit type  from declaration" -- https://staticcheck.dev/docs/checks/#QF1011
+        - '-ST1003' # example: "const autoTFVarsJson should be autoTFVarsJSON" -- https://staticcheck.dev/docs/checks/#ST1003
+        - '-ST1005' # "error strings should not end with punctuation or newlines" -- https://staticcheck.dev/docs/checks/#ST1005
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
