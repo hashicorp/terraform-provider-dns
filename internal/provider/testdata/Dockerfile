@@ -83,6 +83,10 @@ RUN systemctl enable named.service
 COPY --chown=named:named db.* /var/named/dynamic/
 RUN chmod 644 /var/named/dynamic/db.*
 
+# Copy in very large zone content
+COPY --chown=named:named pi.* /var/named/dynamic/
+RUN chmod 644 /var/named/dynamic/pi.*
+
 # Keytab container
 FROM scratch as keytab
 
