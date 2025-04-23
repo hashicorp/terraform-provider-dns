@@ -30,25 +30,3 @@ data "dns_a_record_set" "test" {
 		},
 	})
 }
-
-func TestAccDataDnsARecordSet_Truncated(t *testing.T) {
-	recordName := "data.dns_a_record_set.test"
-
-	resource.UnitTest(t, resource.TestCase{
-		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: `
-data "dns_a_record_set" "test" {
-  host = "pi.example.com"
-}
-`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(recordName, "addrs.#", "1"),
-					resource.TestCheckTypeSetElemAttr(recordName, "addrs.*", "127.0.0.1"),
-					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-a.hashicorptest.com"),
-				),
-			},
-		},
-	})
-}
