@@ -1,3 +1,9 @@
+## 3.4.3 (April 29, 2025)
+
+NOTES:
+
+* Update dependencies ([#480](https://github.com/hashicorp/terraform-provider-dns/issues/480))
+
 ## 3.4.2 (September 10, 2024)
 
 NOTES:
