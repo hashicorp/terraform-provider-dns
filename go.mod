@@ -6,13 +6,13 @@ require (
 	github.com/bodgit/tsig v1.2.2
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/terraform-plugin-framework v1.15.0
-	github.com/hashicorp/terraform-plugin-framework-validators v0.17.0
+	github.com/hashicorp/terraform-plugin-framework-validators v0.18.0
 	github.com/hashicorp/terraform-plugin-go v0.27.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-mux v0.19.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0
 	github.com/hashicorp/terraform-plugin-testing v1.13.0
-	github.com/miekg/dns v1.1.65
+	github.com/miekg/dns v1.1.66
 )
 
 require (
@@ -69,7 +69,7 @@ require (
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.30.0 // indirect
+	golang.org/x/tools v0.32.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/grpc v1.72.1 // indirect
