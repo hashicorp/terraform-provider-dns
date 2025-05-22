@@ -32,7 +32,6 @@ func testProviderSchemaConfig(t *testing.T, ctx context.Context, schema schema.S
 
 	objectValue := types.ObjectValueMust(objectType.AttributeTypes(), values)
 	tfTypesValue, err := objectValue.ToTerraformValue(ctx)
-
 	if err != nil {
 		t.Fatalf("unexpected error converting to tftypes: %s", err)
 	}
@@ -92,6 +91,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  ":53",
 					transport: "udp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
 			},
 		},
 		"update-port-config": {
@@ -120,6 +127,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":1053",
+					transport: "udp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net: "udp",
 					},
@@ -165,6 +180,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  ":1053",
 					transport: "udp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":1053",
+					transport: "udp",
+				},
 			},
 		},
 		"update-port-env": {
@@ -178,6 +201,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":1053",
+					transport: "udp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net: "udp",
 					},
@@ -203,7 +234,8 @@ func TestDnsProviderConfigure(t *testing.T) {
 						"strconv.Atoi: parsing \"not-an-int\": invalid syntax",
 					),
 				},
-				ResourceData: nil,
+				ResourceData:   nil,
+				DataSourceData: nil,
 			},
 		},
 		"update-server-config": {
@@ -232,6 +264,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  "example.com:53",
+					transport: "udp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net: "udp",
 					},
@@ -277,6 +317,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  "example.com:53",
 					transport: "udp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  "example.com:53",
+					transport: "udp",
+				},
 			},
 		},
 		"update-server-env": {
@@ -290,6 +338,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  "example.com:53",
+					transport: "udp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net: "udp",
 					},
@@ -333,6 +389,15 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  ":53",
 					transport: "udp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
 			},
 		},
 		"update-timeout-config-number": {
@@ -361,6 +426,15 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net:     "udp",
 						Timeout: 5 * time.Second,
@@ -408,6 +482,15 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  ":53",
 					transport: "udp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
 			},
 		},
 		"update-timeout-env-duration": {
@@ -421,6 +504,15 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net:     "udp",
 						Timeout: 5 * time.Second,
@@ -450,6 +542,15 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  ":53",
 					transport: "udp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net:     "udp",
+						Timeout: 5 * time.Second,
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+				},
 			},
 		},
 		"update-timeout-env-invalid": {
@@ -468,7 +569,8 @@ func TestDnsProviderConfigure(t *testing.T) {
 						"Timeout cannot be parsed as an integer: strconv.Atoi: parsing \"not-an-int\": invalid syntax",
 					),
 				},
-				ResourceData: nil,
+				ResourceData:   nil,
+				DataSourceData: nil,
 			},
 		},
 		"update-transport-config": {
@@ -497,6 +599,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "tcp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "tcp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net: "tcp",
 					},
@@ -542,6 +652,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 					srv_addr:  ":53",
 					transport: "tcp",
 				},
+				DataSourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "tcp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "tcp",
+				},
 			},
 		},
 		"update-transport-env": {
@@ -555,6 +673,14 @@ func TestDnsProviderConfigure(t *testing.T) {
 			},
 			expected: &provider.ConfigureResponse{
 				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "tcp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "tcp",
+				},
+				DataSourceData: &DNSClient{
 					c: &dns.Client{
 						Net: "tcp",
 					},
