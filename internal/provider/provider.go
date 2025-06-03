@@ -443,14 +443,12 @@ func getPtrVal(record interface{}) (string, int, error) {
 }
 
 func isTimeout(err error) bool {
-
 	//nolint:forcetypeassert
 	timeout, ok := err.(net.Error)
 	return ok && timeout.Timeout()
 }
 
 func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
-
 	c := client.c
 	srv_addr := client.srv_addr
 	keyname := client.keyname
@@ -522,6 +520,8 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 					c.Net = "tcp4"
 				case "udp6":
 					c.Net = "tcp6"
+				case "tcp", "tcp4", "tcp6":
+					return nil, fmt.Errorf("received truncated %s response from server, response length %d", c.Net, msg.Len())
 				default:
 					return nil, fmt.Errorf("unknown transport: %s", c.Net)
 				}
