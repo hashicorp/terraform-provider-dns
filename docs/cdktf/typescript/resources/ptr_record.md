@@ -58,9 +58,11 @@ class MyConvertedCode extends TerraformStack {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Import using the FQDN.
 terraform import dns_ptr_record.dns-sd r._dns-sd.example.com.
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-743f4ec84754c850a3f6d6afd7a39ee5662b7c41485e67365180c6a52169d75e -->
+<!-- cache-key: cdktf-0.20.8 input-534c79978ca2c7c23e971db18316a35c902cc3657ab2b374b106f32b212e51fb -->
