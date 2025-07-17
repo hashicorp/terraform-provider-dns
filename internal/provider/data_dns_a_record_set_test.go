@@ -19,6 +19,7 @@ func TestAccDataDnsARecordSet_Basic(t *testing.T) {
 				Config: `
 data "dns_a_record_set" "test" {
   host = "terraform-provider-dns-a.hashicorptest.com"
+  
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
