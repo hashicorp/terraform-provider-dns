@@ -26,7 +26,7 @@ data "dns_mx_record_set" "test" {
 					resource.TestCheckResourceAttr(recordName, "mx.#", "1"),
 					resource.TestCheckTypeSetElemNestedAttrs(recordName, "mx.*", map[string]string{
 						"exchange":   "example.com.",
-						"preference": "10",
+						"preference": "1",
 					}),
 				),
 			},
