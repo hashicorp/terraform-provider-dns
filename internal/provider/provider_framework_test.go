@@ -71,6 +71,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 	t.Setenv("DNS_UPDATE_TRANSPORT", "")
 	t.Setenv("DNS_UPDATE_TIMEOUT", "")
 	t.Setenv("DNS_UPDATE_USERNAME", "")
+	t.Setenv("DNS_UPDATE_RECURSIVE", "")
 
 	testCases := map[string]struct {
 		env      map[string]string
@@ -112,6 +113,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -150,6 +152,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -224,6 +227,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -262,6 +266,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -317,6 +322,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringValue("5s"),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -353,6 +359,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringValue("5"),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -392,6 +399,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringValue("5"),
 									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -489,6 +497,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringValue("tcp"),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -527,6 +536,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringValue("tcp"),
+									"recursive":     types.BoolNull(),
 								},
 							),
 						},
@@ -561,6 +571,104 @@ func TestDnsProviderConfigure(t *testing.T) {
 					retries:   3,
 					srv_addr:  ":53",
 					transport: "tcp",
+				},
+			},
+		},
+		"update-recursive-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+									"recursive":     types.BoolValue(true),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+					recursive: true,
+				},
+			},
+		},
+		"update-recursive-config-and-env": {
+			env: map[string]string{
+				"DNS_UPDATE_RECURSIVE": "true",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+									"recursive":     types.BoolValue(false),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+					recursive: false,
+				},
+			},
+		},
+		"update-recursive-env": {
+			env: map[string]string{
+				"DNS_UPDATE_RECURSIVE": "true",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+					recursive: true,
 				},
 			},
 		},

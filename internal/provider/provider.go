@@ -93,6 +93,12 @@ func New() *schema.Provider {
 							Description: "How many times to retry on connection timeout. Defaults to `3`. " +
 								"Value can also be sourced from the DNS_UPDATE_RETRIES environment variable.",
 						},
+						"recursive": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Enable the Recursion Desired (RD) flag on DNS queries",
+						},
 						"key_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
@@ -179,7 +185,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
-	var gssapi bool
+	var gssapi, recursive bool
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
@@ -204,6 +210,10 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		if val, ok := update["retries"]; ok {
 			//nolint:forcetypeassert
 			retries = val.(int)
+		}
+		if val, ok := update["recursive"]; ok {
+			//nolint:forcetypeassert
+			recursive = val.(bool)
 		}
 		if val, ok := update["key_name"]; ok {
 			//nolint:forcetypeassert
@@ -275,6 +285,16 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		} else {
 			retries = defaultRetries
 		}
+		if len(os.Getenv("DNS_UPDATE_RECURSIVE")) > 0 {
+			var err error
+			envStr := os.Getenv("DNS_UPDATE_RECURSIVE")
+			recursive, err = strconv.ParseBool(envStr)
+			if err != nil {
+				return nil, diag.Errorf("invalid DNS_UPDATE_RECURSIVE environment variable: %s", err.Error())
+			}
+		} else {
+			recursive = false
+		}
 		if len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
 			keyname = os.Getenv("DNS_UPDATE_KEYNAME")
 		}
@@ -332,6 +352,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		username:  username,
 		password:  password,
 		keytab:    keytab,
+		recursive: recursive,
 	}
 
 	dnsClient, err := config.Client(ctx)
@@ -638,6 +659,9 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		if !ok {
 			return nil, diag.Errorf("Error asserting meta to *DNSClient")
 		}
+
+		// Set recursion desired flag
+		msg.RecursionDesired = dnsClient.recursive
 
 		r, err := exchange(msg, true, dnsClient)
 		if err != nil {
