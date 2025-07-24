@@ -13,6 +13,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/action"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -328,6 +329,11 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	resp.ResourceData, configErr = config.Client(ctx)
 	if configErr != nil {
 		resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
+	}
+}
+func (p *dnsProvider) Actions(ctx context.Context) []func() action.Action {
+	return []func() action.Action{
+		NewDnsAction,
 	}
 }
 
