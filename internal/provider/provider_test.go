@@ -119,7 +119,7 @@ func TestAccProvider_Update_Gssapi_Realm(t *testing.T) {
 
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
-					host = "terraform-provider-dns-a.hashicorptest.com"
+					host = "a.dns.tfacc.hashicorptest.com"
 				}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -144,7 +144,7 @@ func TestAccProvider_Update_Server_Config(t *testing.T) {
 
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
-					host = "terraform-provider-dns-a.hashicorptest.com"
+					host = "a.dns.tfacc.hashicorptest.com"
 				}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -165,7 +165,7 @@ func TestAccProvider_Update_Server_Env(t *testing.T) {
 				Config: `
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
-					host = "terraform-provider-dns-a.hashicorptest.com"
+					host = "a.dns.tfacc.hashicorptest.com"
 				}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -190,7 +190,7 @@ func TestAccProvider_Update_Timeout_Config(t *testing.T) {
 
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
-					host = "terraform-provider-dns-a.hashicorptest.com"
+					host = "a.dns.tfacc.hashicorptest.com"
 				}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -211,7 +211,7 @@ func TestAccProvider_Update_Timeout_Env(t *testing.T) {
 				Config: `
 				data "dns_a_record_set" "test" {
 					# Same host as data source testing
-					host = "terraform-provider-dns-a.hashicorptest.com"
+					host = "a.dns.tfacc.hashicorptest.com"
 				}
 				`,
 				Check: resource.ComposeAggregateTestCheckFunc(

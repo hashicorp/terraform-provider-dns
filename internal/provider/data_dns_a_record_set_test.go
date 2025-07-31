@@ -18,13 +18,13 @@ func TestAccDataDnsARecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_a_record_set" "test" {
-  host = "terraform-provider-dns-a.hashicorptest.com"
+  host = "a.dns.tfacc.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(recordName, "addrs.#", "1"),
 					resource.TestCheckTypeSetElemAttr(recordName, "addrs.*", "127.0.0.1"),
-					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-a.hashicorptest.com"),
+					resource.TestCheckResourceAttr(recordName, "id", "a.dns.tfacc.hashicorptest.com"),
 				),
 			},
 		},
