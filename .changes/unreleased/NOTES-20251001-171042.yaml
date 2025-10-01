@@ -1,0 +1,5 @@
+kind: NOTES
+body: This Go module has been updated to Go 1.24 per the [Go support policy](https://golang.org/doc/devel/release.html#policy). Any consumers building on earlier Go versions may experience errors.
+time: 2025-10-01T17:10:42.010102-04:00
+custom:
+    Issue: "587"
