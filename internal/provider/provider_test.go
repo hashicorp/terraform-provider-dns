@@ -370,6 +370,8 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	var duration time.Duration
 	var gssapi bool
 
+	ednsMsgSize := dns.DefaultMsgSize
+
 	if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 		server = os.Getenv("DNS_UPDATE_SERVER")
 	}
@@ -446,24 +448,37 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	if len(os.Getenv("DNS_UPDATE_KEYTAB")) > 0 {
 		keytab = os.Getenv("DNS_UPDATE_KEYTAB")
 	}
+	if len(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE")) > 0 {
+		msgSize, err := strconv.Atoi(os.Getenv("DNS_UPDATE_EDNS_MSG_SIZE"))
+		if err != nil {
+			return &DNSClient{}, fmt.Errorf("invalid DNS_UPDATE_EDNS_MSG_SIZE environment variable: %s", err.Error())
+		}
+		// if trying to set larger than the max message size, just set it to MaxMsgSize
+		if msgSize > dns.MaxMsgSize {
+			msgSize = dns.MaxMsgSize
+		}
+		ednsMsgSize = msgSize
+	}
+
 	if realm != "" || username != "" || password != "" || keytab != "" {
 		gssapi = true
 	}
 
 	config := Config{
-		server:    server,
-		port:      port,
-		transport: transport,
-		timeout:   duration,
-		retries:   retries,
-		keyname:   keyname,
-		keyalgo:   keyalgo,
-		keysecret: keysecret,
-		gssapi:    gssapi,
-		realm:     realm,
-		username:  username,
-		password:  password,
-		keytab:    keytab,
+		server:      server,
+		port:        port,
+		transport:   transport,
+		timeout:     duration,
+		retries:     retries,
+		keyname:     keyname,
+		keyalgo:     keyalgo,
+		keysecret:   keysecret,
+		gssapi:      gssapi,
+		realm:       realm,
+		username:    username,
+		password:    password,
+		keytab:      keytab,
+		ednsMsgSize: ednsMsgSize,
 	}
 
 	client, configErr := config.Client(ctx)
