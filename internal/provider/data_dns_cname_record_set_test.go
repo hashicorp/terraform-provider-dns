@@ -18,12 +18,12 @@ func TestAccDataDnsCnameRecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_cname_record_set" "test" {
-  host = "terraform-provider-dns-cname.hashicorptest.com"
+  host = "cname.dns.tfacc.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(recordName, "cname", "example.com."),
-					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-cname.hashicorptest.com"),
+					resource.TestCheckResourceAttr(recordName, "id", "cname.dns.tfacc.hashicorptest.com"),
 				),
 			},
 		},

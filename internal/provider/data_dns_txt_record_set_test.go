@@ -19,11 +19,11 @@ func TestAccDataDnsTxtRecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_txt_record_set" "test" {
-  host = "terraform-provider-dns-txt.hashicorptest.com"
+  host = "txt.dns.tfacc.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-txt.hashicorptest.com"),
+					resource.TestCheckResourceAttr(recordName, "id", "txt.dns.tfacc.hashicorptest.com"),
 					resource.TestCheckResourceAttr(recordName, "record", "v=spf1 -all"),
 					resource.TestCheckResourceAttr(recordName, "records.#", "1"),
 					resource.TestCheckTypeSetElemAttr(recordName, "records.*", "v=spf1 -all"),

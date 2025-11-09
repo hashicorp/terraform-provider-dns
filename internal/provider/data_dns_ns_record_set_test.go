@@ -18,14 +18,16 @@ func TestAccDataDnsNSRecordSet_Basic(t *testing.T) {
 			{
 				Config: `
 data "dns_ns_record_set" "test" {
-  host = "terraform-provider-dns-ns.hashicorptest.com"
+  host = "ns.dns.tfacc.hashicorptest.com"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-ns.hashicorptest.com"),
-					resource.TestCheckResourceAttr(recordName, "nameservers.#", "2"),
-					resource.TestCheckTypeSetElemAttr(recordName, "nameservers.*", "adaline.ns.cloudflare.com."),
-					resource.TestCheckTypeSetElemAttr(recordName, "nameservers.*", "kenneth.ns.cloudflare.com."),
+					resource.TestCheckResourceAttr(recordName, "id", "ns.dns.tfacc.hashicorptest.com"),
+					resource.TestCheckResourceAttr(recordName, "nameservers.#", "4"),
+					resource.TestCheckTypeSetElemAttr(recordName, "nameservers.*", "ns-1172.awsdns-18.org."),
+					resource.TestCheckTypeSetElemAttr(recordName, "nameservers.*", "ns-1747.awsdns-26.co.uk."),
+					resource.TestCheckTypeSetElemAttr(recordName, "nameservers.*", "ns-67.awsdns-08.com."),
+					resource.TestCheckTypeSetElemAttr(recordName, "nameservers.*", "ns-555.awsdns-05.net."),
 				),
 			},
 		},

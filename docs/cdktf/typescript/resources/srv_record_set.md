@@ -87,9 +87,11 @@ Required:
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Import using the FQDN.
 terraform import dns_srv_record_set.sip _sip._tcp.example.com.
 ```
 
-<!-- cache-key: cdktf-0.20.8 input-22ffe02ab7ba511864fe0c2492c236018c65bf3034091ec468a954e13d60b83f -->
+<!-- cache-key: cdktf-0.20.8 input-f3f550117c7041a2302836eef3a894eb596d3ebc66df33acdeed0beadb62948c -->
