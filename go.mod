@@ -5,7 +5,7 @@ go 1.24.8
 require (
 	github.com/bodgit/tsig v1.2.2
 	github.com/google/go-cmp v0.7.0
-	github.com/hashicorp/terraform-plugin-framework v1.16.1
+	github.com/hashicorp/terraform-plugin-framework v1.17.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.19.0
 	github.com/hashicorp/terraform-plugin-go v0.29.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
