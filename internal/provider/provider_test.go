@@ -506,3 +506,29 @@ func testRemoveRecord(t *testing.T, recordType string, recordName string) {
 		t.Fatalf("Error deleting DNS record (%s): %v", rrStr, resp.Rcode)
 	}
 }
+
+func TestAccProvider_Recursive_Default(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+				provider "dns" {
+					update {
+						server = "127.0.0.1"
+					}
+				}`,
+				Check: func(s *terraform.State) error {
+					client := dnsClient
+					if client == nil {
+						t.Fatal("dnsClient is not initialized")
+					}
+					if client.recursive != false {
+						t.Fatalf("expected recursive to be false by default, got %v", client.recursive)
+					}
+					return nil
+				},
+			},
+		},
+	})
+}
