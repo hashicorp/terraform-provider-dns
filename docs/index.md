@@ -70,11 +70,11 @@ Optional:
 - `key_secret` (String) Required if `key_name` is set
 A Base64-encoded string containing the shared secret to be used for TSIG. Value can also be sourced from the DNS_UPDATE_KEYSECRET environment variable.
 - `port` (Number) The target UDP port on the server where updates are sent to. Defaults to `53`. Value can also be sourced from the DNS_UPDATE_PORT environment variable.
+- `recursive` (Boolean) Enable the Recursion Desired (RD) flag on DNS queries
 - `retries` (Number) How many times to retry on connection timeout. Defaults to `3`. Value can also be sourced from the DNS_UPDATE_RETRIES environment variable.
 - `server` (String) The hostname or IP address of the DNS server to send updates to. Value can also be sourced from the DNS_UPDATE_SERVER environment variable.
 - `timeout` (String) Timeout for DNS queries. Valid values are durations expressed as `500ms`, etc. or a plain number which is treated as whole seconds. Value can also be sourced from the DNS_UPDATE_TIMEOUT environment variable.
 - `transport` (String) Transport to use for DNS queries. Valid values are `udp`, `udp4`, `udp6`, `tcp`, `tcp4`, or `tcp6`. Any UDP transport will retry automatically with the equivalent TCP transport in the event of a truncated response. Defaults to `udp`. Value can also be sourced from the DNS_UPDATE_TRANSPORT environment variable.
-- `recursive` (Boolean) Whether DNS resolution queries should be made recursively. When set to `true`, the DNS server is expected to perform full resolution and return a complete answer. When set to `false`, the server may return a referral to other name servers. Defaults to `false`. Value can also be sourced from the DNS_UPDATE_RECURSIVE environment variable.
 
 <a id="nestedblock--update--gssapi"></a>
 ### Nested Schema for `update.gssapi`
