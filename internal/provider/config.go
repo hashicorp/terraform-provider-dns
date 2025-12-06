@@ -18,34 +18,36 @@ import (
 )
 
 type Config struct {
-	server    string
-	port      int
-	transport string
-	timeout   time.Duration
-	retries   int
-	keyname   string
-	keyalgo   string
-	keysecret string
-	gssapi    bool
-	realm     string
-	username  string
-	password  string
-	keytab    string
+	server      string
+	port        int
+	transport   string
+	timeout     time.Duration
+	retries     int
+	keyname     string
+	keyalgo     string
+	keysecret   string
+	gssapi      bool
+	realm       string
+	username    string
+	password    string
+	keytab      string
+	ednsMsgSize int
 }
 
 type DNSClient struct {
-	c         *dns.Client
-	srv_addr  string
-	transport string
-	retries   int
-	keyname   string
-	keysecret string
-	keyalgo   string
-	gssClient *gss.Client
-	realm     string
-	username  string
-	password  string
-	keytab    string
+	c           *dns.Client
+	srv_addr    string
+	transport   string
+	retries     int
+	keyname     string
+	keysecret   string
+	keyalgo     string
+	gssClient   *gss.Client
+	realm       string
+	username    string
+	password    string
+	keytab      string
+	ednsMsgSize int
 }
 
 // Client configures and returns a fully initialized DNSClient.
@@ -75,6 +77,7 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	client.username = c.username
 	client.password = c.password
 	client.keytab = c.keytab
+	client.ednsMsgSize = c.ednsMsgSize
 	if !c.gssapi && c.keyname != "" {
 		if !dns.IsFqdn(c.keyname) {
 			return nil, fmt.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
