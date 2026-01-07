@@ -73,6 +73,10 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 							Description: "How many times to retry on connection timeout. Defaults to `3`. " +
 								"Value can also be sourced from the DNS_UPDATE_RETRIES environment variable.",
 						},
+						"recursive": schema.BoolAttribute{
+							Optional:    true,
+							Description: "Enable the Recursion Desired (RD) flag on DNS queries",
+						},
 						"key_name": schema.StringAttribute{
 							Optional: true,
 							Validators: []validator.String{
@@ -170,7 +174,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
-	var gssapi bool
+	var gssapi, recursive bool
 	var configErr error
 
 	providerUpdateConfig := make([]providerUpdateModel, 1)
@@ -196,6 +200,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	keyname = providerUpdateConfig[0].KeyName.ValueString()
 	keyalgo = providerUpdateConfig[0].KeyAlgorithm.ValueString()
 	keysecret = providerUpdateConfig[0].KeySecret.ValueString()
+	recursive = providerUpdateConfig[0].Recursive.ValueBool()
 
 	if providerUpdateConfig[0].Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 		server = os.Getenv("DNS_UPDATE_SERVER")
@@ -269,6 +274,22 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 			}
 		}
 	}
+
+	if providerUpdateConfig[0].Recursive.IsNull() {
+		recursive = false
+
+		if len(os.Getenv("DNS_UPDATE_RECURSIVE")) > 0 {
+			recursiveStr := os.Getenv("DNS_UPDATE_RECURSIVE")
+
+			var err error
+			recursive, err = strconv.ParseBool(recursiveStr)
+			if err != nil {
+				resp.Diagnostics.AddError("Invalid DNS_UPDATE_RECURSIVE environment variable:", err.Error())
+				return
+			}
+		}
+	}
+
 	if providerUpdateConfig[0].KeyName.IsNull() && len(os.Getenv("DNS_UPDATE_KEYNAME")) > 0 {
 		keyname = os.Getenv("DNS_UPDATE_KEYNAME")
 	}
@@ -315,6 +336,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		transport: transport,
 		timeout:   duration,
 		retries:   retries,
+		recursive: recursive,
 		keyname:   keyname,
 		keyalgo:   keyalgo,
 		keysecret: keysecret,
@@ -365,6 +387,7 @@ type providerUpdateModel struct {
 	Transport    types.String `tfsdk:"transport"`
 	Timeout      types.String `tfsdk:"timeout"`
 	Retries      types.Int64  `tfsdk:"retries"`
+	Recursive    types.Bool   `tfsdk:"recursive"`
 	KeyName      types.String `tfsdk:"key_name"`
 	KeyAlgorithm types.String `tfsdk:"key_algorithm"`
 	KeySecret    types.String `tfsdk:"key_secret"`
@@ -388,6 +411,7 @@ func (m providerUpdateModel) objectAttributeTypes() map[string]attr.Type {
 		"retries":       types.Int64Type,
 		"timeout":       types.StringType,
 		"transport":     types.StringType,
+		"recursive":     types.BoolType,
 	}
 }
 
@@ -501,6 +525,9 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 
 	msg := new(dns.Msg)
 	msg.SetQuestion(fqdn, rrType)
+
+	// Set recursion desired flag
+	msg.RecursionDesired = client.recursive
 
 	r, err := exchange(msg, true, client)
 	if err != nil {
