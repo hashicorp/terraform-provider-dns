@@ -21,7 +21,7 @@ Before running any acceptance tests for the DNS provider, start a DNS server:
     -p 127.0.0.1:15353:53/udp \
     --rm --name ns --hostname ns.example.com ns
     ```
-1. After starting the DNS server, verify that the DNS serer is alive by querying its locally-mapped port:
+1. After starting the DNS server, verify that the DNS server is alive by querying its locally-mapped port:
    ```
    dig @127.0.0.1 -p 15353 +short ns.example.com
    ```
