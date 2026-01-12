@@ -5,31 +5,11 @@ description: Guide for running acceptance tests for the DNS provider. Use this w
 
 An acceptance test is a Go test function with the prefix `TestAcc`.
 
-Before running any acceptance tests for the DNS provider, start a DNS server:
-
-1. Run this command in the background:
-   ```
-   docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
-    -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
-    -v /etc/localtime:/etc/localtime:ro \
-    -v $PWD/internal/provider/testdata/named.conf.kerberos:/etc/named.conf:ro \
-    -p 127.0.0.1:15353:53 \
-    -p 127.0.0.1:15353:53/udp \
-    --rm --name ns --hostname ns.example.com ns
-    ```
-1. Verify that the ns container is alive by querying its locally-mapped port:
-   ```
-   dig @127.0.0.1 -p 15353 +short ns.example.com
-   ```
-   Expected command output is "127.0.0.1." Display no output unless there is a problem.
-
 To run a focussed acceptance test named `TestAccFeatureHappyPath`:
 
 1. Run `go test -run=TestAccFeatureHappyPath` with the following environment
    variables:
    - `TF_ACC=1`
-   - `DNS_UPDATE_SERVER=127.0.0.1`
-   - `DNS_UPDATE_PORT=15353`
    
    Default to non-verbose test output.
 
