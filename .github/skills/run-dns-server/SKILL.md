@@ -5,7 +5,13 @@ description: Guide for running a local containerized DNS server. Use this when a
 
 Before running any acceptance tests for the DNS provider, start a DNS server:
 
-1. Run this command in the background:
+1. Check whether the DNS server is already alive by querying its locally-mapped port:
+   ```
+   dig @127.0.0.1 -p 15353 +short ns.example.com
+   ```
+   Expected command output is "127.0.0.1."
+
+1. If the DNS server is not already alive, then start the DNS server by running this command in the background:
    ```
    docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
     -v /sys/fs/cgroup:/sys/fs/cgroup:rw \
@@ -15,7 +21,7 @@ Before running any acceptance tests for the DNS provider, start a DNS server:
     -p 127.0.0.1:15353:53/udp \
     --rm --name ns --hostname ns.example.com ns
     ```
-1. Verify that the ns container is alive by querying its locally-mapped port:
+1. After starting the DNS server, verify that the DNS serer is alive by querying its locally-mapped port:
    ```
    dig @127.0.0.1 -p 15353 +short ns.example.com
    ```
