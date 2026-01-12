@@ -25,16 +25,16 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_basic,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:dead:beef:cafe:babe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:cafe:babe:dead:beef"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:1234:5678:cafe:9012"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:cafe:9012:1234:5678"),
 				),
 			},
 			{
 				Config: testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:beef:dead:babe:cafe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:babe:cafe:beef:dead"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:5678:1234:9012:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:9012:cafe:5678:1234"),
 				),
 			},
 			{
@@ -42,28 +42,28 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config:    testAccDnsAAAARecordSet_update,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "2"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:beef:dead:babe:cafe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:babe:cafe:beef:dead"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:5678:1234:9012:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282:0000:0000:9012:cafe:5678:1234"),
 				),
 			},
 			{
 				Config: testAccDnsAAAARecordSet_retry,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "addresses.#", "14"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::beef:dead:babe:cafe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::babe:cafe:beef:dead"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::beef:babe:dead:cafe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::babe:beef:cafe:dead"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:beef:babe:dead"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:beef:dead:babe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:babe:dead:beef"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:babe:beef:dead"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:babe:cafe:beef"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:babe:beef:cafe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:cafe:babe:beef"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:cafe:beef:babe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:beef:cafe:babe"),
-					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::dead:beef:babe:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::5678:1234:9012:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::9012:cafe:5678:1234"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::5678:9012:1234:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::9012:5678:cafe:1234"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:5678:9012:1234"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:5678:1234:9012"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:9012:1234:5678"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::cafe:9012:5678:1234"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::1234:9012:cafe:5678"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::1234:9012:5678:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::1234:cafe:9012:5678"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::1234:cafe:5678:9012"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::1234:5678:cafe:9012"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "addresses.*", "fdd5:e282::1234:5678:9012:cafe"),
 				),
 			},
 			{
@@ -75,7 +75,7 @@ func TestAccDnsAAAARecordSet_basic(t *testing.T) {
 				Config: testAccDnsAAAARecordSet_root,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceRoot, "addresses.#", "1"),
-					resource.TestCheckTypeSetElemAttr(resourceRoot, "addresses.*", "fdd5:e282::beef:dead:babe:cafe"),
+					resource.TestCheckTypeSetElemAttr(resourceRoot, "addresses.*", "fdd5:e282::5678:1234:9012:cafe"),
 				),
 			},
 			{
@@ -119,7 +119,7 @@ var testAccDnsAAAARecordSet_basic = `
   resource "dns_aaaa_record_set" "bar" {
     zone = "example.com."
     name = "bar"
-    addresses = ["fdd5:e282:0000:0000:dead:beef:cafe:babe", "fdd5:e282:0000:0000:cafe:babe:dead:beef"]
+    addresses = ["fdd5:e282:0000:0000:1234:5678:cafe:9012", "fdd5:e282:0000:0000:cafe:9012:1234:5678"]
     ttl = 300
   }`
 
@@ -127,7 +127,7 @@ var testAccDnsAAAARecordSet_update = `
   resource "dns_aaaa_record_set" "bar" {
     zone = "example.com."
     name = "bar"
-    addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe", "fdd5:e282:0000:0000:babe:cafe:beef:dead"]
+    addresses = ["fdd5:e282:0000:0000:5678:1234:9012:cafe", "fdd5:e282:0000:0000:9012:cafe:5678:1234"]
     ttl = 300
   }`
 
@@ -135,20 +135,20 @@ var testAccDnsAAAARecordSet_retry = `
   resource "dns_aaaa_record_set" "bar" {
     zone = "example.com."
     name = "bar"
-    addresses = ["fdd5:e282::beef:dead:babe:cafe", "fdd5:e282::babe:cafe:beef:dead", "fdd5:e282::beef:babe:dead:cafe", "fdd5:e282::babe:beef:cafe:dead", "fdd5:e282::cafe:beef:babe:dead", "fdd5:e282::cafe:beef:dead:babe", "fdd5:e282::cafe:babe:dead:beef", "fdd5:e282::cafe:babe:beef:dead", "fdd5:e282::dead:babe:cafe:beef", "fdd5:e282::dead:babe:beef:cafe", "fdd5:e282::dead:cafe:babe:beef", "fdd5:e282::dead:cafe:beef:babe", "fdd5:e282::dead:beef:cafe:babe", "fdd5:e282::dead:beef:babe:cafe"]
+    addresses = ["fdd5:e282::5678:1234:9012:cafe", "fdd5:e282::9012:cafe:5678:1234", "fdd5:e282::5678:9012:1234:cafe", "fdd5:e282::9012:5678:cafe:1234", "fdd5:e282::cafe:5678:9012:1234", "fdd5:e282::cafe:5678:1234:9012", "fdd5:e282::cafe:9012:1234:5678", "fdd5:e282::cafe:9012:5678:1234", "fdd5:e282::1234:9012:cafe:5678", "fdd5:e282::1234:9012:5678:cafe", "fdd5:e282::1234:cafe:9012:5678", "fdd5:e282::1234:cafe:5678:9012", "fdd5:e282::1234:5678:cafe:9012", "fdd5:e282::1234:5678:9012:cafe"]
     ttl = 300
   }`
 
 var testAccDnsAAAARecordSet_root = `
   resource "dns_aaaa_record_set" "root" {
     zone = "example.com."
-    addresses = ["fdd5:e282::beef:dead:babe:cafe"]
+    addresses = ["fdd5:e282::5678:1234:9012:cafe"]
     ttl = 300
   }`
 
 var testAccDnsAAAARecordSet_root_expanded = `
   resource "dns_aaaa_record_set" "root" {
     zone = "example.com."
-    addresses = ["fdd5:e282:0000:0000:beef:dead:babe:cafe"]
+    addresses = ["fdd5:e282:0000:0000:5678:1234:9012:cafe"]
     ttl = 300
   }`
