@@ -1,3 +1,9 @@
+## 3.5.0 (January 28, 2026)
+
+ENHANCEMENTS:
+
+* * provider: add `recursive` configuration option for DNS read queries to control the RD flag ([#552](https://github.com/hashicorp/terraform-provider-dns/issues/552))
+
 ## 3.4.3 (April 29, 2025)
 
 NOTES:
