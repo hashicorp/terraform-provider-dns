@@ -34,6 +34,7 @@ func main() {
 	providers := []func() tfprotov6.ProviderServer{
 		providerserver.NewProtocol6(provider.NewFrameworkProvider()),
 		func() tfprotov6.ProviderServer { return sdkv2Server },
+		func() tfprotov6.ProviderServer { return provider.CodeMigrationServer{} },
 	}
 
 	muxServer, err := tf6muxserver.NewMuxServer(ctx, providers...)

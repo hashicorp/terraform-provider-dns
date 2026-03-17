@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -374,6 +375,12 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewDnsPTRRecordSetDataSource,
 		NewDnsSRVRecordSetDataSource,
 		NewDnsTXTRecordSetDataSource,
+	}
+}
+
+func (p *dnsProvider) Functions(ctx context.Context) []func() function.Function {
+	return []func() function.Function{
+		NewStripLeadingZeroesFunction,
 	}
 }
 

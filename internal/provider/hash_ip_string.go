@@ -41,3 +41,24 @@ func stripLeadingZeros(input string) string {
 
 	return input
 }
+
+func stripLeadingZerosIPv6(input string) string {
+	if strings.Contains(input, ":") {
+		classes := strings.Split(input, ":")
+		if len(classes) != 8 {
+			return input
+		}
+		for classIndex, class := range classes {
+			if len(class) <= 1 {
+				continue
+			}
+			classes[classIndex] = strings.TrimLeft(class, "0")
+			if classes[classIndex] == "" {
+				classes[classIndex] = "0"
+			}
+		}
+		return strings.Join(classes, ":")
+	}
+
+	return input
+}
