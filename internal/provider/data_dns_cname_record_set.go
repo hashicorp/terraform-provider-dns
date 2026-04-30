@@ -6,11 +6,11 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/miekg/dns"
 )
 
 var (
@@ -56,7 +56,8 @@ func (d *dnsCNAMERecordSetDataSource) Read(ctx context.Context, req datasource.R
 	}
 
 	host := config.Host.ValueString()
-	cname, err := net.LookupCNAME(host)
+	fqdn := dns.Fqdn(host)
+	cname, err := lookupCNAME(fqdn)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("error looking up CNAME records for %q: ", host), err.Error())
 		return
