@@ -1,3 +1,9 @@
+## 3.6.0 (May 12, 2026)
+
+ENHANCEMENTS:
+
+* Added linux/s390x build target for IBM Z platform support ([#639](https://github.com/hashicorp/terraform-provider-dns/issues/639))
+
 ## 3.5.0 (January 28, 2026)
 
 ENHANCEMENTS:
