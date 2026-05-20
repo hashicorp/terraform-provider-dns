@@ -522,6 +522,7 @@ func TestAccProvider_Recursive_Default(t *testing.T) {
 					client := dnsClient
 					if client == nil {
 						t.Fatal("dnsClient is not initialized")
+						return nil
 					}
 					if client.recursive != false {
 						t.Fatalf("expected recursive to be false by default, got %v", client.recursive)
