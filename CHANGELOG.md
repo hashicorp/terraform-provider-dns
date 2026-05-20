@@ -1,3 +1,9 @@
+## 3.6.1 (May 20, 2026)
+
+BUG FIXES:
+
+* Update github.com/bodgit/tsig to v1.3.1 to fix TKEY exchange failures ([#642](https://github.com/hashicorp/terraform-provider-dns/issues/642))
+
 ## 3.6.0 (May 12, 2026)
 
 ENHANCEMENTS:
