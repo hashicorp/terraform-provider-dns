@@ -3,7 +3,7 @@ module github.com/hashicorp/terraform-provider-dns
 go 1.25.8
 
 require (
-	github.com/bodgit/tsig v1.3.0
+	github.com/bodgit/tsig v1.3.1
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/terraform-plugin-framework v1.19.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.19.0
@@ -20,7 +20,7 @@ require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20250919150558-7d374ff0d59e // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
-	github.com/bodgit/gssapi v0.0.2 // indirect
+	github.com/bodgit/gssapi v0.0.3 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
@@ -58,7 +58,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.2.0 // indirect
 	github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b // indirect
-	github.com/spf13/afero v1.10.0 // indirect
+	github.com/spf13/afero v1.15.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
