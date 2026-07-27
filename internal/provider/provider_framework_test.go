@@ -412,6 +412,112 @@ func TestDnsProviderConfigure(t *testing.T) {
 				},
 			},
 		},
+		"query-nameservers-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query": types.ListValueMust(
+						queryObjectType,
+						[]attr.Value{
+							types.ObjectValueMust(
+								queryObjectType.AttrTypes,
+								map[string]attr.Value{
+									"nameservers": types.ListValueMust(types.StringType, []attr.Value{
+										types.StringValue("8.8.8.8"),
+										types.StringValue("8.8.4.4"),
+									}),
+									"transport": types.StringNull(),
+									"timeout":   types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:          3,
+					srv_addr:         ":53",
+					transport:        "udp",
+					queryNameservers: []string{"8.8.8.8", "8.8.4.4"},
+					queryTransport:   "udp",
+					queryTimeout:     5 * time.Second,
+				},
+			},
+		},
+		"query-transport-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query": types.ListValueMust(
+						queryObjectType,
+						[]attr.Value{
+							types.ObjectValueMust(
+								queryObjectType.AttrTypes,
+								map[string]attr.Value{
+									"nameservers": types.ListValueMust(types.StringType, []attr.Value{
+										types.StringValue("8.8.8.8"),
+									}),
+									"transport": types.StringValue("tcp"),
+									"timeout":   types.StringNull(),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:          3,
+					srv_addr:         ":53",
+					transport:        "udp",
+					queryNameservers: []string{"8.8.8.8"},
+					queryTransport:   "tcp",
+					queryTimeout:     5 * time.Second,
+				},
+			},
+		},
+		"query-timeout-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query": types.ListValueMust(
+						queryObjectType,
+						[]attr.Value{
+							types.ObjectValueMust(
+								queryObjectType.AttrTypes,
+								map[string]attr.Value{
+									"nameservers": types.ListValueMust(types.StringType, []attr.Value{
+										types.StringValue("8.8.8.8"),
+									}),
+									"transport": types.StringNull(),
+									"timeout":   types.StringValue("10s"),
+								},
+							),
+						},
+					),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:          3,
+					srv_addr:         ":53",
+					transport:        "udp",
+					queryNameservers: []string{"8.8.8.8"},
+					queryTransport:   "udp",
+					queryTimeout:     10 * time.Second,
+				},
+			},
+		},
 	}
 
 	for name, testCase := range testCases {
