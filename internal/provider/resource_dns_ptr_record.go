@@ -40,7 +40,7 @@ func (d *dnsPTRRecordResource) Metadata(ctx context.Context, req resource.Metada
 
 func (d *dnsPTRRecordResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Creates a PTR type DNS record.",
+		Description: "Creates a PTR type DNS record. Note: DNS servers may mark records created via dynamic update as scavengable; see provider documentation for details.",
 		Attributes: map[string]schema.Attribute{
 			"zone": schema.StringAttribute{
 				Required: true,
