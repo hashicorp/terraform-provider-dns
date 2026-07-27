@@ -27,7 +27,7 @@ resource "dns_cname_record" "foo" {
 ### Required
 
 - `cname` (String) The canonical name this record will point to.
-- `name` (String) The name of the record. The `zone` argument will be appended to this value to create the full record path.
+- `name` (String) The name of the record. The `zone` argument will be appended to this value to create the full record path. Wildcard records (names starting with `*.`) are not supported on Windows DNS servers when using dynamic DNS updates.
 - `zone` (String) DNS zone the record belongs to. It must be an FQDN, that is, include the trailing dot.
 
 ### Optional

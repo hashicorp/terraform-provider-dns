@@ -64,7 +64,7 @@ resource "dns_mx_record_set" "mx" {
 ### Optional
 
 - `mx` (Block Set) Can be specified multiple times for each MX record. (see [below for nested schema](#nestedblock--mx))
-- `name` (String) The name of the record set. The `zone` argument will be appended to this value to create the full record path.
+- `name` (String) The name of the record set. The `zone` argument will be appended to this value to create the full record path. Wildcard records (names starting with `*.`) are not supported on Windows DNS servers when using dynamic DNS updates.
 - `ttl` (Number) The TTL of the record set. Defaults to `3600`.
 
 ### Read-Only

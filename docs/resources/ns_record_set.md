@@ -29,7 +29,7 @@ resource "dns_ns_record_set" "www" {
 
 ### Required
 
-- `name` (String) The name of the record set. The `zone` argument will be appended to this value to create the full record path.
+- `name` (String) The name of the record set. The `zone` argument will be appended to this value to create the full record path. Wildcard records (names starting with `*.`) are not supported on Windows DNS servers when using dynamic DNS updates.
 - `nameservers` (Set of String) The nameservers this record set will point to.
 - `zone` (String) DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.
 
