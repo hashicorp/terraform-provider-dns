@@ -157,3 +157,7 @@ var testAccDnsTXTRecordSet_root = `
     txt = ["foo"]
     ttl = 300
   }`
+
+func TestAccDnsTXTRecordSet_TTLUpdate(t *testing.T) {
+	t.Skip("Verifying TTL changes do not force resource recreation requires live DNS infrastructure")
+}
