@@ -58,3 +58,33 @@ func TestValidateName(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateNameSubdomain(t *testing.T) {
+	validNames := []string{
+		"alias.subdomain",
+		"host.subdomain.example",
+		"a.b.c.d",
+		"my-host.subdomain",
+		"www",
+		"sub1.sub2.sub3.sub4",
+	}
+	for _, v := range validNames {
+		_, errors := validateName(v, "name")
+		if len(errors) != 0 {
+			t.Fatalf("%q should be a valid DNS record name with subdomains: %q", v, errors)
+		}
+	}
+
+	invalidNames := []string{
+		"alias.subdomain.",
+		" host.subdomain",
+		"",
+		" ",
+	}
+	for _, v := range invalidNames {
+		_, errors := validateName(v, "name")
+		if len(errors) == 0 {
+			t.Fatalf("%q should be an invalid DNS record name", v)
+		}
+	}
+}
