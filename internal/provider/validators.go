@@ -22,6 +22,15 @@ func validateZone(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+func validateKeyName(v interface{}, k string) (ws []string, errors []error) {
+	//nolint:forcetypeassert
+	value := v.(string)
+	if strings.TrimSpace(value) == "" {
+		errors = append(errors, fmt.Errorf("DNS key name %q must not be empty: %q", k, value))
+	}
+	return
+}
+
 func validateName(v interface{}, k string) (ws []string, errors []error) {
 	//nolint:forcetypeassert
 	value := v.(string)
