@@ -58,6 +58,12 @@ func TestDnsProviderConfigure(t *testing.T) {
 
 	schema := schemaResp.Schema
 
+	queryObjectType := types.ObjectType{AttrTypes: map[string]attr.Type{
+		"nameservers": types.ListType{ElemType: types.StringType},
+		"transport":   types.StringType,
+		"timeout":     types.StringType,
+	}}
+
 	// Prevent external environment variable values from affecting this test
 	t.Setenv("DNS_UPDATE_KEYALGORITHM", "")
 	t.Setenv("DNS_UPDATE_KEYNAME", "")
@@ -82,6 +88,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -90,7 +97,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -110,6 +117,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Value(1053),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
@@ -118,6 +126,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -126,7 +135,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":1053"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -149,6 +158,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Value(1053),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
@@ -157,6 +167,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -165,7 +176,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":1053"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -177,6 +188,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -185,7 +197,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":1053"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -197,6 +209,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -224,6 +237,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringValue("example.com"),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
@@ -232,6 +246,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -263,6 +278,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringValue("example.com"),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
@@ -271,6 +287,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -291,6 +308,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -319,6 +337,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringValue("5s"),
 									"transport":     types.StringNull(),
@@ -327,6 +346,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -336,7 +356,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Timeout: 5 * time.Second,
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -356,6 +376,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringValue("5"),
 									"transport":     types.StringNull(),
@@ -364,6 +385,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -373,7 +395,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Timeout: 5 * time.Second,
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -396,6 +418,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringValue("5"),
 									"transport":     types.StringNull(),
@@ -404,6 +427,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -413,7 +437,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Timeout: 5 * time.Second,
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -425,6 +449,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -434,7 +459,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Timeout: 5 * time.Second,
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -446,6 +471,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -455,7 +481,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Timeout: 5 * time.Second,
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 				},
 			},
@@ -467,6 +493,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -494,6 +521,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringValue("tcp"),
@@ -502,6 +530,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -510,7 +539,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "tcp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "tcp",
 				},
 			},
@@ -533,6 +562,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringValue("tcp"),
@@ -541,6 +571,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -549,7 +580,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "tcp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "tcp",
 				},
 			},
@@ -561,6 +592,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -569,7 +601,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "tcp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "tcp",
 				},
 			},
@@ -589,6 +621,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
@@ -597,6 +630,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -605,7 +639,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 					recursive: true,
 				},
@@ -629,6 +663,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 									"key_secret":    types.StringNull(),
 									"port":          types.Int64Null(),
 									"server":        types.StringNull(),
+								"servers":       types.ListNull(types.StringType),
 									"retries":       types.Int64Null(),
 									"timeout":       types.StringNull(),
 									"transport":     types.StringNull(),
@@ -637,6 +672,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 							),
 						},
 					),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -645,7 +681,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 					recursive: false,
 				},
@@ -658,6 +694,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 			request: provider.ConfigureRequest{
 				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
 					"update": types.ListNull(providerUpdateModel{}.objectType()),
+					"query":  types.ListNull(queryObjectType),
 				}),
 			},
 			expected: &provider.ConfigureResponse{
@@ -666,9 +703,90 @@ func TestDnsProviderConfigure(t *testing.T) {
 						Net: "udp",
 					},
 					retries:   3,
-					srv_addrs:  []string{":53"},
+					srv_addrs: nil,
 					transport: "udp",
 					recursive: true,
+				},
+			},
+		},
+		"update-servers-multiple-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"servers": types.ListValueMust(types.StringType, []attr.Value{
+										types.StringValue("ns1.example.com"),
+										types.StringValue("ns2.example.com"),
+									}),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
+								},
+							),
+						},
+					),
+					"query":  types.ListNull(queryObjectType),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addrs:  []string{"ns1.example.com:53", "ns2.example.com:53"},
+					transport: "udp",
+				},
+			},
+		},
+		"update-servers-single-config": {
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListValueMust(
+						providerUpdateModel{}.objectType(),
+						[]attr.Value{
+							types.ObjectValueMust(
+								providerUpdateModel{}.objectAttributeTypes(),
+								map[string]attr.Value{
+									"gssapi":        types.ListNull(providerGssapiModel{}.objectType()),
+									"key_name":      types.StringNull(),
+									"key_algorithm": types.StringNull(),
+									"key_secret":    types.StringNull(),
+									"port":          types.Int64Null(),
+									"server":        types.StringNull(),
+									"servers": types.ListValueMust(types.StringType, []attr.Value{
+										types.StringValue("ns1.example.com"),
+									}),
+									"retries":       types.Int64Null(),
+									"timeout":       types.StringNull(),
+									"transport":     types.StringNull(),
+									"recursive":     types.BoolNull(),
+								},
+							),
+						},
+					),
+					"query":  types.ListNull(queryObjectType),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addrs:  []string{"ns1.example.com:53"},
+					transport: "udp",
 				},
 			},
 		},
@@ -686,7 +804,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 
 			testProvider.Configure(ctx, testCase.request, got)
 
-			if diff := cmp.Diff(got, testCase.expected, cmp.AllowUnexported(DNSClient{}), cmpopts.IgnoreUnexported(dns.Client{})); diff != "" {
+			if diff := cmp.Diff(got, testCase.expected, cmp.AllowUnexported(DNSClient{}), cmpopts.IgnoreUnexported(dns.Client{}), cmpopts.IgnoreFields(provider.ConfigureResponse{}, "DataSourceData")); diff != "" {
 				t.Errorf("unexpected difference: %s", diff)
 			}
 		})
