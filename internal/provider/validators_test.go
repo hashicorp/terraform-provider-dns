@@ -23,6 +23,7 @@ func TestValidateZone(t *testing.T) {
 		" example.com.",
 		" ",
 		"",
+		".dedicated.zone.",
 	}
 	for _, v := range invalidNames {
 		_, errors := validateZone(v, "name")
