@@ -163,6 +163,12 @@ func New() *schema.Provider {
 											"`username`. " +
 											"Value can also be sourced from the DNS_UPDATE_KEYTAB environment variable.",
 									},
+									"kdc": {
+										Type:        schema.TypeString,
+										Optional:    true,
+										Description: "The KDC server address for the Kerberos realm. " +
+											"If not specified, KDC discovery will use DNS lookup.",
+									},
 								},
 							},
 						},
@@ -182,7 +188,7 @@ func New() *schema.Provider {
 
 func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 
-	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
+	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab, kdc string
 	var port, retries int
 	var duration time.Duration
 	var gssapi, recursive bool
@@ -246,6 +252,10 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 			if val, ok := g["keytab"]; ok {
 				//nolint:forcetypeassert
 				keytab = val.(string)
+			}
+			if val, ok := g["kdc"]; ok {
+				//nolint:forcetypeassert
+				kdc = val.(string)
 			}
 			gssapi = true
 		}
@@ -352,6 +362,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		username:  username,
 		password:  password,
 		keytab:    keytab,
+		kdc:       kdc,
 		recursive: recursive,
 	}
 
