@@ -31,6 +31,7 @@ type Config struct {
 	username  string
 	password  string
 	keytab    string
+	kdc       string
 	recursive bool
 
 	queryNameservers []string
