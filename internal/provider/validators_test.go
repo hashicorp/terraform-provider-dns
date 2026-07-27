@@ -57,3 +57,30 @@ func TestValidateName(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateZoneLeadingDot(t *testing.T) {
+	invalidNames := []string{
+		".example.com.",
+		"..example.com.",
+		".",
+		".zone.",
+		"...",
+	}
+	for _, v := range invalidNames {
+		_, errors := validateZone(v, "name")
+		if len(errors) == 0 {
+			t.Fatalf("%q should be an invalid DNS zone (leading dot)", v)
+		}
+	}
+
+	validNames := []string{
+		"example.com.",
+		"zone.example.com.",
+	}
+	for _, v := range validNames {
+		_, errors := validateZone(v, "name")
+		if len(errors) != 0 {
+			t.Fatalf("%q should be a valid DNS zone: %q", v, errors)
+		}
+	}
+}
