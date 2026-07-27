@@ -35,6 +35,8 @@ func TestValidateZone(t *testing.T) {
 func TestValidateName(t *testing.T) {
 	validNames := []string{
 		"test",
+		"alias.subdomain",
+		"host.subdomain.example",
 	}
 	for _, v := range validNames {
 		_, errors := validateName(v, "name")

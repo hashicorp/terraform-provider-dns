@@ -49,6 +49,14 @@ func TestIsRecordNameValid(t *testing.T) {
 			val:         types.StringValue("test"),
 			expectError: false,
 		},
+		"name with dots (subdomain)": {
+			val:         types.StringValue("alias.subdomain"),
+			expectError: false,
+		},
+		"name with multiple subdomain levels": {
+			val:         types.StringValue("host.subdomain.example"),
+			expectError: false,
+		},
 	}
 
 	for name, test := range tests {

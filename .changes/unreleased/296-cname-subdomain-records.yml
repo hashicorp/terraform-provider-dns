@@ -1,0 +1,4 @@
+kind: BUG FIXES
+body: "dns_cname_record: allow subdomain names with dots to support CNAME records in subdomains of the zone"
+custom:
+  Issue: "296"
