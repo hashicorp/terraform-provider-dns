@@ -50,7 +50,6 @@ func resourceDnsARecordSet() *schema.Resource {
 			"ttl": {
 				Type:        schema.TypeInt,
 				Optional:    true,
-				ForceNew:    true,
 				Default:     3600,
 				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
@@ -112,7 +111,7 @@ func resourceDnsARecordSetUpdate(ctx context.Context, d *schema.ResourceData, me
 		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
-		if d.HasChange("addresses") {
+		if d.HasChanges("addresses", "ttl") {
 			o, n := d.GetChange("addresses")
 			//nolint:forcetypeassert
 			os := o.(*schema.Set)
@@ -144,6 +143,20 @@ func resourceDnsARecordSetUpdate(ctx context.Context, d *schema.ResourceData, me
 				}
 
 				msg.Insert([]dns.RR{rr_insert})
+			}
+
+			// If TTL changed but addresses didn't, re-add all addresses with new TTL
+			if d.HasChange("ttl") && !d.HasChange("addresses") {
+				//nolint:forcetypeassert
+				oldAddrs := os.List()
+				for _, addr := range oldAddrs {
+					rrStr := fmt.Sprintf("%s %d A %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
+					rr_insert, err := dns.NewRR(rrStr)
+					if err != nil {
+						return diag.Errorf("error reading DNS record (%s): %s", rrStr, err)
+					}
+					msg.Insert([]dns.RR{rr_insert})
+				}
 			}
 
 			dnsClient, ok := meta.(*DNSClient)
