@@ -5,6 +5,8 @@ package provider
 
 import (
 	"testing"
+
+	"github.com/miekg/dns"
 )
 
 func TestValidateZone(t *testing.T) {
@@ -56,5 +58,25 @@ func TestValidateName(t *testing.T) {
 		if len(errors) == 0 {
 			t.Fatalf("%q should be an invalid DNS record", v)
 		}
+	}
+}
+
+func TestGetPtrValNoTruncate(t *testing.T) {
+	target := "host.example.com."
+	ptr := &dns.PTR{
+		Ptr: target,
+		Hdr: dns.RR_Header{
+			Ttl: 3600,
+		},
+	}
+	result, ttl, err := getPtrVal(ptr)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if result != target {
+		t.Fatalf("expected %q, got %q", target, result)
+	}
+	if ttl != 3600 {
+		t.Fatalf("expected TTL 3600, got %d", ttl)
 	}
 }
