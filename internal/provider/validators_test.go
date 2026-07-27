@@ -48,6 +48,8 @@ func TestValidateName(t *testing.T) {
 		" test. ",
 		" ",
 		"",
+		"test name",
+		"test  name",
 	}
 	for _, v := range invalidNames {
 		_, errors := validateName(v, "name")
