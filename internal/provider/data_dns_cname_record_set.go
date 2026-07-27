@@ -6,22 +6,25 @@ package provider
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/miekg/dns"
 )
 
 var (
-	_ datasource.DataSource = (*dnsCNAMERecordSetDataSource)(nil)
+	_ datasource.DataSource             = (*dnsCNAMERecordSetDataSource)(nil)
+	_ datasource.DataSourceWithConfigure = (*dnsCNAMERecordSetDataSource)(nil)
 )
 
 func NewDnsCNAMERecordSetDataSource() datasource.DataSource {
 	return &dnsCNAMERecordSetDataSource{}
 }
 
-type dnsCNAMERecordSetDataSource struct{}
+type dnsCNAMERecordSetDataSource struct {
+	client *DNSClient
+}
 
 func (d *dnsCNAMERecordSetDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_cname_record_set"
@@ -47,6 +50,23 @@ func (d *dnsCNAMERecordSetDataSource) Schema(ctx context.Context, req datasource
 	}
 }
 
+func (d *dnsCNAMERecordSetDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*DNSClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+
+	d.client = client
+}
+
 func (d *dnsCNAMERecordSetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config cnameRecordSetConfig
 
@@ -56,9 +76,30 @@ func (d *dnsCNAMERecordSetDataSource) Read(ctx context.Context, req datasource.R
 	}
 
 	host := config.Host.ValueString()
-	cname, err := net.LookupCNAME(host)
+
+	msg := new(dns.Msg)
+	msg.SetQuestion(dns.Fqdn(host), dns.TypeCNAME)
+	msg.RecursionDesired = d.client.recursive
+
+	r, err := exchange(msg, true, d.client)
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("error looking up CNAME records for %q: ", host), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("error querying CNAME records for %q: ", host), err.Error())
+		return
+	}
+
+	if r.Rcode != dns.RcodeSuccess {
+		resp.Diagnostics.AddError(fmt.Sprintf("error looking up CNAME records for %q: ", host), fmt.Errorf("%v (%s)", r.Rcode, dns.RcodeToString[r.Rcode]).Error())
+		return
+	}
+
+	if len(r.Answer) == 0 {
+		resp.Diagnostics.AddError(fmt.Sprintf("no CNAME records found for %q", host), "")
+		return
+	}
+
+	cname, _, err := getCnameVal(r.Answer[0])
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("error parsing CNAME record for %q: ", host), err.Error())
 		return
 	}
 
