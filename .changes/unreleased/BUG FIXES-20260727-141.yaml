@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: Clear existing PTR records before inserting new ones in PTR record create to prevent conflicts with Windows AD DNS
+time: 2026-07-27T20:20:00.000000+02:00
+custom:
+    Issue: "141"
