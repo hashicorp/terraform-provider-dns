@@ -129,6 +129,24 @@ func (d *dnsNSRecordSetResource) Create(ctx context.Context, req resource.Create
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 
+	// Windows AD requires a zone authority (SOA) prerequisite for NS delegation updates
+	zone := dns.Fqdn(plan.Zone.ValueString())
+	msg.Answer = append(msg.Answer, &dns.SOA{
+		Hdr: dns.RR_Header{
+			Name:   zone,
+			Rrtype: dns.TypeSOA,
+			Class:  dns.ClassANY,
+			Ttl:    0,
+		},
+		Ns:      zone,
+		Mbox:    zone,
+		Serial:  1,
+		Refresh: 3600,
+		Retry:   900,
+		Expire:  86400,
+		Minttl:  3600,
+	})
+
 	var planNS []string
 
 	resp.Diagnostics.Append(plan.Nameservers.ElementsAs(ctx, &planNS, false)...)
@@ -263,6 +281,24 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
+
+	// Windows AD requires a zone authority (SOA) prerequisite for NS delegation updates
+	zone := dns.Fqdn(plan.Zone.ValueString())
+	msg.Answer = append(msg.Answer, &dns.SOA{
+		Hdr: dns.RR_Header{
+			Name:   zone,
+			Rrtype: dns.TypeSOA,
+			Class:  dns.ClassANY,
+			Ttl:    0,
+		},
+		Ns:      zone,
+		Mbox:    zone,
+		Serial:  1,
+		Refresh: 3600,
+		Retry:   900,
+		Expire:  86400,
+		Minttl:  3600,
+	})
 
 	if !plan.Nameservers.Equal(state.Nameservers) {
 
