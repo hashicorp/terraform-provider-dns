@@ -54,6 +54,13 @@ func resourceDnsAAAARecordSet() *schema.Resource {
 				Default:     3600,
 				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
+			"use_additional": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Validate record presence using only the Additional section. " + 
+					"Especially useful for glue records. Defaults to `false`.",
+			},
 		},
 
 		Description: "Creates an AAAA type DNS record set.",
