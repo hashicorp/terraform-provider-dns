@@ -1,0 +1,35 @@
+// Copyright IBM Corp. 2017, 2026
+// SPDX-License-Identifier: MPL-2.0
+
+package provider
+
+import (
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+)
+
+func TestAccDataDnsNAPTRRecordSet_Basic(t *testing.T) {
+	t.Skip("NAPTR records not available on test DNS infrastructure")
+	recordName := "data.dns_naptr_record_set.test"
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "dns_naptr_record_set" "test" {
+  zone = "example.com."
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(recordName, "order"),
+					resource.TestCheckResourceAttrSet(recordName, "preference"),
+					resource.TestCheckResourceAttrSet(recordName, "flags"),
+					resource.TestCheckResourceAttrSet(recordName, "service"),
+					resource.TestCheckResourceAttrSet(recordName, "replacement"),
+				),
+			},
+		},
+	})
+}
