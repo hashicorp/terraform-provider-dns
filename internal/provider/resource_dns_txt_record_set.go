@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -76,9 +75,6 @@ func (d *dnsTXTRecordSetResource) Schema(ctx context.Context, req resource.Schem
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(3600),
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
 			"id": schema.StringAttribute{
@@ -265,7 +261,7 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 
-	if !plan.TXT.Equal(state.TXT) {
+	if !plan.TXT.Equal(state.TXT) || !plan.TTL.Equal(state.TTL) {
 
 		var planTXT, stateTXT []string
 
@@ -279,49 +275,72 @@ func (d *dnsTXTRecordSetResource) Update(ctx context.Context, req resource.Updat
 			return
 		}
 
-		var add []string
-		for _, newTXT := range planTXT {
-			for _, oldTXT := range stateTXT {
-				if oldTXT == newTXT {
-					continue
-				}
-			}
-			add = append(add, newTXT)
-		}
-
-		var remove []string
-		for _, oldTXT := range stateTXT {
+		if !plan.TXT.Equal(state.TXT) {
+			var add []string
 			for _, newTXT := range planTXT {
-				if oldTXT == newTXT {
-					continue
+				for _, oldTXT := range stateTXT {
+					if oldTXT == newTXT {
+						continue
+					}
 				}
+				add = append(add, newTXT)
 			}
-			remove = append(remove, oldTXT)
+
+			var remove []string
+			for _, oldTXT := range stateTXT {
+				for _, newTXT := range planTXT {
+					if oldTXT == newTXT {
+						continue
+					}
+				}
+				remove = append(remove, oldTXT)
+			}
+
+			// Loop through all the old addresses and remove them
+			for _, txt := range remove {
+				rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
+
+				rr_remove, err := dns.NewRR(rrStr)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+					return
+				}
+
+				msg.Remove([]dns.RR{rr_remove})
+			}
+			// Loop through all the new addresses and insert them
+			for _, txt := range add {
+				rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
+
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+					return
+				}
+
+				msg.Insert([]dns.RR{rr_insert})
+			}
 		}
 
-		// Loop through all the old addresses and remove them
-		for _, txt := range remove {
-			rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
-
+		// If only TTL changed, remove and re-insert all TXT records with new TTL
+		if plan.TXT.Equal(state.TXT) && !plan.TTL.Equal(state.TTL) {
+			rrStr := fmt.Sprintf("%s 0 TXT", fqdn)
 			rr_remove, err := dns.NewRR(rrStr)
 			if err != nil {
 				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
+			msg.RemoveRRset([]dns.RR{rr_remove})
 
-			msg.Remove([]dns.RR{rr_remove})
-		}
-		// Loop through all the new addresses and insert them
-		for _, txt := range add {
-			rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
-
-			rr_insert, err := dns.NewRR(rrStr)
-			if err != nil {
-				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
-				return
+			for _, txt := range planTXT {
+				rrStr := fmt.Sprintf("%s %d TXT \"%s\"", fqdn, plan.TTL.ValueInt64(), txt)
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+					return
+				}
+				msg.Insert([]dns.RR{rr_insert})
 			}
-
-			msg.Insert([]dns.RR{rr_insert})
 		}
 
 		r, err := exchange(msg, true, d.client)

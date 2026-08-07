@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -70,9 +69,6 @@ func (d *dnsMXRecordSetResource) Schema(ctx context.Context, req resource.Schema
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(3600),
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
 			"id": schema.StringAttribute{
@@ -286,7 +282,7 @@ func (d *dnsMXRecordSetResource) Update(ctx context.Context, req resource.Update
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 
-	if !plan.MX.Equal(state.MX) {
+	if !plan.MX.Equal(state.MX) || !plan.TTL.Equal(state.TTL) {
 
 		var planMX, stateMX []mxBlockConfig
 
@@ -300,49 +296,74 @@ func (d *dnsMXRecordSetResource) Update(ctx context.Context, req resource.Update
 			return
 		}
 
-		var add []mxBlockConfig
-		for _, newMX := range planMX {
-			for _, oldMX := range stateMX {
-				if oldMX == newMX {
-					continue
-				}
-			}
-			add = append(add, newMX)
-		}
-
-		var remove []mxBlockConfig
-		for _, oldMX := range stateMX {
+		if !plan.MX.Equal(state.MX) {
+			var add []mxBlockConfig
 			for _, newMX := range planMX {
-				if oldMX == newMX {
-					continue
+				for _, oldMX := range stateMX {
+					if oldMX == newMX {
+						continue
+					}
 				}
+				add = append(add, newMX)
 			}
-			remove = append(remove, oldMX)
+
+			var remove []mxBlockConfig
+			for _, oldMX := range stateMX {
+				for _, newMX := range planMX {
+					if oldMX == newMX {
+						continue
+					}
+				}
+				remove = append(remove, oldMX)
+			}
+
+			// Loop through all the old addresses and remove them
+			for _, mx := range remove {
+				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, plan.TTL.ValueInt64(), mx.Preference.ValueInt64(), mx.Exchange.ValueString())
+
+				rr_remove, err := dns.NewRR(rrStr)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+					return
+				}
+
+				msg.Remove([]dns.RR{rr_remove})
+			}
+			// Loop through all the new addresses and insert them
+			for _, mx := range add {
+				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, plan.TTL.ValueInt64(), mx.Preference.ValueInt64(), mx.Exchange.ValueString())
+
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+					return
+				}
+
+				msg.Insert([]dns.RR{rr_insert})
+			}
 		}
 
-		// Loop through all the old addresses and remove them
-		for _, mx := range remove {
-			rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, plan.TTL.ValueInt64(), mx.Preference.ValueInt64(), mx.Exchange.ValueString())
-
+		// If only TTL changed, remove and re-insert all MX records with new TTL
+		if plan.MX.Equal(state.MX) && !plan.TTL.Equal(state.TTL) {
+			rrStr := fmt.Sprintf("%s 0 MX", fqdn)
 			rr_remove, err := dns.NewRR(rrStr)
 			if err != nil {
 				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
+			msg.RemoveRRset([]dns.RR{rr_remove})
 
-			msg.Remove([]dns.RR{rr_remove})
-		}
-		// Loop through all the new addresses and insert them
-		for _, mx := range add {
-			rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, plan.TTL.ValueInt64(), mx.Preference.ValueInt64(), mx.Exchange.ValueString())
+			for _, mx := range planMX {
+				rrStr := fmt.Sprintf("%s %d MX %d %s", fqdn, plan.TTL.ValueInt64(), mx.Preference.ValueInt64(), mx.Exchange.ValueString())
 
-			rr_insert, err := dns.NewRR(rrStr)
-			if err != nil {
-				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
-				return
+				rr_insert, err := dns.NewRR(rrStr)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
+					return
+				}
+
+				msg.Insert([]dns.RR{rr_insert})
 			}
-
-			msg.Insert([]dns.RR{rr_insert})
 		}
 
 		r, err := exchange(msg, true, d.client)
