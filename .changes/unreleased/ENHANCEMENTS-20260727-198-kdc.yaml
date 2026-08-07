@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: Add optional `kdc` field to `gssapi` config block to allow explicit KDC specification
+time: 2026-07-27T20:15:00.000000+02:00
+custom:
+    Issue: "241"

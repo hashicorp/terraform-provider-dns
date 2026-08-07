@@ -158,6 +158,11 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 											"supported on Windows. The path to a keytab file containing a key for " +
 											"`username`. Value can also be sourced from the DNS_UPDATE_KEYTAB environment variable.",
 									},
+									"kdc": schema.StringAttribute{
+										Optional:    true,
+										Description: "The KDC server address for the Kerberos realm. " +
+											"If not specified, KDC discovery will use DNS lookup.",
+									},
 								},
 							},
 						},
@@ -171,7 +176,7 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var providerConfig providerModel
 
-	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
+	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab, kdc string
 	var port, retries int
 	var duration time.Duration
 	var gssapi, recursive bool
@@ -313,6 +318,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	username = providerGssapiConfig[0].Username.ValueString()
 	password = providerGssapiConfig[0].Password.ValueString()
 	keytab = providerGssapiConfig[0].Keytab.ValueString()
+	kdc = providerGssapiConfig[0].Kdc.ValueString()
 
 	if providerGssapiConfig[0].Realm.IsNull() && len(os.Getenv("DNS_UPDATE_REALM")) > 0 {
 		realm = os.Getenv("DNS_UPDATE_REALM")
@@ -345,6 +351,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		username:  username,
 		password:  password,
 		keytab:    keytab,
+		kdc:       kdc,
 	}
 
 	resp.ResourceData, configErr = config.Client(ctx)
@@ -420,6 +427,7 @@ type providerGssapiModel struct {
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
 	Keytab   types.String `tfsdk:"keytab"`
+	Kdc      types.String `tfsdk:"kdc"`
 }
 
 func (m providerGssapiModel) objectType() types.ObjectType {
@@ -428,6 +436,7 @@ func (m providerGssapiModel) objectType() types.ObjectType {
 
 func (m providerGssapiModel) objectAttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"kdc":      types.StringType,
 		"keytab":   types.StringType,
 		"password": types.StringType,
 		"realm":    types.StringType,

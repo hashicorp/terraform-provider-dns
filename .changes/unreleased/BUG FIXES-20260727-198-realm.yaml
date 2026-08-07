@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: Generate temporary Kerberos configuration from provider `realm` and `kdc` settings to support multi-realm setups and missing krb5.conf
+time: 2026-07-27T20:15:00.000000+02:00
+custom:
+    Issue: "198"

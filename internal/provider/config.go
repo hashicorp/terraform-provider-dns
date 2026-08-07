@@ -31,7 +31,12 @@ type Config struct {
 	username  string
 	password  string
 	keytab    string
+	kdc       string
 	recursive bool
+
+	queryNameservers []string
+	queryTransport   string
+	queryTimeout     time.Duration
 }
 
 type DNSClient struct {
@@ -48,23 +53,24 @@ type DNSClient struct {
 	password  string
 	keytab    string
 	recursive bool
+
+	queryNameservers []string
+	queryTransport   string
+	queryTimeout     time.Duration
 }
 
-// Client configures and returns a fully initialized DNSClient.
 func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	tflog.Info(ctx, "Building DNSClient config structure")
 
 	var client DNSClient
 	client.srv_addr = net.JoinHostPort(c.server, strconv.Itoa(c.port))
 
-	// This block is a little unwieldy but there are a few combinations of
-	// settings we need to check for
-	if c.gssapi && // GSSAPI requested
-		!(c.realm != "" && ((c.username == "" && c.password == "" && c.keytab == "") || // Rely on current user session
-			(c.username != "" && (c.password != "" || c.keytab != "")))) { // Supplied credentials with either password or keytab
+	if c.gssapi &&
+		!(c.realm != "" && ((c.username == "" && c.password == "" && c.keytab == "") ||
+			(c.username != "" && (c.password != "" || c.keytab != "")))) {
 		return nil, fmt.Errorf("Error configuring provider: when using GSSAPI, \"realm\", \"username\" and either \"password\" or \"keytab\" should be non empty")
-	} else if !((c.keyname == "" && c.keysecret == "" && c.keyalgo == "") || // No TSIG required
-		(c.keyname != "" && c.keysecret != "" && c.keyalgo != "")) { // Supplied key name, secret and algorithm
+	} else if !((c.keyname == "" && c.keysecret == "" && c.keyalgo == "") ||
+		(c.keyname != "" && c.keysecret != "" && c.keyalgo != "")) {
 		return nil, fmt.Errorf("Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty")
 	}
 
@@ -78,6 +84,10 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	client.password = c.password
 	client.keytab = c.keytab
 	client.recursive = c.recursive
+	client.queryNameservers = c.queryNameservers
+	client.queryTransport = c.queryTransport
+	client.queryTimeout = c.queryTimeout
+
 	if !c.gssapi && c.keyname != "" {
 		if !dns.IsFqdn(c.keyname) {
 			return nil, fmt.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
@@ -104,7 +114,6 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	return &client, nil
 }
 
-// Validates and converts HMAC algorithm.
 func convertHMACAlgorithm(name string) (string, error) {
 	switch name {
 	case "hmac-md5":
