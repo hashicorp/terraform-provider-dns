@@ -41,6 +41,14 @@ func TestIsZoneNameValid(t *testing.T) {
 			val:         types.StringValue(" example.com."),
 			expectError: true,
 		},
+		"string contains empty label": {
+			val:         types.StringValue("example..com."),
+			expectError: true,
+		},
+		"string contains double trailing dot": {
+			val:         types.StringValue("example.com.."),
+			expectError: true,
+		},
 		"string only whitespace": {
 			val:         types.StringValue(" "),
 			expectError: true,

@@ -47,6 +47,13 @@ func (validator dnsZoneNameValidator) ValidateString(ctx context.Context, req va
 			req.ConfigValue.ValueString(),
 		))
 	}
+	if _, ok := dns.IsDomainName(value); !ok {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeTypeDiagnostic(
+			req.Path,
+			"DNS zone name must be a valid domain name",
+			req.ConfigValue.ValueString(),
+		))
+	}
 }
 
 // IsZoneNameValid returns an AttributeValidator which ensures that any configured
