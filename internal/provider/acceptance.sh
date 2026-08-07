@@ -17,7 +17,7 @@ failed() {
 
 command -v docker >/dev/null 2>&1 || { echo >&2 "docker command not installed or in PATH"; exit 1; }
 command -v go >/dev/null 2>&1 || { echo >&2 "go command not installed or in PATH"; exit 1; }
-command -v kinit >/dev/null 2>&1 || { echo >&2 "kinit command not installed or in PATH"; exit 1; }
+go build -o /dev/null ./internal/provider/ccachehelper/ 2>/dev/null || { echo >&2 "ccachehelper cannot be compiled; ensure gokrb5 is available"; exit 1; }
 command -v make >/dev/null 2>&1 || { echo >&2 "make command not installed or in PATH"; exit 1; }
 command -v terraform >/dev/null 2>&1 || test -n "${TF_ACC_TERRAFORM_PATH:-}" || { echo >&2 "terraform command not installed or in PATH, TF_ACC_TERRAFORM_PATH not set"; exit 1; }
 grep -q "ns.example.com" /etc/hosts || echo >&2 "127.0.0.1 ns.example.com not found in /etc/hosts, ensure this mapping is handled in DNS resolution configuration"
@@ -126,6 +126,5 @@ docker run --privileged --cgroupns=host -d --tmpfs /tmp --tmpfs /run \
 	-p 127.0.0.1:15353:53 \
 	-p 127.0.0.1:15353:53/udp \
 	--rm --name ns --hostname ns.example.com ns || failed
-echo "password" | kinit --password-file=STDIN test@EXAMPLE.COM || echo "password" | kinit test@EXAMPLE.COM
-GO111MODULE=on make testacc TEST=./internal/provider || failed
+KRB5CCNAME=$(DNS_UPDATE_USERNAME="test" DNS_UPDATE_PASSWORD="password" go run ./internal/provider/ccachehelper/) GO111MODULE=on make testacc TEST=./internal/provider || failed
 cleanup_docker
