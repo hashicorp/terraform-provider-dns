@@ -22,10 +22,19 @@ func validateZone(v interface{}, k string) (ws []string, errors []error) {
 	return
 }
 
+func validateKeyName(v interface{}, k string) (ws []string, errors []error) {
+	//nolint:forcetypeassert
+	value := v.(string)
+	if strings.TrimSpace(value) == "" {
+		errors = append(errors, fmt.Errorf("DNS key name %q must not be empty: %q", k, value))
+	}
+	return
+}
+
 func validateName(v interface{}, k string) (ws []string, errors []error) {
 	//nolint:forcetypeassert
 	value := v.(string)
-	if strings.TrimSpace(value) != value || len(value) == 0 {
+	if strings.TrimSpace(value) != value || strings.Contains(value, " ") || len(value) == 0 {
 		errors = append(errors, fmt.Errorf("DNS record name %q must not contain whitespace or be empty: %q", k, value))
 	}
 	if dns.IsFqdn(value) {
