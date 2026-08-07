@@ -146,3 +146,7 @@ var testAccDnsNSRecordSet_update = `
     nameservers = ["ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk.",]
     ttl = 60
   }`
+
+func TestAccDnsNSRecordSet_WindowsADPrerequisite(t *testing.T) {
+	t.Skip("NS prerequisite changes require Windows AD DNS infrastructure; cannot unit test")
+}
