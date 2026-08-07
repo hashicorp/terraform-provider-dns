@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: Add dns_dname_record resource and dns_dname_record_set data source
+time: 2026-07-27T19:33:00.00000+02:00
+custom:
+    Issue: "49"
