@@ -38,7 +38,7 @@ func resourceDnsARecordSet() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validateName,
 				Description: "The name of the record set. The `zone` argument will be appended to this value to " +
-					"create the full record path.",
+					"create the full record path. If omitted, the record will be created at the zone apex (root).",
 			},
 			"addresses": {
 				Type:        schema.TypeSet,
