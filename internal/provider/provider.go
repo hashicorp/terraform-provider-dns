@@ -25,7 +25,6 @@ const (
 	defaultTransport = "udp"
 )
 
-// New returns a *schema.Provider for DNS dynamic updates.
 func New() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -38,9 +37,17 @@ func New() *schema.Provider {
 						"server": {
 							Type:        schema.TypeString,
 							Optional:    true,
+							Deprecated:  "Use 'servers' instead",
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_SERVER", nil),
 							Description: "The hostname or IP address of the DNS server to send updates to. " +
 								"Value can also be sourced from the DNS_UPDATE_SERVER environment variable.",
+						},
+						"servers": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "List of DNS server hostnames or IP addresses to send updates to. " +
+								"If multiple servers are specified, the provider will try each server in order.",
 						},
 						"port": {
 							Type:     schema.TypeInt,
@@ -53,7 +60,6 @@ func New() *schema.Provider {
 									}
 									return port, err
 								}
-
 								return defaultPort, nil
 							},
 							Description: "The target UDP port on the server where updates are sent to. Defaults to `53`. " +
@@ -87,7 +93,6 @@ func New() *schema.Provider {
 									}
 									return retries, err
 								}
-
 								return defaultRetries, nil
 							},
 							Description: "How many times to retry on connection timeout. Defaults to `3`. " +
@@ -181,70 +186,58 @@ func New() *schema.Provider {
 }
 
 func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
 	var gssapi, recursive bool
+	var servers []string
 
-	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
-		//nolint:forcetypeassert
 		update := v.([]interface{})[0].(map[string]interface{})
 		if val, ok := update["port"]; ok {
-			//nolint:forcetypeassert
 			port = val.(int)
 		}
 		if val, ok := update["server"]; ok {
-			//nolint:forcetypeassert
 			server = val.(string)
 		}
+		if val, ok := update["servers"]; ok {
+			for _, s := range val.([]interface{}) {
+				servers = append(servers, s.(string))
+			}
+		}
 		if val, ok := update["transport"]; ok {
-			//nolint:forcetypeassert
 			transport = val.(string)
 		}
 		if val, ok := update["timeout"]; ok {
-			//nolint:forcetypeassert
 			timeout = val.(string)
 		}
 		if val, ok := update["retries"]; ok {
-			//nolint:forcetypeassert
 			retries = val.(int)
 		}
 		if val, ok := update["recursive"]; ok {
-			//nolint:forcetypeassert
 			recursive = val.(bool)
 		}
 		if val, ok := update["key_name"]; ok {
-			//nolint:forcetypeassert
 			keyname = val.(string)
 		}
 		if val, ok := update["key_algorithm"]; ok {
-			//nolint:forcetypeassert
 			keyalgo = val.(string)
 		}
 		if val, ok := update["key_secret"]; ok {
-			//nolint:forcetypeassert
 			keysecret = val.(string)
 		}
-		//nolint:forcetypeassert
 		if val, ok := update["gssapi"]; ok && len(val.([]interface{})) > 0 {
-			//nolint:forcetypeassert
 			g := val.([]interface{})[0].(map[string]interface{})
 			if val, ok := g["realm"]; ok {
-				//nolint:forcetypeassert
 				realm = val.(string)
 			}
 			if val, ok := g["username"]; ok {
-				//nolint:forcetypeassert
 				username = val.(string)
 			}
 			if val, ok := g["password"]; ok {
-				//nolint:forcetypeassert
 				password = val.(string)
 			}
 			if val, ok := g["keytab"]; ok {
-				//nolint:forcetypeassert
 				keytab = val.(string)
 			}
 			gssapi = true
@@ -321,12 +314,17 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		}
 	}
 
+	if len(servers) > 0 {
+	} else if server != "" {
+		servers = []string{server}
+	} else if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
+		servers = []string{os.Getenv("DNS_UPDATE_SERVER")}
+	}
+
 	if timeout != "" {
 		var err error
-		// Try parsing as a duration
 		duration, err = time.ParseDuration(timeout)
 		if err != nil {
-			// Failing that, convert to an integer and treat as seconds
 			seconds, err := strconv.Atoi(timeout)
 			if err != nil {
 				return nil, diag.Errorf("invalid timeout: %s", timeout)
@@ -339,7 +337,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	}
 
 	config := Config{
-		server:    server,
+		servers:   servers,
 		port:      port,
 		transport: transport,
 		timeout:   duration,
@@ -359,211 +357,196 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	if err != nil {
 		return dnsClient, diag.Errorf("%s", err.Error())
 	}
-
 	return dnsClient, nil
 }
 
 func getAVal(record interface{}) (string, int, error) {
-
 	_, ok := record.(*dns.A)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a A record")
 	}
-
-	//nolint:forcetypeassert
 	recstr := record.(*dns.A).String()
 	var name, class, typ, addr string
 	var ttl int
-
 	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
 	if err != nil {
 		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
-
 	return addr, ttl, nil
 }
 
 func getNSVal(record interface{}) (string, int, error) {
-
 	_, ok := record.(*dns.NS)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a NS record")
 	}
-
-	//nolint:forcetypeassert
 	recstr := record.(*dns.NS).String()
 	var name, class, typ, nameserver string
 	var ttl int
-
 	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &nameserver)
 	if err != nil {
 		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
-
 	return nameserver, ttl, nil
 }
 
 func getAAAAVal(record interface{}) (string, int, error) {
-
 	_, ok := record.(*dns.AAAA)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a AAAA record")
 	}
-
-	//nolint:forcetypeassert
 	recstr := record.(*dns.AAAA).String()
 	var name, class, typ, addr string
 	var ttl int
-
 	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
 	if err != nil {
 		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
-
 	return addr, ttl, nil
 }
 
 func getCnameVal(record interface{}) (string, int, error) {
-
 	_, ok := record.(*dns.CNAME)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a CNAME record")
 	}
-
-	//nolint:forcetypeassert
 	recstr := record.(*dns.CNAME).String()
 	var name, class, typ, cname string
 	var ttl int
-
 	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &cname)
 	if err != nil {
 		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
-
 	return cname, ttl, nil
 }
 
 func getPtrVal(record interface{}) (string, int, error) {
-
 	_, ok := record.(*dns.PTR)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a PTR record")
 	}
-
-	//nolint:forcetypeassert
 	recstr := record.(*dns.PTR).String()
 	var name, class, typ, ptr string
 	var ttl int
-
 	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &ptr)
 	if err != nil {
 		return "", 0, fmt.Errorf("Error parsing record: %s", err)
 	}
-
 	return ptr, ttl, nil
 }
 
 func isTimeout(err error) bool {
-
-	//nolint:forcetypeassert
 	timeout, ok := err.(net.Error)
 	return ok && timeout.Timeout()
 }
 
 func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
-
-	c := client.c
-	srv_addr := client.srv_addr
 	keyname := client.keyname
 	keyalgo := client.keyalgo
-	c.Net = client.transport
-	retries := client.retries
 	g := client.gssClient
-	retry_tcp := false
-
-	// GSS-TSIG
-	if tsig && g != nil {
-		realm := client.realm
-		username := client.username
-		password := client.password
-		keytab := client.keytab
-
-		var k string
-		var err error
-
-		if realm != "" && username != "" && (password != "" || keytab != "") {
-			if password != "" {
-				k, _, err = g.NegotiateContextWithCredentials(srv_addr, realm, username, password)
-			} else {
-				k, _, err = g.NegotiateContextWithKeytab(srv_addr, realm, username, keytab)
-			}
-		} else {
-			k, _, err = g.NegotiateContext(srv_addr)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("error negotiating GSS context: %s", err)
-		}
-
-		//nolint:errcheck
-		defer g.DeleteContext(k)
-
-		keyname = k
-	}
 
 	msg.RecursionDesired = false
 
-	if tsig && keyname != "" {
-		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-	}
+	var errs []error
+	for serverIdx, srv_addr := range client.srv_addrs {
+		c := &dns.Client{}
+		c.Net = client.transport
+		c.Timeout = client.c.Timeout
+		retries := client.retries
+		retry_tcp := false
+		currentKeyname := keyname
 
-	for ok := true; ok; ok = retries > 0 {
-		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
+		if tsig && g != nil {
+			realm := client.realm
+			username := client.username
+			password := client.password
+			keytab := client.keytab
 
-		r, _, err := c.Exchange(msg, srv_addr)
+			var k string
+			var err error
 
-		log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
+			if realm != "" && username != "" && (password != "" || keytab != "") {
+				if password != "" {
+					k, _, err = g.NegotiateContextWithCredentials(srv_addr, realm, username, password)
+				} else {
+					k, _, err = g.NegotiateContextWithKeytab(srv_addr, realm, username, keytab)
+				}
+			} else {
+				k, _, err = g.NegotiateContext(srv_addr)
+			}
+			if err != nil {
+				errs = append(errs, fmt.Errorf("server %s: error negotiating GSS context: %s", srv_addr, err))
+				if serverIdx < len(client.srv_addrs)-1 {
+					continue
+				}
+				return nil, fmt.Errorf("error negotiating GSS context with server %s: %s", srv_addr, err)
+			}
 
-		if err != nil {
-			if isTimeout(err) && retries > 0 {
+			//nolint:errcheck
+			defer g.DeleteContext(k)
+
+			currentKeyname = k
+		}
+
+		if tsig && currentKeyname != "" {
+			msg.SetTsig(currentKeyname, keyalgo, 300, time.Now().Unix())
+		}
+
+		for ok := true; ok; ok = retries > 0 {
+			log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
+
+			r, _, err := c.Exchange(msg, srv_addr)
+
+			log.Printf("[DEBUG] Receiving DNS message from server (%s):\n%s", srv_addr, r)
+
+			if err != nil {
+				if isTimeout(err) && retries > 0 {
+					retries--
+					continue
+				}
+				errs = append(errs, fmt.Errorf("server %s: %s", srv_addr, err))
+				if serverIdx < len(client.srv_addrs)-1 {
+					retries = 0
+					continue
+				}
+				return r, err
+			}
+
+			if r.Rcode == dns.RcodeServerFailure && retries > 0 {
 				retries--
+				continue
+			} else if r.Truncated {
+				if retry_tcp {
+					switch c.Net {
+					case "udp":
+						c.Net = "tcp"
+					case "udp4":
+						c.Net = "tcp4"
+					case "udp6":
+						c.Net = "tcp6"
+					default:
+						errs = append(errs, fmt.Errorf("server %s: unknown transport: %s", srv_addr, c.Net))
+						if serverIdx < len(client.srv_addrs)-1 {
+							break
+						}
+						return nil, fmt.Errorf("unknown transport: %s", c.Net)
+					}
+				} else {
+					msg.SetEdns0(dns.DefaultMsgSize, false)
+					retry_tcp = true
+				}
+
+				retries = client.retries
 				continue
 			}
 			return r, err
 		}
-
-		if r.Rcode == dns.RcodeServerFailure && retries > 0 {
-			retries--
-			continue
-		} else if r.Truncated {
-			if retry_tcp {
-				switch c.Net {
-				case "udp":
-					c.Net = "tcp"
-				case "udp4":
-					c.Net = "tcp4"
-				case "udp6":
-					c.Net = "tcp6"
-				default:
-					return nil, fmt.Errorf("unknown transport: %s", c.Net)
-				}
-			} else {
-				msg.SetEdns0(dns.DefaultMsgSize, false)
-				retry_tcp = true
-			}
-
-			// Reset retries counter on protocol change
-			retries = client.retries
-			continue
-		}
-		return r, err
 	}
 
-	//we should never be hitting this line
-	return nil, fmt.Errorf("unable to complete DNS exchange")
+	return nil, fmt.Errorf("unable to complete DNS exchange, errors: %v", errs)
 }
 
 func resourceDnsImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-
 	record := d.Id()
 	if !dns.IsFqdn(record) {
 		return nil, fmt.Errorf("Not a fully-qualified DNS name: %s", record)
@@ -577,7 +560,6 @@ func resourceDnsImport(ctx context.Context, d *schema.ResourceData, meta interfa
 
 Loop:
 	for l := range labels {
-
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
 		dnsClient, ok := meta.(*DNSClient)
@@ -592,7 +574,6 @@ Loop:
 
 		switch r.Rcode {
 		case dns.RcodeSuccess:
-
 			if len(r.Answer) == 0 {
 				continue
 			}
@@ -623,10 +604,8 @@ Loop:
 		return nil, fmt.Errorf("DNS record %s shares no common labels with zone %s", record, *zone)
 	}
 
-	//nolint:errcheck
 	d.Set("zone", *zone)
 	if name := strings.Join(labels[:len(labels)-common], "."); name != "" {
-		//nolint:errcheck
 		d.Set("name", name)
 	}
 
@@ -634,22 +613,15 @@ Loop:
 }
 
 func resourceFQDN(d *schema.ResourceData) string {
-
-	//nolint:forcetypeassert
 	fqdn := d.Get("zone").(string)
-
 	if name, ok := d.GetOk("name"); ok {
-		//nolint:forcetypeassert
 		fqdn = fmt.Sprintf("%s.%s", name.(string), fqdn)
 	}
-
 	return fqdn
 }
 
 func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([]dns.RR, diag.Diagnostics) {
-
 	if meta != nil {
-
 		fqdn := resourceFQDN(d)
 
 		msg := new(dns.Msg)
@@ -660,7 +632,6 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 			return nil, diag.Errorf("Error asserting meta to *DNSClient")
 		}
 
-		// Set recursion desired flag
 		msg.RecursionDesired = dnsClient.recursive
 
 		r, err := exchange(msg, true, dnsClient)
@@ -669,7 +640,6 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		}
 		switch r.Rcode {
 		case dns.RcodeSuccess:
-			// NS records are returned slightly differently
 			if (rrType == dns.TypeNS && len(r.Ns) > 0) || len(r.Answer) > 0 {
 				break
 			}
@@ -690,15 +660,11 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 }
 
 func resourceDnsDelete(d *schema.ResourceData, meta interface{}, rrType uint16) diag.Diagnostics {
-
 	if meta != nil {
-
 		fqdn := resourceFQDN(d)
 
-		//nolint:forcetypeassert
 		msg := new(dns.Msg)
 
-		//nolint:forcetypeassert
 		msg.SetUpdate(d.Get("zone").(string))
 
 		rrStr := fmt.Sprintf("%s 0 %s", fqdn, dns.TypeToString[rrType])
