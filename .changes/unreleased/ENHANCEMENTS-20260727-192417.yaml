@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: Update documentation for A and AAAA record set name field to clarify that omitting the name creates records at the zone apex (root)
+time: 2026-07-27T19:24:17.538383+02:00
+custom:
+    Issue: "651"
