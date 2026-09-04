@@ -127,3 +127,11 @@ var testAccDnsCnameRecord_update = `
     cname = "baz.example.com."
     ttl = 300
   }`
+
+func TestAccDnsCNAMERecord_RetryMechanism(t *testing.T) {
+	t.Skip("Retry mechanism requires DNS infrastructure with propagation delay to test")
+}
+
+func TestAccDnsCNAMERecord_RetryOnRead(t *testing.T) {
+	t.Skip("Retry mechanism test requires DNS infrastructure with propagation delay")
+}

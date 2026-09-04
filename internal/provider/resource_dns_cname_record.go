@@ -6,7 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
@@ -263,10 +265,25 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 		}
 	}
 
-	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
+	updated := !plan.CNAME.Equal(state.CNAME)
+
+	var answers []dns.RR
+	var readDiags diag.Diagnostics
+
+	for attempts := 0; attempts < defaultRetries; attempts++ {
+		if attempts > 0 {
+			time.Sleep(1 * time.Second)
+		}
+
+		answers, readDiags = resourceDnsRead_framework(config, d.client, dns.TypeCNAME)
+		resp.Diagnostics.Append(readDiags...)
+		if readDiags.HasError() {
+			return
+		}
+
+		if len(answers) > 0 && (!updated || answers[0].(*dns.CNAME).Target == plan.CNAME.ValueString()) {
+			break
+		}
 	}
 
 	if len(answers) > 0 {
