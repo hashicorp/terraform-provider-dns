@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net"
 	"sort"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -126,7 +127,15 @@ func resourceDnsAAAARecordSetUpdate(ctx context.Context, d *schema.ResourceData,
 			// Loop through all the old addresses and remove them
 			for _, addr := range remove {
 				//nolint:forcetypeassert
-				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
+				addrStr := addr.(string)
+				if addrStr == "" {
+					continue
+				}
+				parsedIP := net.ParseIP(addrStr)
+				if parsedIP == nil {
+					return diag.Errorf("invalid IPv6 address: %s", addrStr)
+				}
+				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addrStr))
 
 				rr_remove, err := dns.NewRR(rrStr)
 				if err != nil {
@@ -138,7 +147,15 @@ func resourceDnsAAAARecordSetUpdate(ctx context.Context, d *schema.ResourceData,
 			// Loop through all the new addresses and insert them
 			for _, addr := range add {
 				//nolint:forcetypeassert
-				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addr.(string)))
+				addrStr := addr.(string)
+				if addrStr == "" {
+					continue
+				}
+				parsedIP := net.ParseIP(addrStr)
+				if parsedIP == nil {
+					return diag.Errorf("invalid IPv6 address: %s", addrStr)
+				}
+				rrStr := fmt.Sprintf("%s %d AAAA %s", rec_fqdn, ttl, stripLeadingZeros(addrStr))
 
 				rr_insert, err := dns.NewRR(rrStr)
 				if err != nil {
