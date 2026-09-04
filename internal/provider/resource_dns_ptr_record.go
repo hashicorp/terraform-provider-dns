@@ -60,8 +60,9 @@ func (d *dnsPTRRecordResource) Schema(ctx context.Context, req resource.SchemaRe
 				Validators: []validator.String{
 					dnsvalidator.IsRecordNameValid(),
 				},
-				Description: "The name of the record. The `zone` argument will be appended to this value to create " +
-					"the full record path.",
+			Description: "The name of the record. The `zone` argument will be appended to this value to create " +
+				"the full record path. Wildcard records (names starting with `*.`) " +
+				"are not supported on Windows DNS servers when using dynamic DNS updates.",
 			},
 			"ptr": schema.StringAttribute{
 				Required: true,
