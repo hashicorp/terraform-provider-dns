@@ -32,6 +32,7 @@ type Config struct {
 	password  string
 	keytab    string
 	recursive bool
+	useAxfr   bool
 }
 
 type DNSClient struct {
@@ -48,6 +49,7 @@ type DNSClient struct {
 	password  string
 	keytab    string
 	recursive bool
+	useAxfr   bool
 }
 
 // Client configures and returns a fully initialized DNSClient.
@@ -78,6 +80,7 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	client.password = c.password
 	client.keytab = c.keytab
 	client.recursive = c.recursive
+	client.useAxfr = c.useAxfr
 	if !c.gssapi && c.keyname != "" {
 		if !dns.IsFqdn(c.keyname) {
 			return nil, fmt.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
