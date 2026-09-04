@@ -40,6 +40,29 @@ func (p *dnsProvider) Metadata(ctx context.Context, req provider.MetadataRequest
 func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
+			"query": schema.ListNestedBlock{
+				Description: "When present, specifies DNS server(s) to query instead of the system default resolver.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"nameservers": schema.ListAttribute{
+							Required:    true,
+							ElementType: types.StringType,
+							Description: "DNS server(s) to query. Can be IP address or hostname:port.",
+						},
+						"transport": schema.StringAttribute{
+							Optional:    true,
+							Description: "Transport to use. Valid values: udp, udp4, udp6, tcp, tcp4, tcp6.",
+						},
+						"timeout": schema.StringAttribute{
+							Optional:    true,
+							Description: "Timeout for DNS queries.",
+						},
+					},
+				},
+			},
 			"update": schema.ListNestedBlock{
 				Description: "When the provider is used for DNS updates, this block is required. Only one `update` block may be in the configuration.",
 				Validators: []validator.List{
@@ -330,6 +353,42 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		gssapi = true
 	}
 
+	var queryNameservers []string
+	var queryTransport string
+	var queryTimeout time.Duration
+	providerQueryConfig := make([]providerQueryModel, 1)
+	if !providerConfig.Query.IsNull() {
+		resp.Diagnostics.Append(providerConfig.Query.ElementsAs(ctx, &providerQueryConfig, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		var ns []string
+		resp.Diagnostics.Append(providerQueryConfig[0].Nameservers.ElementsAs(ctx, &ns, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		queryNameservers = ns
+
+		if !providerQueryConfig[0].Transport.IsNull() {
+			queryTransport = providerQueryConfig[0].Transport.ValueString()
+		} else {
+			queryTransport = "udp"
+		}
+
+		if !providerQueryConfig[0].Timeout.IsNull() {
+			timeoutStr := providerQueryConfig[0].Timeout.ValueString()
+			var err error
+			queryTimeout, err = time.ParseDuration(timeoutStr)
+			if err != nil {
+				resp.Diagnostics.AddError("Invalid query timeout:", err.Error())
+				return
+			}
+		} else {
+			queryTimeout = 5 * time.Second
+		}
+	}
+
 	config := Config{
 		server:    server,
 		port:      port,
@@ -345,12 +404,20 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		username:  username,
 		password:  password,
 		keytab:    keytab,
+
+		queryNameservers: queryNameservers,
+		queryTransport:   queryTransport,
+		queryTimeout:     queryTimeout,
 	}
 
-	resp.ResourceData, configErr = config.Client(ctx)
+	var client interface{}
+	client, configErr = config.Client(ctx)
 	if configErr != nil {
 		resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
 	}
+
+	resp.ResourceData = client
+	resp.DataSourceData = client
 }
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -379,6 +446,13 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 
 type providerModel struct {
 	Update types.List `tfsdk:"update"` // providerUpdateModel
+	Query  types.List `tfsdk:"query"`  // providerQueryModel
+}
+
+type providerQueryModel struct {
+	Nameservers types.List   `tfsdk:"nameservers"`
+	Transport   types.String `tfsdk:"transport"`
+	Timeout     types.String `tfsdk:"timeout"`
 }
 
 type providerUpdateModel struct {
