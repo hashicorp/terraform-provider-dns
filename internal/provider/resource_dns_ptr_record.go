@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -74,9 +73,6 @@ func (d *dnsPTRRecordResource) Schema(ctx context.Context, req resource.SchemaRe
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(3600),
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 				Description: "The TTL of the record. Defaults to `3600`.",
 			},
 
@@ -234,7 +230,7 @@ func (d *dnsPTRRecordResource) Update(ctx context.Context, req resource.UpdateRe
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 
-	if !plan.PTR.Equal(state.PTR) {
+	if !plan.PTR.Equal(state.PTR) || !plan.TTL.Equal(state.TTL) {
 
 		//Remove old PTR record
 		rrStrRemove := fmt.Sprintf("%s %d PTR %s", rec_fqdn, plan.TTL.ValueInt64(), state.PTR.ValueString())

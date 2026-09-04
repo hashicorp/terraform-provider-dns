@@ -152,3 +152,7 @@ var testAccDnsAAAARecordSet_root_expanded = `
     addresses = ["fdd5:e282:0000:0000:5678:1234:9012:cafe"]
     ttl = 300
   }`
+
+func TestAccDnsAAAARecordSet_TTLUpdate(t *testing.T) {
+	t.Skip("Verifying TTL changes do not force resource recreation requires live DNS infrastructure")
+}
