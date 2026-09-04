@@ -551,7 +551,14 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	if rrType == dns.TypeNS {
 		return r.Ns, nil
 	}
-	return r.Answer, nil
+
+	var filtered []dns.RR
+	for _, ans := range r.Answer {
+		if ans.Header().Rrtype == rrType {
+			filtered = append(filtered, ans)
+		}
+	}
+	return filtered, nil
 }
 
 func resourceDnsDelete_framework(config dnsConfig, client *DNSClient, rrType uint16) diag.Diagnostics {
