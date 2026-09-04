@@ -44,7 +44,7 @@ func (d *dnsTXTRecordSetResource) Metadata(ctx context.Context, req resource.Met
 
 func (d *dnsTXTRecordSetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Creates a TXT type DNS record set.",
+		Description: "Creates a TXT type DNS record set. Note: DNS servers may mark records created via dynamic update as scavengable; see provider documentation for details.",
 		Attributes: map[string]schema.Attribute{
 			"zone": schema.StringAttribute{
 				Required: true,

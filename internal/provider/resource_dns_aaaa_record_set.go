@@ -56,7 +56,7 @@ func resourceDnsAAAARecordSet() *schema.Resource {
 			},
 		},
 
-		Description: "Creates an AAAA type DNS record set.",
+		Description: "Creates an AAAA type DNS record set. Note: DNS servers may mark records created via dynamic update as scavengable; see provider documentation for details.",
 	}
 }
 

@@ -8,6 +8,8 @@ description: |-
 
 The DNS provider supports resources that perform DNS updates ([RFC 2136](https://datatracker.ietf.org/doc/html/rfc2136)) and data sources for reading DNS information. The provider can be configured with secret key based transaction authentication ([RFC 2845](https://datatracker.ietf.org/doc/html/rfc2845)) or GSS-TSIG ([RFC 3645](https://datatracker.ietf.org/doc/html/rfc3645)).
 
+~> **Note on record scavenging:** DNS records created by this provider use DNS dynamic updates, which some DNS servers (notably Microsoft Windows DNS) may mark as scavengable by default. This means records can be automatically removed when scavenging is enabled. To create static (non-scavengable) records on Windows DNS, use PowerShell's `Add-DnsServerResourceRecord -AgeRecord $false` or configure scavenging settings appropriately. On BIND, configure `allow-update` with appropriate zone settings. This behavior is controlled by the DNS server, not by this provider.
+
 Use the navigation to the left to read about the available resources and data sources.
 
 ## Example Usage
