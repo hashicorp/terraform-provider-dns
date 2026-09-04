@@ -451,7 +451,7 @@ func initializeDNSClient(ctx context.Context) (*DNSClient, error) {
 	}
 
 	config := Config{
-		server:    server,
+		servers:   []string{server},
 		port:      port,
 		transport: transport,
 		timeout:   duration,

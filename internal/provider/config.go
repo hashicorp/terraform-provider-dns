@@ -18,7 +18,7 @@ import (
 )
 
 type Config struct {
-	server    string
+	servers   []string
 	port      int
 	transport string
 	timeout   time.Duration
@@ -36,7 +36,7 @@ type Config struct {
 
 type DNSClient struct {
 	c         *dns.Client
-	srv_addr  string
+	srv_addrs []string
 	transport string
 	retries   int
 	keyname   string
@@ -55,7 +55,9 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	tflog.Info(ctx, "Building DNSClient config structure")
 
 	var client DNSClient
-	client.srv_addr = net.JoinHostPort(c.server, strconv.Itoa(c.port))
+	for _, s := range c.servers {
+		client.srv_addrs = append(client.srv_addrs, net.JoinHostPort(s, strconv.Itoa(c.port)))
+	}
 
 	// This block is a little unwieldy but there are a few combinations of
 	// settings we need to check for
