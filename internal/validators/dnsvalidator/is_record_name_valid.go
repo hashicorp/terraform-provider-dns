@@ -19,7 +19,7 @@ type dnsRecordNameValidator struct {
 }
 
 func (validator dnsRecordNameValidator) Description(ctx context.Context) string {
-	return "value must be a fully qualified DNS record name"
+	return "value must not be a fully qualified DNS record name"
 }
 
 func (validator dnsRecordNameValidator) MarkdownDescription(ctx context.Context) string {
