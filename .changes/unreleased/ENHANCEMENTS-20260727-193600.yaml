@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: Make name optional in dns_ns_record_set to allow managing apex NS records
+time: 2026-07-27T19:36:00.00000+02:00
+custom:
+    Issue: "129"

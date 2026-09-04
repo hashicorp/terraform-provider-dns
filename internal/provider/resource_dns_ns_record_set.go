@@ -38,11 +38,11 @@ type dnsNSRecordSetResource struct {
 	client *DNSClient
 }
 
-func (d *dnsNSRecordSetResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (d *dnsNSRecordSetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_ns_record_set"
 }
 
-func (d *dnsNSRecordSetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (d *dnsNSRecordSetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Creates an NS type DNS record set.",
 		Attributes: map[string]schema.Attribute{
@@ -57,7 +57,7 @@ func (d *dnsNSRecordSetResource) Schema(ctx context.Context, req resource.Schema
 				Description: "DNS zone the record set belongs to. It must be an FQDN, that is, include the trailing dot.",
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Optional: true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -65,7 +65,7 @@ func (d *dnsNSRecordSetResource) Schema(ctx context.Context, req resource.Schema
 					dnsvalidator.IsRecordNameValid(),
 				},
 				Description: "The name of the record set. The `zone` argument will be appended to this value to create " +
-					"the full record path.",
+					"the full record path. If not set, the zone apex is used.",
 			},
 			"ttl": schema.Int64Attribute{
 				Optional: true,
@@ -92,19 +92,17 @@ func (d *dnsNSRecordSetResource) Schema(ctx context.Context, req resource.Schema
 	}
 }
 
-func (d *dnsNSRecordSetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (d *dnsNSRecordSetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
 
 	client, ok := req.ProviderData.(*DNSClient)
-
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
 			fmt.Sprintf("Expected *DNSClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
-
 		return
 	}
 
@@ -136,17 +134,16 @@ func (d *dnsNSRecordSetResource) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// Loop through all the new nameservers and insert them
 	for _, nameserver := range planNS {
 		rrStr := fmt.Sprintf("%s %d NS %s", fqdn, plan.TTL.ValueInt64(), nameserver)
 
-		rr_insert, err := dns.NewRR(rrStr)
+		rrInsert, err := dns.NewRR(rrStr)
 		if err != nil {
 			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 			return
 		}
 
-		msg.Insert([]dns.RR{rr_insert})
+		msg.Insert([]dns.RR{rrInsert})
 	}
 
 	r, err := exchange(msg, true, d.client)
@@ -298,29 +295,27 @@ func (d *dnsNSRecordSetResource) Update(ctx context.Context, req resource.Update
 			remove = append(remove, oldNS)
 		}
 
-		// Loop through all the old nameservers and remove them
 		for _, nameserver := range remove {
 			rrStr := fmt.Sprintf("%s %d NS %s", fqdn, plan.TTL.ValueInt64(), nameserver)
 
-			rr_remove, err := dns.NewRR(rrStr)
+			rrRemove, err := dns.NewRR(rrStr)
 			if err != nil {
 				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
-			msg.Remove([]dns.RR{rr_remove})
+			msg.Remove([]dns.RR{rrRemove})
 		}
-		// Loop through all the new nameservers and insert them
 		for _, nameserver := range add {
 			rrStr := fmt.Sprintf("%s %d NS %s", fqdn, plan.TTL.ValueInt64(), nameserver)
 
-			rr_insert, err := dns.NewRR(rrStr)
+			rrInsert, err := dns.NewRR(rrStr)
 			if err != nil {
 				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStr), err.Error())
 				return
 			}
 
-			msg.Insert([]dns.RR{rr_insert})
+			msg.Insert([]dns.RR{rrInsert})
 		}
 
 		r, err := exchange(msg, true, d.client)
@@ -379,6 +374,30 @@ func (d *dnsNSRecordSetResource) Delete(ctx context.Context, req resource.Delete
 	config := dnsConfig{
 		Name: state.Name.ValueString(),
 		Zone: state.Zone.ValueString(),
+	}
+
+	// Check current NS record count to prevent removing the last NS record
+	answers, diags := resourceDnsRead_framework(config, d.client, dns.TypeNS)
+	resp.Diagnostics.Append(diags...)
+	if diags.HasError() {
+		return
+	}
+
+	remaining := 0
+	for _, ans := range answers {
+		_, ok := ans.(*dns.NS)
+		if ok {
+			remaining++
+		}
+	}
+
+	if remaining <= 1 {
+		resp.Diagnostics.AddWarning("Cannot delete last NS record",
+			fmt.Sprintf("There is %d NS record remaining at %s. "+
+				"Removing the last NS record would make the zone unreachable. "+
+				"The resource will be removed from Terraform state.", remaining, resourceFQDN_framework(config)))
+		resp.State.RemoveResource(ctx)
+		return
 	}
 
 	resp.Diagnostics.Append(resourceDnsDelete_framework(config, d.client, dns.TypeNS)...)
