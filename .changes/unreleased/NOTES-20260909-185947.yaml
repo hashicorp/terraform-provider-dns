@@ -1,0 +1,5 @@
+kind: NOTES
+body: Upgrade golang.org/x/crypto to 0.56.0.
+time: 2026-09-09T18:59:47.308523+02:00
+custom:
+    Issue: "700"
