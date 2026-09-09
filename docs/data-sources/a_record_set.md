@@ -29,6 +29,10 @@ output "google_addrs" {
 
 - `host` (String) Host to look up.
 
+### Optional
+
+- `use_update_server` (Boolean) Whether to use the configured update DNS server
+
 ### Read-Only
 
 - `addrs` (List of String) A list of IP addresses. IP addresses are always sorted to avoid constant changing plans.
