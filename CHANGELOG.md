@@ -1,3 +1,11 @@
+## 3.6.2 (September 11, 2026)
+
+NOTES:
+
+* Upgrade the Go toolchain to 1.26.8. ([#699](https://github.com/hashicorp/terraform-provider-dns/issues/699))
+* Upgrade golang.org/x/crypto to 0.56.0. ([#700](https://github.com/hashicorp/terraform-provider-dns/issues/700))
+* Update golang.org/x/mod to v0.40.0 and google.golang.org/protobuf to v1.36.12. ([#702](https://github.com/hashicorp/terraform-provider-dns/issues/702))
+
 ## 3.6.1 (May 20, 2026)
 
 BUG FIXES:
