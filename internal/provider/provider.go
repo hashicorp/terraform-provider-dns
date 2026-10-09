@@ -667,11 +667,23 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		if err != nil {
 			return nil, diag.Errorf("Error querying DNS record: %s", err)
 		}
+
+		// Read the Additional section instead of the Question section
+		useAdditional := false
+		if v, ok := d.GetOk("use_additional"); ok {
+			useAdditional = v.(bool)
+		}
+
 		switch r.Rcode {
 		case dns.RcodeSuccess:
 			// NS records are returned slightly differently
 			if (rrType == dns.TypeNS && len(r.Ns) > 0) || len(r.Answer) > 0 {
 				break
+			}
+			if useAdditional {
+				if len(r.Extra) > 0 {
+					break
+				}
 			}
 			fallthrough
 		case dns.RcodeNameError:
@@ -682,6 +694,21 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 
 		if rrType == dns.TypeNS {
 			return r.Ns, nil
+		}
+		// Only return from the Additional section rrType records
+		if useAdditional {
+			extractRR := make([]dns.RR, 0, len(r.Extra))
+
+			for _, rr := range r.Extra {
+				if rr == nil || rr.Header() == nil {
+					continue
+				}
+
+				if rr.Header().Rrtype == rrType {
+					extractRR = append(extractRR, rr)
+				}
+			}
+			return extractRR, nil
 		}
 		return r.Answer, nil
 	} else {
