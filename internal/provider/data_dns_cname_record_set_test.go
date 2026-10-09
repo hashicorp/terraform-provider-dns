@@ -29,3 +29,21 @@ data "dns_cname_record_set" "test" {
 		},
 	})
 }
+
+func TestAccDataDnsCnameRecordSet_NonExistent(t *testing.T) {
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "dns_cname_record_set" "test" {
+  host = "nonexistent.cname.dns.tfacc.hashicorptest.com"
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("data.dns_cname_record_set.test", "cname", "target.example.com."),
+				),
+			},
+		},
+	})
+}
