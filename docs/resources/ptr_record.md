@@ -31,7 +31,7 @@ resource "dns_ptr_record" "dns-sd" {
 
 ### Optional
 
-- `name` (String) The name of the record. The `zone` argument will be appended to this value to create the full record path.
+- `name` (String) The name of the record. The `zone` argument will be appended to this value to create the full record path. Wildcard records (names starting with `*.`) are not supported on Windows DNS servers when using dynamic DNS updates.
 - `ttl` (Number) The TTL of the record. Defaults to `3600`.
 
 ### Read-Only
