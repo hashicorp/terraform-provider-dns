@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -74,9 +73,6 @@ func (d *dnsCNAMERecordResource) Schema(ctx context.Context, req resource.Schema
 				Optional: true,
 				Computed: true,
 				Default:  int64default.StaticInt64(3600),
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
-				},
 				Description: "The TTL of the record set. Defaults to `3600`.",
 			},
 			"id": schema.StringAttribute{
@@ -231,14 +227,27 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 
-	if !plan.CNAME.Equal(state.CNAME) {
+	if !plan.CNAME.Equal(state.CNAME) || !plan.TTL.Equal(state.TTL) {
 
-		rrStrRemove := fmt.Sprintf("%s %d CNAME %s", rec_fqdn, plan.TTL.ValueInt64(), state.CNAME.ValueString())
+		if !plan.CNAME.Equal(state.CNAME) {
+			rrStrRemove := fmt.Sprintf("%s %d CNAME %s", rec_fqdn, plan.TTL.ValueInt64(), state.CNAME.ValueString())
 
-		rr_remove, err := dns.NewRR(rrStrRemove)
-		if err != nil {
-			resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrRemove), err.Error())
-			return
+			rr_remove, err := dns.NewRR(rrStrRemove)
+			if err != nil {
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrRemove), err.Error())
+				return
+			}
+			msg.Remove([]dns.RR{rr_remove})
+		} else {
+			// Only TTL changed - remove existing record and re-add
+			rrStrRemove := fmt.Sprintf("%s %d CNAME %s", rec_fqdn, plan.TTL.ValueInt64(), state.CNAME.ValueString())
+
+			rr_remove, err := dns.NewRR(rrStrRemove)
+			if err != nil {
+				resp.Diagnostics.AddError(fmt.Sprintf("Error reading DNS record (%s):", rrStrRemove), err.Error())
+				return
+			}
+			msg.Remove([]dns.RR{rr_remove})
 		}
 
 		rrStrInsert := fmt.Sprintf("%s %d CNAME %s", rec_fqdn, plan.TTL.ValueInt64(), plan.CNAME.ValueString())
@@ -249,7 +258,6 @@ func (d *dnsCNAMERecordResource) Update(ctx context.Context, req resource.Update
 			return
 		}
 
-		msg.Remove([]dns.RR{rr_remove})
 		msg.Insert([]dns.RR{rr_insert})
 
 		r, err := exchange(msg, true, d.client)

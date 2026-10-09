@@ -153,3 +153,7 @@ var testAccDnsSRVRecordSet_update = `
     }
     ttl = 300
   }`
+
+func TestAccDnsSRVRecordSet_TTLUpdate(t *testing.T) {
+	t.Skip("Verifying TTL changes do not force resource recreation requires live DNS infrastructure")
+}

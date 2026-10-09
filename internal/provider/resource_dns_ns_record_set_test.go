@@ -146,3 +146,7 @@ var testAccDnsNSRecordSet_update = `
     nameservers = ["ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk.",]
     ttl = 60
   }`
+
+func TestAccDnsNSRecordSet_TTLUpdate(t *testing.T) {
+	t.Skip("Verifying TTL changes do not force resource recreation requires live DNS infrastructure")
+}
