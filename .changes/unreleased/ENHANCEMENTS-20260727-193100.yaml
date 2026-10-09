@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: Add dns_sshfp_record_set data source
+time: 2026-07-27T19:31:00.00000+02:00
+custom:
+    Issue: "232"
