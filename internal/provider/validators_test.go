@@ -7,6 +7,32 @@ import (
 	"testing"
 )
 
+func TestValidateKeyName(t *testing.T) {
+	validNames := []string{
+		"mykey",
+		"update",
+		"mykey.example.com.",
+		"key.with.multiple.labels",
+	}
+	for _, v := range validNames {
+		_, errors := validateKeyName(v, "key_name")
+		if len(errors) != 0 {
+			t.Fatalf("%q should be a valid key name: %q", v, errors)
+		}
+	}
+
+	invalidNames := []string{
+		"",
+		" ",
+	}
+	for _, v := range invalidNames {
+		_, errors := validateKeyName(v, "key_name")
+		if len(errors) == 0 {
+			t.Fatalf("%q should be an invalid key name", v)
+		}
+	}
+}
+
 func TestValidateZone(t *testing.T) {
 	validNames := []string{
 		"example.com.",
@@ -48,6 +74,8 @@ func TestValidateName(t *testing.T) {
 		" test. ",
 		" ",
 		"",
+		"test name",
+		"test  name",
 	}
 	for _, v := range invalidNames {
 		_, errors := validateName(v, "name")
