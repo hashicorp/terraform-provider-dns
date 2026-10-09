@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: Improve DNS exchange error message to include server and retry count
+time: 2026-07-27T19:25:28.69419+02:00
+custom:
+    Issue: "379"

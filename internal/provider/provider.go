@@ -558,8 +558,7 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 		return r, err
 	}
 
-	//we should never be hitting this line
-	return nil, fmt.Errorf("unable to complete DNS exchange")
+	return nil, fmt.Errorf("unable to complete DNS exchange after %d retries with server %s", client.retries, srv_addr)
 }
 
 func resourceDnsImport(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
