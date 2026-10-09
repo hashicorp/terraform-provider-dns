@@ -356,6 +356,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewDnsCNAMERecordResource,
+		NewDnsDNAMERecordResource,
 		NewDnsMXRecordSetResource,
 		NewDnsNSRecordSetResource,
 		NewDnsPTRRecordResource,
@@ -369,6 +370,7 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 		NewDnsARecordSetDataSource,
 		NewDnsAAAARecordSetDataSource,
 		NewDnsCNAMERecordSetDataSource,
+		NewDnsDNAMERecordSetDataSource,
 		NewDnsMXRecordSetDataSource,
 		NewDnsNSRecordSetDataSource,
 		NewDnsPTRRecordSetDataSource,
