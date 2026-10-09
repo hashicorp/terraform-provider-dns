@@ -12,11 +12,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -78,39 +76,18 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 							Description: "Enable the Recursion Desired (RD) flag on DNS queries",
 						},
 						"key_name": schema.StringAttribute{
-							Optional: true,
-							Validators: []validator.String{
-								stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("gssapi")),
-								stringvalidator.AlsoRequires(
-									path.MatchRelative().AtParent().AtName("key_algorithm"),
-									path.MatchRelative().AtParent().AtName("key_secret"),
-								),
-							},
+							Optional:    true,
 							Description: "The name of the TSIG key used to sign the DNS update messages. " +
 								"Value can also be sourced from the DNS_UPDATE_KEYNAME environment variable.",
 						},
 						"key_algorithm": schema.StringAttribute{
-							Optional: true,
-							Validators: []validator.String{
-								stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("gssapi")),
-								stringvalidator.AlsoRequires(
-									path.MatchRelative().AtParent().AtName("key_name"),
-									path.MatchRelative().AtParent().AtName("key_secret"),
-								),
-							},
+							Optional:    true,
 							Description: "Required if `key_name` is set. When using TSIG authentication, the " +
 								"algorithm to use for HMAC. Valid values are `hmac-md5`, `hmac-sha1`, `hmac-sha256` " +
 								"or `hmac-sha512`. Value can also be sourced from the DNS_UPDATE_KEYALGORITHM environment variable.",
 						},
 						"key_secret": schema.StringAttribute{
 							Optional: true,
-							Validators: []validator.String{
-								stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("gssapi")),
-								stringvalidator.AlsoRequires(
-									path.MatchRelative().AtParent().AtName("key_name"),
-									path.MatchRelative().AtParent().AtName("key_algorithm"),
-								),
-							},
 							Description: "Required if `key_name` is set\nA Base64-encoded string containing the " +
 								"shared secret to be used for TSIG. Value can also be sourced from the DNS_UPDATE_KEYSECRET environment variable.",
 						},
@@ -119,11 +96,6 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 						"gssapi": schema.ListNestedBlock{
 							Validators: []validator.List{
 								listvalidator.SizeAtMost(1),
-								listvalidator.ConflictsWith(
-									path.MatchRelative().AtParent().AtName("key_name"),
-									path.MatchRelative().AtParent().AtName("key_algorithm"),
-									path.MatchRelative().AtParent().AtName("key_algorithm"),
-								),
 							},
 							Description: "A `gssapi` block. Only one `gssapi` block may be in the configuration. " +
 								"Conflicts with use of `key_name`, `key_algorithm` and `key_secret`.",
@@ -139,21 +111,13 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 											"user session will be used. Value can also be sourced from the DNS_UPDATE_USERNAME environment variable.",
 									},
 									"password": schema.StringAttribute{
-										Optional: true,
-										Validators: []validator.String{
-											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("keytab")),
-											stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("username")),
-										},
+										Optional:  true,
 										Sensitive: true,
 										Description: "This or `keytab` is required if `username` is set. The matching " +
 											"password for `username`. Value can also be sourced from the DNS_UPDATE_PASSWORD environment variable.",
 									},
 									"keytab": schema.StringAttribute{
 										Optional: true,
-										Validators: []validator.String{
-											stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("password")),
-											stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("username")),
-										},
 										Description: "This or `password` is required if `username` is set, not " +
 											"supported on Windows. The path to a keytab file containing a key for " +
 											"`username`. Value can also be sourced from the DNS_UPDATE_KEYTAB environment variable.",

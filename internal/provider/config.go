@@ -63,9 +63,19 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 		!(c.realm != "" && ((c.username == "" && c.password == "" && c.keytab == "") || // Rely on current user session
 			(c.username != "" && (c.password != "" || c.keytab != "")))) { // Supplied credentials with either password or keytab
 		return nil, fmt.Errorf("Error configuring provider: when using GSSAPI, \"realm\", \"username\" and either \"password\" or \"keytab\" should be non empty")
+	} else if c.gssapi && (c.keyname != "" || c.keyalgo != "" || c.keysecret != "") {
+		return nil, fmt.Errorf("Error configuring provider: GSSAPI cannot be used together with \"key_name\", \"key_algorithm\", or \"key_secret\"")
 	} else if !((c.keyname == "" && c.keysecret == "" && c.keyalgo == "") || // No TSIG required
 		(c.keyname != "" && c.keysecret != "" && c.keyalgo != "")) { // Supplied key name, secret and algorithm
 		return nil, fmt.Errorf("Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty")
+	}
+
+	// GSSAPI sub-field validation
+	if c.password != "" && c.keytab != "" {
+		return nil, fmt.Errorf("Error configuring provider: \"password\" and \"keytab\" cannot be set at the same time")
+	}
+	if (c.password != "" || c.keytab != "") && c.username == "" {
+		return nil, fmt.Errorf("Error configuring provider: \"username\" is required when \"password\" or \"keytab\" is set")
 	}
 
 	client.c = new(dns.Client)
