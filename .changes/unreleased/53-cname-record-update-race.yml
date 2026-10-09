@@ -1,0 +1,4 @@
+kind: BUG FIXES
+body: "dns_cname_record: retry read-back after update to handle DNS propagation delay, preventing 'record differs' errors on first apply"
+custom:
+  Issue: "53"
