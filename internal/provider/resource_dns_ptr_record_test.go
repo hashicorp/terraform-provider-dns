@@ -12,6 +12,10 @@ import (
 	"github.com/miekg/dns"
 )
 
+func TestKrb5ConfGeneration(t *testing.T) {
+	t.Skip("Requires krb5 infrastructure")
+}
+
 func TestAccDnsPtrRecord_Basic(t *testing.T) {
 	resourceName := "dns_ptr_record.foo"
 	resourceRoot := "dns_ptr_record.root"
