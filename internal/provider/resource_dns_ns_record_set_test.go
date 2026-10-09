@@ -124,6 +124,34 @@ func TestAccDnsNSRecordSet_Basic_Upgrade(t *testing.T) {
 	})
 }
 
+func TestAccDnsNSRecordSet_Apex(t *testing.T) {
+	resourceName := "dns_ns_record_set.apex"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDnsNSRecordSet_apex_basic,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "2"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "nameservers.*", "ns1.apex.testdns.co.uk."),
+					resource.TestCheckTypeSetElemAttr(resourceName, "nameservers.*", "ns2.apex.testdns.co.uk."),
+				),
+			},
+			{
+				Config: testAccDnsNSRecordSet_apex_update,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "nameservers.#", "3"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "nameservers.*", "ns1.apex.test2dns.co.uk."),
+					resource.TestCheckTypeSetElemAttr(resourceName, "nameservers.*", "ns2.apex.test2dns.co.uk."),
+					resource.TestCheckTypeSetElemAttr(resourceName, "nameservers.*", "ns3.apex.test2dns.co.uk."),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckDnsNSRecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_ns_record_set", dns.TypeNS)
 }
@@ -144,5 +172,22 @@ var testAccDnsNSRecordSet_update = `
     zone = "example.com."
     name = "foo"
     nameservers = ["ns1.test2dns.co.uk.", "ns2.test2dns.co.uk.", "ns3.test2dns.co.uk.",]
+    ttl = 60
+  }`
+
+var testAccDnsNSRecordSet_apex_basic = `
+  resource "dns_ns_record_set" "apex" {
+    zone = "example.com."
+    nameservers = [
+      "ns1.apex.testdns.co.uk.",
+      "ns2.apex.testdns.co.uk.",
+    ]
+    ttl = 60
+  }`
+
+var testAccDnsNSRecordSet_apex_update = `
+  resource "dns_ns_record_set" "apex" {
+    zone = "example.com."
+    nameservers = ["ns1.apex.test2dns.co.uk.", "ns2.apex.test2dns.co.uk.", "ns3.apex.test2dns.co.uk."]
     ttl = 60
   }`
