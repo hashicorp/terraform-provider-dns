@@ -483,6 +483,9 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 
 	// GSS-TSIG
 	if tsig && g != nil {
+		client.mu.Lock()
+		defer client.mu.Unlock()
+
 		realm := client.realm
 		username := client.username
 		password := client.password

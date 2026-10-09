@@ -9,6 +9,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bodgit/tsig"
@@ -48,6 +49,7 @@ type DNSClient struct {
 	password  string
 	keytab    string
 	recursive bool
+	mu        sync.Mutex
 }
 
 // Client configures and returns a fully initialized DNSClient.
