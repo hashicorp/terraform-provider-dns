@@ -40,6 +40,29 @@ func (p *dnsProvider) Metadata(ctx context.Context, req provider.MetadataRequest
 func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Blocks: map[string]schema.Block{
+			"query": schema.ListNestedBlock{
+				Description: "When present, specifies DNS server(s) to query instead of the system default resolver.",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(1),
+				},
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"nameservers": schema.ListAttribute{
+							Required:    true,
+							ElementType: types.StringType,
+							Description: "DNS server(s) to query. Can be IP address or hostname:port.",
+						},
+						"transport": schema.StringAttribute{
+							Optional:    true,
+							Description: "Transport to use. Valid values: udp, udp4, udp6, tcp, tcp4, tcp6.",
+						},
+						"timeout": schema.StringAttribute{
+							Optional:    true,
+							Description: "Timeout for DNS queries.",
+						},
+					},
+				},
+			},
 			"update": schema.ListNestedBlock{
 				Description: "When the provider is used for DNS updates, this block is required. Only one `update` block may be in the configuration.",
 				Validators: []validator.List{
@@ -49,7 +72,14 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 					Attributes: map[string]schema.Attribute{
 						"server": schema.StringAttribute{
 							Optional:    true,
+							DeprecationMessage: "Use 'servers' instead",
 							Description: "The hostname or IP address of the DNS server to send updates to. Value can also be sourced from the DNS_UPDATE_SERVER environment variable.",
+						},
+						"servers": schema.ListAttribute{
+							Optional:    true,
+							ElementType: types.StringType,
+							Description: "List of DNS server hostnames or IP addresses to send updates to. " +
+								"If multiple servers are specified, the provider will try each server in order.",
 						},
 						"port": schema.Int64Attribute{
 							Optional:    true,
@@ -175,6 +205,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	var port, retries int
 	var duration time.Duration
 	var gssapi, recursive bool
+	var servers []string
 	var configErr error
 
 	providerUpdateConfig := make([]providerUpdateModel, 1)
@@ -187,7 +218,6 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	if !providerConfig.Update.IsNull() {
 		resp.Diagnostics.Append(providerConfig.Update.ElementsAs(ctx, &providerUpdateConfig, false)...)
-
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -206,9 +236,21 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		server = os.Getenv("DNS_UPDATE_SERVER")
 	}
 
+	if !providerUpdateConfig[0].Servers.IsNull() {
+		resp.Diagnostics.Append(providerUpdateConfig[0].Servers.ElementsAs(ctx, &servers, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+	if len(servers) > 0 {
+	} else if server != "" {
+		servers = []string{server}
+	} else if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
+		servers = []string{os.Getenv("DNS_UPDATE_SERVER")}
+	}
+
 	if providerUpdateConfig[0].Port.IsNull() {
 		port = defaultPort
-
 		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
 			portStr := os.Getenv("DNS_UPDATE_PORT")
 			envPort, err := strconv.Atoi(portStr)
@@ -222,7 +264,6 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	if providerUpdateConfig[0].Transport.IsNull() {
 		transport = defaultTransport
-
 		if len(os.Getenv("DNS_UPDATE_TRANSPORT")) > 0 {
 			transport = os.Getenv("DNS_UPDATE_TRANSPORT")
 		}
@@ -230,20 +271,16 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	if providerUpdateConfig[0].Timeout.IsNull() {
 		timeout = defaultTimeout
-
 		if len(os.Getenv("DNS_UPDATE_TIMEOUT")) > 0 {
 			timeout = os.Getenv("DNS_UPDATE_TIMEOUT")
 		}
-
 	} else {
 		timeout = providerUpdateConfig[0].Timeout.ValueString()
 	}
 
-	// Try parsing timeout as a duration
 	var err error
 	duration, err = time.ParseDuration(timeout)
 	if err != nil {
-		// Failing that, convert to an integer and treat as seconds
 		var seconds int
 		seconds, err = strconv.Atoi(timeout)
 		if err != nil {
@@ -262,10 +299,8 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	if providerUpdateConfig[0].Retries.IsNull() {
 		retries = defaultRetries
-
 		if len(os.Getenv("DNS_UPDATE_RETRIES")) > 0 {
 			retriesStr := os.Getenv("DNS_UPDATE_RETRIES")
-
 			var err error
 			retries, err = strconv.Atoi(retriesStr)
 			if err != nil {
@@ -277,10 +312,8 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	if providerUpdateConfig[0].Recursive.IsNull() {
 		recursive = false
-
 		if len(os.Getenv("DNS_UPDATE_RECURSIVE")) > 0 {
 			recursiveStr := os.Getenv("DNS_UPDATE_RECURSIVE")
-
 			var err error
 			recursive, err = strconv.ParseBool(recursiveStr)
 			if err != nil {
@@ -302,7 +335,6 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	if !providerUpdateConfig[0].Gssapi.IsNull() {
 		resp.Diagnostics.Append(providerUpdateConfig[0].Gssapi.ElementsAs(ctx, &providerGssapiConfig, false)...)
-
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -331,7 +363,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	config := Config{
-		server:    server,
+		servers:   servers,
 		port:      port,
 		transport: transport,
 		timeout:   duration,
@@ -347,10 +379,14 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		keytab:    keytab,
 	}
 
-	resp.ResourceData, configErr = config.Client(ctx)
+	var client interface{}
+	client, configErr = config.Client(ctx)
 	if configErr != nil {
 		resp.Diagnostics.AddError("Error initializing DNS Client:", configErr.Error())
 	}
+
+	resp.ResourceData = client
+	resp.DataSourceData = client
 }
 
 func (p *dnsProvider) Resources(ctx context.Context) []func() resource.Resource {
@@ -379,10 +415,18 @@ func (p *dnsProvider) DataSources(ctx context.Context) []func() datasource.DataS
 
 type providerModel struct {
 	Update types.List `tfsdk:"update"` // providerUpdateModel
+	Query  types.List `tfsdk:"query"`  // providerQueryModel
+}
+
+type providerQueryModel struct {
+	Nameservers types.List   `tfsdk:"nameservers"`
+	Transport   types.String `tfsdk:"transport"`
+	Timeout     types.String `tfsdk:"timeout"`
 }
 
 type providerUpdateModel struct {
 	Server       types.String `tfsdk:"server"`
+	Servers      types.List   `tfsdk:"servers"`
 	Port         types.Int64  `tfsdk:"port"`
 	Transport    types.String `tfsdk:"transport"`
 	Timeout      types.String `tfsdk:"timeout"`
@@ -408,6 +452,7 @@ func (m providerUpdateModel) objectAttributeTypes() map[string]attr.Type {
 		"key_secret":    types.StringType,
 		"port":          types.Int64Type,
 		"server":        types.StringType,
+		"servers":       types.ListType{ElemType: types.StringType},
 		"retries":       types.Int64Type,
 		"timeout":       types.StringType,
 		"transport":     types.StringType,
@@ -454,7 +499,6 @@ func resourceDnsImport_framework(id string, client *DNSClient) (dnsConfig, diag.
 
 Loop:
 	for l := range labels {
-
 		msg.SetQuestion(dns.Fqdn(strings.Join(labels[l:], ".")), dns.TypeSOA)
 
 		r, err := exchange(msg, true, client)
@@ -465,11 +509,9 @@ Loop:
 
 		switch r.Rcode {
 		case dns.RcodeSuccess:
-
 			if len(r.Answer) == 0 {
 				continue
 			}
-
 			for _, ans := range r.Answer {
 				switch t := ans.(type) {
 				case *dns.SOA:
@@ -478,7 +520,6 @@ Loop:
 					continue Loop
 				}
 			}
-
 			break Loop
 		case dns.RcodeNameError:
 			continue
@@ -511,7 +552,6 @@ Loop:
 }
 
 func resourceFQDN_framework(config dnsConfig) string {
-
 	fqdn := config.Zone
 	if config.Name != "" {
 		fqdn = fmt.Sprintf("%s.%s", config.Name, fqdn)
@@ -526,7 +566,6 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	msg := new(dns.Msg)
 	msg.SetQuestion(fqdn, rrType)
 
-	// Set recursion desired flag
 	msg.RecursionDesired = client.recursive
 
 	r, err := exchange(msg, true, client)
@@ -536,7 +575,6 @@ func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint1
 	}
 	switch r.Rcode {
 	case dns.RcodeSuccess:
-		// NS records are returned slightly differently
 		if (rrType == dns.TypeNS && len(r.Ns) > 0) || len(r.Answer) > 0 {
 			break
 		}
