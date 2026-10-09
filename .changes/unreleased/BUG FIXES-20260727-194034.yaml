@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: 'validators: reject zone names starting with a period to prevent crash'
+time: 2026-07-27T19:40:34.648494+02:00
+custom:
+    Issue: "126"
