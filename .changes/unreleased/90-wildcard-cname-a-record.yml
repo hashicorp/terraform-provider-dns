@@ -1,0 +1,4 @@
+kind: BUG FIXES
+body: "resourceDnsRead: filter DNS answers to only include records of the requested type, preventing wildcard CNAME records from causing A record creation failures"
+custom:
+  Issue: "90"

@@ -683,7 +683,14 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 		if rrType == dns.TypeNS {
 			return r.Ns, nil
 		}
-		return r.Answer, nil
+
+		var filtered []dns.RR
+		for _, ans := range r.Answer {
+			if ans.Header().Rrtype == rrType {
+				filtered = append(filtered, ans)
+			}
+		}
+		return filtered, nil
 	} else {
 		return nil, diag.Errorf("update server is not set")
 	}
