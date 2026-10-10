@@ -30,3 +30,27 @@ data "dns_a_record_set" "test" {
 		},
 	})
 }
+
+func TestAccDataDnsARecordSet_BasicUpdateProvider(t *testing.T) {
+	recordName := "data.dns_a_record_set.test"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV5ProviderFactories: testProtoV5ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "dns_a_record_set" "test" {
+  host = "terraform-provider-dns-a.hashicorptest.com"
+  use_update_server = true
+}
+`,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(recordName, "addrs.#", "1"),
+					resource.TestCheckTypeSetElemAttr(recordName, "addrs.*", "127.0.0.1"),
+					resource.TestCheckResourceAttr(recordName, "id", "terraform-provider-dns-a.hashicorptest.com"),
+				),
+			},
+		},
+	})
+}
