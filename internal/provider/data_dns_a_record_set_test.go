@@ -30,3 +30,7 @@ data "dns_a_record_set" "test" {
 		},
 	})
 }
+
+func TestAccDataDnsARecordSet_WildcardCNAME(t *testing.T) {
+	t.Skip("Requires DNS infrastructure with wildcard CNAME records")
+}
