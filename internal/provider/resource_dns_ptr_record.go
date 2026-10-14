@@ -125,6 +125,14 @@ func (d *dnsPTRRecordResource) Create(ctx context.Context, req resource.CreateRe
 	msg := new(dns.Msg)
 	msg.SetUpdate(plan.Zone.ValueString())
 
+	//nolint:errcheck
+	// Remove any existing PTR records at this name before inserting
+	rrStrRemove := fmt.Sprintf("%s 0 PTR", rec_fqdn)
+	rr_remove, err := dns.NewRR(rrStrRemove)
+	if err == nil {
+		msg.RemoveRRset([]dns.RR{rr_remove})
+	}
+
 	//Insert new PTR record
 	rrStrInsert := fmt.Sprintf("%s %d PTR %s", rec_fqdn, plan.TTL.ValueInt64(), plan.PTR.ValueString())
 

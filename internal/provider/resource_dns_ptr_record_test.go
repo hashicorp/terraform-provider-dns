@@ -120,6 +120,10 @@ func TestAccDnsPtrRecord_Basic_Upgrade(t *testing.T) {
 	})
 }
 
+func TestAccDnsPTRRecord_WindowsAD(t *testing.T) {
+	t.Skip("Requires Windows AD DNS server with GSSAPI configured")
+}
+
 func testAccCheckDnsPtrRecordDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_ptr_record", dns.TypePTR)
 }
