@@ -672,6 +672,51 @@ func TestDnsProviderConfigure(t *testing.T) {
 				},
 			},
 		},
+		"update-key-config-env-resolved-before-validation": {
+			env: map[string]string{
+				"DNS_UPDATE_KEYNAME":      "test-key.example.com.",
+				"DNS_UPDATE_KEYALGORITHM": "hmac-sha256",
+				"DNS_UPDATE_KEYSECRET":    "base64secret==",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				ResourceData: &DNSClient{
+					c: &dns.Client{
+						Net: "udp",
+					},
+					retries:   3,
+					srv_addr:  ":53",
+					transport: "udp",
+					keyname:   "test-key.example.com.",
+					keyalgo:   "hmac-sha256.",
+					keysecret: "base64secret==",
+				},
+			},
+		},
+		"update-key-config-missing-algorithm-from-env": {
+			env: map[string]string{
+				"DNS_UPDATE_KEYNAME":   "test-key.example.com.",
+				"DNS_UPDATE_KEYSECRET": "base64secret==",
+			},
+			request: provider.ConfigureRequest{
+				Config: testProviderSchemaConfig(t, ctx, schema, map[string]attr.Value{
+					"update": types.ListNull(providerUpdateModel{}.objectType()),
+				}),
+			},
+			expected: &provider.ConfigureResponse{
+				Diagnostics: diag.Diagnostics{
+					diag.NewErrorDiagnostic(
+						"Error initializing DNS Client:",
+						"Error configuring provider: when using authentication, \"key_name\", \"key_secret\" and \"key_algorithm\" should be non empty",
+					),
+				},
+				ResourceData: nil,
+			},
+		},
 	}
 
 	for name, testCase := range testCases {
@@ -686,7 +731,7 @@ func TestDnsProviderConfigure(t *testing.T) {
 
 			testProvider.Configure(ctx, testCase.request, got)
 
-			if diff := cmp.Diff(got, testCase.expected, cmp.AllowUnexported(DNSClient{}), cmpopts.IgnoreUnexported(dns.Client{})); diff != "" {
+			if diff := cmp.Diff(got, testCase.expected, cmp.AllowUnexported(DNSClient{}), cmpopts.IgnoreUnexported(dns.Client{}), cmpopts.IgnoreFields(dns.Client{}, "TsigProvider")); diff != "" {
 				t.Errorf("unexpected difference: %s", diff)
 			}
 		})
