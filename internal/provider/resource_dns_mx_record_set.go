@@ -43,7 +43,7 @@ func (d *dnsMXRecordSetResource) Metadata(ctx context.Context, req resource.Meta
 
 func (d *dnsMXRecordSetResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Creates an MX type DNS record set.",
+		Description: "Creates an MX type DNS record set. Note: DNS servers may mark records created via dynamic update as scavengable; see provider documentation for details.",
 		Attributes: map[string]schema.Attribute{
 			"zone": schema.StringAttribute{
 				Required: true,
