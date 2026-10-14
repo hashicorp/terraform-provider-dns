@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: 'resource_dns_a_record_set: validate addresses before use to prevent nil pointer crash on empty addresses'
+time: 2026-07-27T19:41:20.561818+02:00
+custom:
+    Issue: "96"
