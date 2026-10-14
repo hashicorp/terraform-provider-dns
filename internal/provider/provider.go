@@ -99,6 +99,13 @@ func New() *schema.Provider {
 							Default:     false,
 							Description: "Enable the Recursion Desired (RD) flag on DNS queries",
 						},
+						"use_axfr": {
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							Description: "Use AXFR (zone transfer) to read DNS records instead of individual queries. " +
+								"Useful for large zones where querying each record individually is slow.",
+						},
 						"key_name": {
 							Type:        schema.TypeString,
 							Optional:    true,
@@ -185,7 +192,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
-	var gssapi, recursive bool
+	var gssapi, recursive, useAxfr bool
 
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
@@ -214,6 +221,10 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		if val, ok := update["recursive"]; ok {
 			//nolint:forcetypeassert
 			recursive = val.(bool)
+		}
+		if val, ok := update["use_axfr"]; ok {
+			//nolint:forcetypeassert
+			useAxfr = val.(bool)
 		}
 		if val, ok := update["key_name"]; ok {
 			//nolint:forcetypeassert
@@ -353,6 +364,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		password:  password,
 		keytab:    keytab,
 		recursive: recursive,
+		useAxfr:   useAxfr,
 	}
 
 	dnsClient, err := config.Client(ctx)
@@ -652,13 +664,29 @@ func resourceDnsRead(d *schema.ResourceData, meta interface{}, rrType uint16) ([
 
 		fqdn := resourceFQDN(d)
 
-		msg := new(dns.Msg)
-		msg.SetQuestion(fqdn, rrType)
-
 		dnsClient, ok := meta.(*DNSClient)
 		if !ok {
 			return nil, diag.Errorf("Error asserting meta to *DNSClient")
 		}
+
+		if dnsClient.useAxfr {
+			zone := d.Get("zone").(string)
+			records, err := axfrQuery(dnsClient, zone)
+			if err != nil {
+				return nil, diag.Errorf("Error reading DNS records via AXFR: %s", err)
+			}
+
+			var matching []dns.RR
+			for _, rr := range records {
+				if rr.Header().Name == fqdn && rr.Header().Rrtype == rrType {
+					matching = append(matching, rr)
+				}
+			}
+			return matching, nil
+		}
+
+		msg := new(dns.Msg)
+		msg.SetQuestion(fqdn, rrType)
 
 		// Set recursion desired flag
 		msg.RecursionDesired = dnsClient.recursive

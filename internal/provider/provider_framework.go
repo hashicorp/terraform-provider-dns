@@ -77,6 +77,11 @@ func (p *dnsProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 							Optional:    true,
 							Description: "Enable the Recursion Desired (RD) flag on DNS queries",
 						},
+						"use_axfr": schema.BoolAttribute{
+							Optional:    true,
+							Description: "Use AXFR (zone transfer) to read DNS records instead of individual queries. " +
+								"Useful for large zones where querying each record individually is slow.",
+						},
 						"key_name": schema.StringAttribute{
 							Optional: true,
 							Validators: []validator.String{
@@ -174,7 +179,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	var server, transport, timeout, keyname, keyalgo, keysecret, realm, username, password, keytab string
 	var port, retries int
 	var duration time.Duration
-	var gssapi, recursive bool
+	var gssapi, recursive, useAxfr bool
 	var configErr error
 
 	providerUpdateConfig := make([]providerUpdateModel, 1)
@@ -201,6 +206,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	keyalgo = providerUpdateConfig[0].KeyAlgorithm.ValueString()
 	keysecret = providerUpdateConfig[0].KeySecret.ValueString()
 	recursive = providerUpdateConfig[0].Recursive.ValueBool()
+	useAxfr = providerUpdateConfig[0].UseAxfr.ValueBool()
 
 	if providerUpdateConfig[0].Server.IsNull() && len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 		server = os.Getenv("DNS_UPDATE_SERVER")
@@ -345,6 +351,7 @@ func (p *dnsProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		username:  username,
 		password:  password,
 		keytab:    keytab,
+		useAxfr:   useAxfr,
 	}
 
 	resp.ResourceData, configErr = config.Client(ctx)
@@ -388,6 +395,7 @@ type providerUpdateModel struct {
 	Timeout      types.String `tfsdk:"timeout"`
 	Retries      types.Int64  `tfsdk:"retries"`
 	Recursive    types.Bool   `tfsdk:"recursive"`
+	UseAxfr      types.Bool   `tfsdk:"use_axfr"`
 	KeyName      types.String `tfsdk:"key_name"`
 	KeyAlgorithm types.String `tfsdk:"key_algorithm"`
 	KeySecret    types.String `tfsdk:"key_secret"`
@@ -412,6 +420,7 @@ func (m providerUpdateModel) objectAttributeTypes() map[string]attr.Type {
 		"timeout":       types.StringType,
 		"transport":     types.StringType,
 		"recursive":     types.BoolType,
+		"use_axfr":      types.BoolType,
 	}
 }
 
@@ -522,6 +531,22 @@ func resourceFQDN_framework(config dnsConfig) string {
 func resourceDnsRead_framework(config dnsConfig, client *DNSClient, rrType uint16) ([]dns.RR, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	fqdn := resourceFQDN_framework(config)
+
+	if client.useAxfr {
+		records, err := axfrQuery(client, config.Zone)
+		if err != nil {
+			diags.AddError("Error reading DNS records via AXFR:", err.Error())
+			return nil, diags
+		}
+
+		var matching []dns.RR
+		for _, rr := range records {
+			if rr.Header().Name == fqdn && rr.Header().Rrtype == rrType {
+				matching = append(matching, rr)
+			}
+		}
+		return matching, nil
+	}
 
 	msg := new(dns.Msg)
 	msg.SetQuestion(fqdn, rrType)
