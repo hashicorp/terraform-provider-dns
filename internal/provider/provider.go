@@ -512,11 +512,11 @@ func exchange(msg *dns.Msg, tsig bool, client *DNSClient) (*dns.Msg, error) {
 
 	msg.RecursionDesired = false
 
-	if tsig && keyname != "" {
-		msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
-	}
-
 	for ok := true; ok; ok = retries > 0 {
+		if tsig && keyname != "" {
+			msg.SetTsig(keyname, keyalgo, 300, time.Now().Unix())
+		}
+
 		log.Printf("[DEBUG] Sending DNS message to server (%s):\n%s", srv_addr, msg)
 
 		r, _, err := c.Exchange(msg, srv_addr)
