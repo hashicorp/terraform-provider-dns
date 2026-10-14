@@ -1,0 +1,5 @@
+kind: ENHANCEMENTS
+body: 'resource/dns_a_record_set: Allow fetching the Additional section instead of the Question section'
+time: 2026-05-25T14:52:00.872442225+02:00
+custom:
+    Issue: "167"
