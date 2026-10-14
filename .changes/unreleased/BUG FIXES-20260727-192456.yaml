@@ -1,0 +1,5 @@
+kind: BUG FIXES
+body: Remove FQDN validation requirement for key_name to align with RFC 2845
+time: 2026-07-27T19:24:56.24086+02:00
+custom:
+    Issue: "540"
