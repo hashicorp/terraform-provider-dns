@@ -15,8 +15,11 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
 
     - name: Check out code into the Go module directory
@@ -29,6 +32,7 @@ jobs:
       id: go
 
     - name: Run linters
+      if: matrix.os == 'ubuntu-latest'
       uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
       with:
         version: latest
@@ -40,14 +44,17 @@ jobs:
         terraform_wrapper: false
 
     - name: Generate
+      shell: bash
       run: make generate
 
     - name: Confirm no diff
+      shell: bash
       run: |
         git diff --compact-summary --exit-code || \
           (echo "*** Unexpected differences after code generation. Run 'make generate' and commit."; exit 1)
 
     - name: Build
+      shell: bash
       run: make build
 
   test:
@@ -60,14 +67,20 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - macos-latest
+          - windows-latest
         terraform: ${{ fromJSON(vars.TF_VERSIONS_PROTOCOL_V5) }}
     steps:
 
-    - name: Add hosts entry
+    - name: Add hosts entry (Linux/macOS)
+      if: runner.os != 'Windows'
+      shell: bash
       run: echo "127.0.0.1 ns.example.com" | sudo tee -a /etc/hosts
 
-    - name: Install krb5-user
-      run: sudo apt-get update && sudo apt-get install krb5-user
+    - name: Add hosts entry (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: Add-Content -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Value "127.0.0.1 ns.example.com"
 
     - name: Check out code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -85,7 +98,14 @@ jobs:
         terraform_wrapper: false
 
     - name: Run acceptance test
+      if: runner.os != 'Windows'
       env:
         TF_ACC: "1"
+      shell: bash
       run: |
         bash internal/provider/acceptance.sh
+
+    - name: Run unit tests
+      if: runner.os == 'Windows'
+      shell: bash
+      run: make test
