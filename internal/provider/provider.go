@@ -29,6 +29,34 @@ const (
 func New() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
+			"query": {
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: "When present, specifies DNS server(s) to query instead of the system default resolver.",
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"nameservers": {
+							Type:        schema.TypeList,
+							Required:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "DNS server(s) to query. Can be IP address or hostname:port.",
+						},
+						"transport": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "udp",
+							Description: "Transport to use. Valid values: udp, udp4, udp6, tcp, tcp4, tcp6.",
+						},
+						"timeout": {
+							Type:        schema.TypeString,
+							Optional:    true,
+							Default:     "5s",
+							Description: "Timeout for DNS queries.",
+						},
+					},
+				},
+			},
 			"update": {
 				Type:        schema.TypeList,
 				Optional:    true,
@@ -187,6 +215,34 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	var duration time.Duration
 	var gssapi, recursive bool
 
+	var queryNameservers []string
+	var queryTransport string
+	var queryTimeout time.Duration
+	if v, ok := d.GetOk("query"); ok {
+		queryBlock := v.([]interface{})[0].(map[string]interface{})
+
+		if val, ok := queryBlock["nameservers"]; ok {
+			for _, ns := range val.([]interface{}) {
+				queryNameservers = append(queryNameservers, ns.(string))
+			}
+		}
+		if val, ok := queryBlock["transport"]; ok {
+			queryTransport = val.(string)
+		} else {
+			queryTransport = "udp"
+		}
+		if val, ok := queryBlock["timeout"]; ok {
+			timeoutStr := val.(string)
+			var err error
+			queryTimeout, err = time.ParseDuration(timeoutStr)
+			if err != nil {
+				return nil, diag.Errorf("invalid query timeout: %s", timeoutStr)
+			}
+		} else {
+			queryTimeout = 5 * time.Second
+		}
+	}
+
 	// if the update block is missing, schema.EnvDefaultFunc is not called
 	if v, ok := d.GetOk("update"); ok {
 		//nolint:forcetypeassert
@@ -252,7 +308,7 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 	} else {
 		if len(os.Getenv("DNS_UPDATE_SERVER")) > 0 {
 			server = os.Getenv("DNS_UPDATE_SERVER")
-		} else {
+		} else if len(queryNameservers) == 0 {
 			return nil, nil
 		}
 		if len(os.Getenv("DNS_UPDATE_PORT")) > 0 {
@@ -353,6 +409,10 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 		password:  password,
 		keytab:    keytab,
 		recursive: recursive,
+
+		queryNameservers: queryNameservers,
+		queryTransport:   queryTransport,
+		queryTimeout:     queryTimeout,
 	}
 
 	dnsClient, err := config.Client(ctx)
