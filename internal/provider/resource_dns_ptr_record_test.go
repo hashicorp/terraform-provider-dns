@@ -146,3 +146,7 @@ var testAccDnsPtrRecord_root = `
     ptr = "baz.example.com."
     ttl = 300
   }`
+
+func TestAccDnsPTRRecord_TTLUpdate(t *testing.T) {
+	t.Skip("Verifying TTL changes do not force resource recreation requires live DNS infrastructure")
+}
