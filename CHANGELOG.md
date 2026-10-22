@@ -1,3 +1,23 @@
+## 3.6.2 (September 11, 2026)
+
+NOTES:
+
+* Upgrade the Go toolchain to 1.26.8. ([#699](https://github.com/hashicorp/terraform-provider-dns/issues/699))
+* Upgrade golang.org/x/crypto to 0.56.0. ([#700](https://github.com/hashicorp/terraform-provider-dns/issues/700))
+* Update golang.org/x/mod to v0.40.0 and google.golang.org/protobuf to v1.36.12. ([#702](https://github.com/hashicorp/terraform-provider-dns/issues/702))
+
+## 3.6.1 (May 20, 2026)
+
+BUG FIXES:
+
+* Update github.com/bodgit/tsig to v1.3.1 to fix TKEY exchange failures ([#642](https://github.com/hashicorp/terraform-provider-dns/issues/642))
+
+## 3.6.0 (May 12, 2026)
+
+ENHANCEMENTS:
+
+* Added linux/s390x build target for IBM Z platform support ([#639](https://github.com/hashicorp/terraform-provider-dns/issues/639))
+
 ## 3.5.0 (January 28, 2026)
 
 ENHANCEMENTS:
