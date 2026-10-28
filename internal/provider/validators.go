@@ -16,6 +16,9 @@ func validateZone(v interface{}, k string) (ws []string, errors []error) {
 	if strings.TrimSpace(value) != value {
 		errors = append(errors, fmt.Errorf("DNS zone name %q must not contain whitespace: %q", k, value))
 	}
+	if strings.HasPrefix(value, ".") {
+		errors = append(errors, fmt.Errorf("DNS zone name %q must not start with a period: %q", k, value))
+	}
 	if !dns.IsFqdn(value) {
 		errors = append(errors, fmt.Errorf("DNS zone name %q must be fully qualified: %q", k, value))
 	}
