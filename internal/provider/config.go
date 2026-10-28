@@ -79,9 +79,6 @@ func (c *Config) Client(ctx context.Context) (interface{}, error) {
 	client.keytab = c.keytab
 	client.recursive = c.recursive
 	if !c.gssapi && c.keyname != "" {
-		if !dns.IsFqdn(c.keyname) {
-			return nil, fmt.Errorf("Error configuring provider: \"key_name\" should be fully-qualified")
-		}
 		keyname := strings.ToLower(c.keyname)
 		client.keyname = keyname
 		client.keysecret = c.keysecret

@@ -104,6 +104,7 @@ func New() *schema.Provider {
 							Optional:    true,
 							DefaultFunc: schema.EnvDefaultFunc("DNS_UPDATE_KEYNAME", nil),
 							Description: "The name of the TSIG key used to sign the DNS update messages. " +
+								"The key name does not need to be a fully-qualified domain name. " +
 								"Value can also be sourced from the DNS_UPDATE_KEYNAME environment variable.",
 						},
 						"key_algorithm": {
