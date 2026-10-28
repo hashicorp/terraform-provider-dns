@@ -365,102 +365,52 @@ func configureProvider(ctx context.Context, d *schema.ResourceData) (interface{}
 
 func getAVal(record interface{}) (string, int, error) {
 
-	_, ok := record.(*dns.A)
+	a, ok := record.(*dns.A)
 	if !ok {
-		return "", 0, fmt.Errorf("didn't get a A record")
+		return "", 0, fmt.Errorf("didn't get an A record")
 	}
 
-	//nolint:forcetypeassert
-	recstr := record.(*dns.A).String()
-	var name, class, typ, addr string
-	var ttl int
-
-	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing record: %s", err)
-	}
-
-	return addr, ttl, nil
+	return a.A.String(), int(a.Hdr.Ttl), nil
 }
 
 func getNSVal(record interface{}) (string, int, error) {
 
-	_, ok := record.(*dns.NS)
+	ns, ok := record.(*dns.NS)
 	if !ok {
-		return "", 0, fmt.Errorf("didn't get a NS record")
+		return "", 0, fmt.Errorf("didn't get an NS record")
 	}
 
-	//nolint:forcetypeassert
-	recstr := record.(*dns.NS).String()
-	var name, class, typ, nameserver string
-	var ttl int
-
-	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &nameserver)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing record: %s", err)
-	}
-
-	return nameserver, ttl, nil
+	return ns.Ns, int(ns.Hdr.Ttl), nil
 }
 
 func getAAAAVal(record interface{}) (string, int, error) {
 
-	_, ok := record.(*dns.AAAA)
+	a, ok := record.(*dns.AAAA)
 	if !ok {
-		return "", 0, fmt.Errorf("didn't get a AAAA record")
+		return "", 0, fmt.Errorf("didn't get an AAAA record")
 	}
 
-	//nolint:forcetypeassert
-	recstr := record.(*dns.AAAA).String()
-	var name, class, typ, addr string
-	var ttl int
-
-	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &addr)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing record: %s", err)
-	}
-
-	return addr, ttl, nil
+	return a.AAAA.String(), int(a.Hdr.Ttl), nil
 }
 
 func getCnameVal(record interface{}) (string, int, error) {
 
-	_, ok := record.(*dns.CNAME)
+	c, ok := record.(*dns.CNAME)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a CNAME record")
 	}
 
-	//nolint:forcetypeassert
-	recstr := record.(*dns.CNAME).String()
-	var name, class, typ, cname string
-	var ttl int
-
-	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &cname)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing record: %s", err)
-	}
-
-	return cname, ttl, nil
+	return c.Target, int(c.Hdr.Ttl), nil
 }
 
 func getPtrVal(record interface{}) (string, int, error) {
 
-	_, ok := record.(*dns.PTR)
+	p, ok := record.(*dns.PTR)
 	if !ok {
 		return "", 0, fmt.Errorf("didn't get a PTR record")
 	}
 
-	//nolint:forcetypeassert
-	recstr := record.(*dns.PTR).String()
-	var name, class, typ, ptr string
-	var ttl int
-
-	_, err := fmt.Sscanf(recstr, "%s\t%d\t%s\t%s\t%s", &name, &ttl, &class, &typ, &ptr)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error parsing record: %s", err)
-	}
-
-	return ptr, ttl, nil
+	return p.Ptr, int(p.Hdr.Ttl), nil
 }
 
 func isTimeout(err error) bool {
