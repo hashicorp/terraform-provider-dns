@@ -1,0 +1,4 @@
+kind: BUG FIXES
+body: 'data-source/dns_cname_record_set: Fix non-deterministic results for CNAME chain domains by querying for the direct CNAME target instead of following the entire chain'
+custom:
+  Issue: 615
