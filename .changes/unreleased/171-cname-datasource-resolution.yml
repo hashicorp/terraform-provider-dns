@@ -1,0 +1,4 @@
+kind: BUG FIXES
+body: "dns_cname_record_set data source: use direct DNS query instead of net.LookupCNAME to avoid resolution failures when the CNAME target does not resolve"
+custom:
+  Issue: "171"
