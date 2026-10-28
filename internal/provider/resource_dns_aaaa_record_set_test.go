@@ -111,6 +111,10 @@ func TestAccDnsAAAARecordSet_basic_root_expanded(t *testing.T) {
 	})
 }
 
+func TestAccDnsAAAARecordSet_EmptyAddresses(t *testing.T) {
+	t.Skip("Requires DNS_UPDATE_SERVER for acceptance testing")
+}
+
 func testAccCheckDnsAAAARecordSetDestroy(s *terraform.State) error {
 	return testAccCheckDnsDestroy(s, "dns_aaaa_record_set", dns.TypeAAAA)
 }
